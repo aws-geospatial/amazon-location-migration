@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": ["es2017", "dom"],
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "outDir": "dist"
+  },
+  "typedocOptions": {
+    "entryPoints": ["./src/index.ts"]
+  },
+  "include": ["src"],
+  "exclude": ["**/*.test.ts", "**/test-utils.ts"]
+}

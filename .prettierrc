@@ -1,0 +1,7 @@
+{
+    "plugins": ["prettier-plugin-jsdoc"],
+    "trailingComma": "all",
+    "printWidth": 120,
+    "tsdoc": true
+  }
+  
