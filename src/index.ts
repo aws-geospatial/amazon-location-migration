@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationMap } from "./maps";
+import { MigrationMarker } from "./markers";
 
 // This migration helper will replace classes/methods in the google.maps namespace
 // to target our AWS Location Service migration server shim endpoint instead of
@@ -41,6 +42,7 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/Migratio
 
   // Replace the Google Maps classes with our migration classes
   (window as any).google.maps.Map = MigrationMap;
+  (window as any).google.maps.Marker = MigrationMarker;
 
   if (postMigrationCallback) {
     window[postMigrationCallback]();
