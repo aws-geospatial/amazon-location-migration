@@ -40,8 +40,7 @@ class MigrationMap {
   getCenter() {
     const center = this._map.getCenter();
 
-    //return new google.maps.LatLng(center.lat, center.lng);
-    return GoogleLatLng(center.lat, center.lng);
+    return GoogleLatLng(center?.lat, center?.lng);
   }
   setCenter(center) {
     this._map.setCenter([center.lng(), center.lat()]);

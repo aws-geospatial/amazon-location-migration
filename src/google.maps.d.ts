@@ -12,4 +12,11 @@ declare namespace google.maps {
     lat(): number;
     lng(): number;
   }
+
+  export class LatLngBounds {
+    constructor(swOrLatLngBounds: google.maps.LatLng | null, ne: google.maps.LatLng | null);
+
+    getNorthEast(): google.maps.LatLng;
+    getSouthWest(): google.maps.LatLng;
+  }
 }
