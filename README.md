@@ -32,8 +32,8 @@ npm install
 
 To build the adapter, run:
 
-```> npm run build
-
+```
+> npm run build
 created dist/amazonLocationMigrationAdapter.js in 2.1s
 ```
 
