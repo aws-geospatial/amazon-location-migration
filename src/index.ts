@@ -6,7 +6,7 @@ import { LocationClient } from "@aws-sdk/client-location";
 
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
-import { MigrationAutocompleteService } from "./places";
+import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
 
 // This migration helper will replace classes/methods in the google.maps namespace
 // to target our AWS Location Service migration server shim endpoint instead of
@@ -52,15 +52,18 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/Migratio
     ...authHelper.getLocationClientConfig(), // Configures the client to use API keys when making supported requests
   });
 
-  // Pass our location client and place index to our Migration AutocompleteService class
+  // Pass our location client and place index to our Migration AutocompleteService and MigrationPlacesService classes
   MigrationAutocompleteService.prototype._client = client;
   MigrationAutocompleteService.prototype._placeIndexName = placeIndexName;
+  MigrationPlacesService.prototype._client = client;
+  MigrationPlacesService.prototype._placeIndexName = placeIndexName;
 
   // Replace the Google Maps classes with our migration classes
   (window as any).google.maps.Map = MigrationMap;
   (window as any).google.maps.Marker = MigrationMarker;
 
   (window as any).google.maps.places.AutocompleteService = MigrationAutocompleteService;
+  (window as any).google.maps.places.PlacesService = MigrationPlacesService;
 
   if (postMigrationCallback) {
     window[postMigrationCallback]();
