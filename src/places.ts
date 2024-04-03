@@ -2,12 +2,52 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  GetPlaceCommand,
+  GetPlaceRequest,
   LocationClient,
   SearchPlaceIndexForSuggestionsCommand,
   SearchPlaceIndexForSuggestionsRequest,
 } from "@aws-sdk/client-location";
 
-import { PlacesServiceStatus, QueryAutocompletePrediction } from "./googleCommon";
+import { GoogleLatLng, PlacesServiceStatus, QueryAutocompletePrediction } from "./googleCommon";
+
+class MigrationPlacesService {
+  _client: LocationClient; // This will be populated by the top level module that creates our location client
+  _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
+
+  getDetails(request, callback) {
+    const placeId = request.placeId;
+
+    const input: GetPlaceRequest = {
+      // GetPlaceRequest
+      IndexName: this._placeIndexName, // required
+      PlaceId: placeId, // required
+    };
+
+    const command = new GetPlaceCommand(input);
+    this._client
+      .send(command)
+      .then((response) => {
+        const place = response.Place;
+        const point = place.Geometry.Point;
+        const googleResult = {
+          formatted_address: place.Label,
+          name: place.Label.split(",")[0],
+          geometry: {
+            location: GoogleLatLng(point[1], point[0]),
+          },
+          place_id: placeId,
+        };
+
+        callback(googleResult, PlacesServiceStatus.OK);
+      })
+      .catch((error) => {
+        console.error(error);
+
+        callback([], PlacesServiceStatus.UNKNOWN_ERROR);
+      });
+  }
+}
 
 class MigrationAutocompleteService {
   _client: LocationClient; // This will be populated by the top level module that creates our location client
@@ -68,4 +108,4 @@ class MigrationAutocompleteService {
   }
 }
 
-export { MigrationAutocompleteService };
+export { MigrationAutocompleteService, MigrationPlacesService };
