@@ -15,7 +15,7 @@ import { GoogleLatLng } from "./googleCommon";
 */
 class MigrationMap {
   _map: Map;
-  _styleUrl: string; // This will be populated by the top level module is passed our API key
+  _styleUrl: string; // This will be populated by the top level module that is passed our API key
 
   constructor(containerElement, options) {
     const maplibreOptions: MapOptions = {

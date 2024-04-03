@@ -79,3 +79,18 @@ export const GoogleLatLngBounds = function (swOrLatLngBounds, ne) {
     ? new google.maps.LatLngBounds(swOrLatLngBounds, ne)
     : new MigrationLatLngBounds(swOrLatLngBounds, ne);
 };
+
+export const PlacesServiceStatus = {
+  OK: "OK",
+  UNKNOWN_ERROR: "UNKNOWN_ERROR",
+  OVER_QUERY_LIMIT: "OVER_QUERY_LIMIT",
+  REQUEST_DENIED: "REQUEST_DENIED",
+  INVALID_REQUEST: "INVALID_REQUEST",
+  ZERO_RESULTS: "ZERO_RESULTS",
+  NOT_FOUND: "NOT_FOUND",
+};
+
+export interface QueryAutocompletePrediction {
+  description: string;
+  place_id?: string;
+}
