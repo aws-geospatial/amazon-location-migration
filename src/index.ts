@@ -1,8 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
+import { LocationClient } from "@aws-sdk/client-location";
+
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
+import { MigrationAutocompleteService } from "./places";
 
 // This migration helper will replace classes/methods in the google.maps namespace
 // to target our AWS Location Service migration server shim endpoint instead of
@@ -40,9 +44,23 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/Migratio
   // Pass our style url (which includes the API key) to our Migration Map class
   MigrationMap.prototype._styleUrl = styleUrl;
 
+  // Create an authentication helper instance using an API key
+  const authHelper = await withAPIKey(apiKey);
+
+  const client = new LocationClient({
+    region: region, // Region containing Amazon Location resource
+    ...authHelper.getLocationClientConfig(), // Configures the client to use API keys when making supported requests
+  });
+
+  // Pass our location client and place index to our Migration AutocompleteService class
+  MigrationAutocompleteService.prototype._client = client;
+  MigrationAutocompleteService.prototype._placeIndexName = placeIndexName;
+
   // Replace the Google Maps classes with our migration classes
   (window as any).google.maps.Map = MigrationMap;
   (window as any).google.maps.Marker = MigrationMarker;
+
+  (window as any).google.maps.places.AutocompleteService = MigrationAutocompleteService;
 
   if (postMigrationCallback) {
     window[postMigrationCallback]();
