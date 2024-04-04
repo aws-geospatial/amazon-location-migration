@@ -4,7 +4,7 @@
 import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
 
-import { MigrationDirectionsRenderer } from "./directions";
+import { MigrationDirectionsRenderer, MigrationDirectionsService } from "./directions";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
@@ -53,11 +53,21 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/Migratio
     ...authHelper.getLocationClientConfig(), // Configures the client to use API keys when making supported requests
   });
 
-  // Pass our location client and place index to our Migration AutocompleteService and MigrationPlacesService classes
+  // Pass our location client, and optionally place index and route calculator names
+  // to our migration services
   MigrationAutocompleteService.prototype._client = client;
   MigrationAutocompleteService.prototype._placeIndexName = placeIndexName;
   MigrationPlacesService.prototype._client = client;
   MigrationPlacesService.prototype._placeIndexName = placeIndexName;
+  MigrationDirectionsService.prototype._client = client;
+  MigrationDirectionsService.prototype._routeCalculatorName = routeCalculatorName;
+
+  // Additionally, we need to create a places service for our directions service
+  // to use, since it can optionally be passed source/destinations that are string
+  // queries instead of actual LatLng coordinates. Constructing it here and passing
+  // it in will make sure it is already configured with the appropriate client
+  // and place index name.
+  MigrationDirectionsService.prototype._placesService = new MigrationPlacesService();
 
   // Replace the Google Maps classes with our migration classes
   (window as any).google.maps.Map = MigrationMap;
@@ -67,6 +77,7 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/Migratio
   (window as any).google.maps.places.PlacesService = MigrationPlacesService;
 
   (window as any).google.maps.DirectionsRenderer = MigrationDirectionsRenderer;
+  (window as any).google.maps.DirectionsService = MigrationDirectionsService;
 
   if (postMigrationCallback) {
     window[postMigrationCallback]();
