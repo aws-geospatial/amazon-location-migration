@@ -90,6 +90,17 @@ export const PlacesServiceStatus = {
   NOT_FOUND: "NOT_FOUND",
 };
 
+export const DirectionsStatus = {
+  OK: "OK",
+  UNKNOWN_ERROR: "UNKNOWN_ERROR",
+  OVER_QUERY_LIMIT: "OVER_QUERY_LIMIT",
+  REQUEST_DENIED: "REQUEST_DENIED",
+  INVALID_REQUEST: "INVALID_REQUEST",
+  ZERO_RESULTS: "ZERO_RESULTS",
+  MAX_WAYPOINTS_EXCEEDED: "MAX_WAYPOINTS_EXCEEDED",
+  NOT_FOUND: "NOT_FOUND",
+};
+
 export interface QueryAutocompletePrediction {
   description: string;
   place_id?: string;
