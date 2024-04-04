@@ -4,6 +4,7 @@
 import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
 
+import { MigrationDirectionsRenderer } from "./directions";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
@@ -64,6 +65,8 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/Migratio
 
   (window as any).google.maps.places.AutocompleteService = MigrationAutocompleteService;
   (window as any).google.maps.places.PlacesService = MigrationPlacesService;
+
+  (window as any).google.maps.DirectionsRenderer = MigrationDirectionsRenderer;
 
   if (postMigrationCallback) {
     window[postMigrationCallback]();
