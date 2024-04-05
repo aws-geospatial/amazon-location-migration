@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <title>Directions Example - Migration Adapter</title>
+    <link rel="stylesheet" type="text/css" href="../common/style.css" />
+
+    <!-- TODO: Move the maplibre stylesheet to be loaded dynamically by the migration adapter -->
+    <link href="https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <!-- Client logic example -->
+    <script type="text/javascript" src="./example.js"></script>
+
+    <!-- Migration script import -->
+    <script src="../../dist/amazonLocationMigrationAdapter.js?callback=initMap&placeIndex=<YOUR_PLACE_INDEX>&routeCalculator=<YOUR_ROUTE_CALCULATOR>&apiKey=<YOUR_AMAZON_API_KEY>"></script>
+  </head>
+  <body>
+    <div id="floating-panel">
+      <b>Start: </b>
+      <select id="start">
+        <option value="chicago, il">Chicago</option>
+        <option value="st louis, mo">St Louis</option>
+        <option value="joplin, mo">Joplin, MO</option>
+        <option value="oklahoma city, ok">Oklahoma City</option>
+        <option value="austin, tx">Austin</option>
+        <option value="gallup, nm">Gallup, NM</option>
+        <option value="flagstaff, az">Flagstaff, AZ</option>
+        <option value="winona, az">Winona</option>
+        <option value="kingman, az">Kingman</option>
+        <option value="barstow, ca">Barstow</option>
+        <option value="san bernardino, ca">San Bernardino</option>
+        <option value="los angeles, ca">Los Angeles</option>
+      </select>
+      <b>End: </b>
+      <select id="end">
+        <option value="chicago, il">Chicago</option>
+        <option value="st louis, mo">St Louis</option>
+        <option value="joplin, mo">Joplin, MO</option>
+        <option value="oklahoma city, ok">Oklahoma City</option>
+        <option value="austin, tx">Austin</option>
+        <option value="gallup, nm">Gallup, NM</option>
+        <option value="flagstaff, az">Flagstaff, AZ</option>
+        <option value="winona, az">Winona</option>
+        <option value="kingman, az">Kingman</option>
+        <option value="barstow, ca">Barstow</option>
+        <option value="san bernardino, ca">San Bernardino</option>
+        <option value="los angeles, ca">Los Angeles</option>
+      </select>
+    </div>
+    <div id="map"></div>
+
+    <!-- Google Maps API import -->
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key=<YOUR_GOOGLE_API_KEY>&callback=migrationInit&libraries=places"
+    ></script>
+  </body>
+</html>
