@@ -43,6 +43,35 @@ To run the unit tests, run:
 npm test
 ```
 
+## Examples
+
+There are several examples under the `<root>/examples` folder that you can run locally with the built migration adapter.
+
+Each example has an `index.html` and a `google.html` page, of which the only difference between them is that the `index.html` imports our migration adapter.
+The examples also have an `example.js` script that holds the client logic for the example. This client logic is shared between both `index` and `google` example pages
+in order to showcase that the client logic can invoke the same `google.maps` APIs, but will be re-routed by the migration adapter for any APIs that the migration adapter supports.
+
+The examples can be hosted on a local webserver with the following command:
+
+```
+npm run hostExamples
+```
+
+### Basic map
+
+http://localhost:3000/examples/basicMap/index.html
+http://localhost:3000/examples/basicMap/google.html
+
+### Autocomplete
+
+http://localhost:3000/examples/autoComplete/index.html
+http://localhost:3000/examples/autoComplete/google.html
+
+### Directions
+
+http://localhost:3000/examples/directions/index.html
+http://localhost:3000/examples/directions/google.html
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

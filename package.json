@@ -46,7 +46,8 @@
     "build-ts:cjs": "tsc --module commonjs --outDir dist/cjs",
     "build-ts:esm": "tsc --esModuleInterop --module esnext --outDir dist/esm",
     "prepare": "husky install",
-    "prepublishOnly": "npm-run-all clean lint prettier:check test build"
+    "prepublishOnly": "npm-run-all clean lint prettier:check test build",
+    "hostExamples": "vite --open"
   },
   "jest": {
     "testMatch": [
@@ -99,6 +100,7 @@
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
     "typedoc": "^0.24.1",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "vite": "^5.2.8"
   }
 }
