@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Map, MapOptions, NavigationControl } from "maplibre-gl";
-import { GoogleLatLng } from "./googleCommon";
+import { GoogleLatLng, GoogleToMaplibreControlPosition, LatLngToLngLat } from "./googleCommon";
 
 /*
   This migration map class is a thin wrapper replacement for google.maps.Map, which
@@ -24,16 +24,55 @@ class MigrationMap {
     };
 
     if (options.center) {
-      maplibreOptions.center = [options.center.lng, options.center.lat];
+      const lnglat = LatLngToLngLat(options.center);
+      if (lnglat) {
+        maplibreOptions.center = lnglat;
+      } else {
+        console.error("Unrecognized center option", options.center);
+      }
     }
+
+    // MapLibre offers 0-24 zoom, Google can potentially go higher based on location
+    // see more: https://developers.google.com/maps/documentation/javascript/maxzoom
     if (options.zoom) {
-      maplibreOptions.zoom = options.zoom;
+      maplibreOptions.zoom = options.zoom > 24 ? 24 : options.zoom < 0 ? 0 : options.zoom;
+    }
+
+    if (options.maxZoom) {
+      maplibreOptions.maxZoom = options.maxZoom > 24 ? 24 : options.maxZoom < 0 ? 0 : options.maxZoom;
+    }
+
+    if (options.minZoom) {
+      maplibreOptions.minZoom = options.minZoom > 24 ? 24 : options.minZoom < 0 ? 0 : options.minZoom;
+    }
+
+    if (options.heading) {
+      maplibreOptions.bearing = options.heading;
+    }
+
+    if (options.tilt) {
+      maplibreOptions.pitch = options.tilt;
     }
 
     this._map = new Map(maplibreOptions);
 
-    if (options.zoomControl === undefined || options.zoomControl) {
-      this._map.addControl(new NavigationControl(), "bottom-right");
+    // Add NavigationControl if zoomControl is true or not passed in (Google by default adds zoom control to map),
+    // furthermore, you can specify zoomControlOptions without passing in zoomControl as an option
+    if (options.zoomControl === undefined || options.zoomControl === true) {
+      // checks that 'position' option is set, only translates 8 out of 29 positions that Google offers,
+      // we will default to bottom-right for positions that MapLibre does not offer
+      if (
+        options.zoomControlOptions &&
+        options.zoomControlOptions.position &&
+        options.zoomControlOptions.position in GoogleToMaplibreControlPosition
+      ) {
+        this._map.addControl(
+          new NavigationControl(),
+          GoogleToMaplibreControlPosition[options.zoomControlOptions.position],
+        );
+      } else {
+        this._map.addControl(new NavigationControl(), "bottom-right");
+      }
     }
   }
 
