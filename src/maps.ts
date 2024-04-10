@@ -32,18 +32,18 @@ class MigrationMap {
       }
     }
 
-    // MapLibre offers 0-24 zoom, Google can potentially go higher based on location
+    // MapLibre offers 0-24 zoom (handles out of bounds), Google can potentially go higher based on location
     // see more: https://developers.google.com/maps/documentation/javascript/maxzoom
     if (options.zoom) {
-      maplibreOptions.zoom = options.zoom > 24 ? 24 : options.zoom < 0 ? 0 : options.zoom;
+      maplibreOptions.zoom = options.zoom;
     }
 
     if (options.maxZoom) {
-      maplibreOptions.maxZoom = options.maxZoom > 24 ? 24 : options.maxZoom < 0 ? 0 : options.maxZoom;
+      maplibreOptions.maxZoom = options.maxZoom;
     }
 
     if (options.minZoom) {
-      maplibreOptions.minZoom = options.minZoom > 24 ? 24 : options.minZoom < 0 ? 0 : options.minZoom;
+      maplibreOptions.minZoom = options.minZoom;
     }
 
     if (options.heading) {
@@ -81,8 +81,26 @@ class MigrationMap {
 
     return GoogleLatLng(center?.lat, center?.lng);
   }
+
+  getDiv() {
+    return this._map.getContainer();
+  }
+
+  getHeading() {
+    return this._map.getBearing();
+  }
+
+  getTilt() {
+    return this._map.getPitch();
+  }
+
+  getZoom() {
+    return this._map.getZoom();
+  }
+
   setCenter(center) {
-    this._map.setCenter([center.lng(), center.lat()]);
+    const lnglat = LatLngToLngLat(center);
+    this._map.setCenter(lnglat);
   }
 
   fitBounds(bounds) {

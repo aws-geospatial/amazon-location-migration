@@ -84,7 +84,7 @@ export const GoogleLatLngBounds = function (swOrLatLngBounds, ne) {
 // longitude and latitude (valid MapLibre input), returns 'null' if 'coord' parameter
 // is not a Google LatLng or LatLngLiteral
 export const LatLngToLngLat = function (coord): [number, number] {
-  if (coord.lng && coord.lat) {
+  if (coord.lng !== undefined && coord.lat !== undefined) {
     if (typeof coord.lng === "number" && typeof coord.lat === "number") {
       return [coord.lng, coord.lat];
     } else if (typeof coord.lng === "function" && typeof coord.lat === "function") {

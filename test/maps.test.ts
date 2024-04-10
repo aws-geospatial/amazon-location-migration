@@ -66,26 +66,6 @@ test("should set migration map options with control position not available in Ma
   expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
 });
 
-test("should set migration map options with zoom options not available in MapLibre", () => {
-  const testMap = new MigrationMap(null, {
-    center: { lat: 30.268193, lng: -97.7457518 }, // Austin, TX :)
-    zoom: -2,
-    minZoom: -2,
-    maxZoom: 30,
-  });
-
-  const expectedMaplibreOptions: MapOptions = {
-    container: null,
-    style: undefined,
-    center: [-97.7457518, 30.268193],
-    zoom: 0,
-    minZoom: 0,
-    maxZoom: 24,
-  };
-  expect(Map).toHaveBeenCalledTimes(1);
-  expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
-});
-
 test("should call setZoom from migration map", () => {
   const testMap = new MigrationMap(null, {});
 
@@ -95,7 +75,7 @@ test("should call setZoom from migration map", () => {
   expect(Map.prototype.setZoom).toHaveBeenCalledWith(3);
 });
 
-test("should call setCenter from migration map", () => {
+test("should call setCenter from migration map with LatLng", () => {
   const testMap = new MigrationMap(null, {});
   const testCenter = GoogleLatLng(1, 2);
 
@@ -105,12 +85,30 @@ test("should call setCenter from migration map", () => {
   expect(Map.prototype.setCenter).toHaveBeenCalledWith([2, 1]);
 });
 
-test("should call getCenter from migration map", () => {
+test("should call setCenter from migration map with LatLngLiteral", () => {
+  const testMap = new MigrationMap(null, {});
+  const testCenter = { lat: 3, lng: 4 };
+
+  testMap.setCenter(testCenter);
+
+  expect(Map.prototype.setCenter).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setCenter).toHaveBeenCalledWith([4, 3]);
+});
+
+test("should call get methods from migration map", () => {
   const testMap = new MigrationMap(null, {});
 
   testMap.getCenter();
+  testMap.getDiv();
+  testMap.getHeading();
+  testMap.getTilt();
+  testMap.getZoom();
 
   expect(Map.prototype.getCenter).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.getContainer).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.getBearing).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.getPitch).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.getZoom).toHaveBeenCalledTimes(1);
 });
 
 test("should call fitBounds from migration map", () => {
