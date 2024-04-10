@@ -4,6 +4,12 @@ TODO: Fill this README out!
 
 ## Developing
 
+Prerequisites:
+
+- install `Prettier` and `ESLint` plugins for Visual Studio Code
+- select `Prettier` as your `Default Formatter` (Code &rarr; Settings &rarr; Settings &rarr; search `format`)
+- check off `Format On Save` (Code &rarr; Settings &rarr; Settings &rarr; search `format`)
+
 To develop this package, first create a fork of the repo and then set the upstream to this repository, e.g:
 
 ```

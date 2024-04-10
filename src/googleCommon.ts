@@ -80,6 +80,20 @@ export const GoogleLatLngBounds = function (swOrLatLngBounds, ne) {
     : new MigrationLatLngBounds(swOrLatLngBounds, ne);
 };
 
+// function that takes in a Google LatLng or LatLngLiteral and returns array containing a
+// longitude and latitude (valid MapLibre input), returns 'null' if 'coord' parameter
+// is not a Google LatLng or LatLngLiteral
+export const LatLngToLngLat = function (coord): [number, number] {
+  if (coord.lng && coord.lat) {
+    if (typeof coord.lng === "number" && typeof coord.lat === "number") {
+      return [coord.lng, coord.lat];
+    } else if (typeof coord.lng === "function" && typeof coord.lat === "function") {
+      return [coord.lng(), coord.lat()];
+    }
+  }
+  return null;
+};
+
 export const PlacesServiceStatus = {
   OK: "OK",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
@@ -100,6 +114,54 @@ export const DirectionsStatus = {
   MAX_WAYPOINTS_EXCEEDED: "MAX_WAYPOINTS_EXCEEDED",
   NOT_FOUND: "NOT_FOUND",
 };
+
+// Migration version of google.maps.ControlPosition
+// This is only used in adapter standalone mode and in unit tests
+export const MigrationControlPosition = {
+  TOP_LEFT: 1,
+  TOP_CENTER: 2,
+  TOP: 2,
+  TOP_RIGHT: 3,
+  LEFT_CENTER: 4,
+  LEFT_TOP: 5,
+  LEFT: 5,
+  LEFT_BOTTOM: 6,
+  RIGHT_TOP: 7,
+  RIGHT: 7,
+  RIGHT_CENTER: 8,
+  RIGHT_BOTTOM: 9,
+  BOTTOM_LEFT: 10,
+  BOTTOM_CENTER: 11,
+  BOTTOM: 11,
+  BOTTOM_RIGHT: 12,
+  CENTER: 13,
+  BLOCK_START_INLINE_START: 14,
+  BLOCK_START_INLINE_CENTER: 15,
+  BLOCK_START_INLINE_END: 16,
+  INLINE_START_BLOCK_CENTER: 17,
+  INLINE_START_BLOCK_START: 18,
+  INLINE_START_BLOCK_END: 19,
+  INLINE_END_BLOCK_START: 20,
+  INLINE_END_BLOCK_CENTER: 21,
+  INLINE_END_BLOCK_END: 22,
+  BLOCK_END_INLINE_START: 23,
+  BLOCK_END_INLINE_CENTER: 24,
+  BLOCK_END_INLINE_END: 25,
+};
+
+// Constant responsible for translating numbers representing Google ControlPositions into MapLibre position
+// strings that can be passed into MapLibre's 'addControl'
+// see more on Google ControlPosition: https://developers.google.com/maps/documentation/javascript/controls#ControlPositioning
+// see more on MapLibre ControlPosition: https://maplibre.org/maplibre-gl-js/docs/API/types/ControlPosition/
+export const GoogleToMaplibreControlPosition = {};
+GoogleToMaplibreControlPosition[MigrationControlPosition.TOP_LEFT] = "top-left";
+GoogleToMaplibreControlPosition[MigrationControlPosition.TOP_RIGHT] = "top-right";
+GoogleToMaplibreControlPosition[MigrationControlPosition.LEFT_TOP] = "top-left";
+GoogleToMaplibreControlPosition[MigrationControlPosition.LEFT_BOTTOM] = "bottom-left";
+GoogleToMaplibreControlPosition[MigrationControlPosition.RIGHT_TOP] = "top-right";
+GoogleToMaplibreControlPosition[MigrationControlPosition.RIGHT_BOTTOM] = "bottom-right";
+GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_LEFT] = "bottom-left";
+GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_RIGHT] = "bottom-right";
 
 export interface QueryAutocompletePrediction {
   description: string;

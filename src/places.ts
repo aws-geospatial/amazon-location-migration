@@ -57,7 +57,7 @@ class MigrationPlacesService {
               } else if (item === "geometry") {
                 const point = place.Geometry.Point;
                 placeResponse[item] = {
-                  location: new google.maps.LatLng(point[1], point[0]),
+                  location: GoogleLatLng(point[1], point[0]),
                 };
               }
             });
