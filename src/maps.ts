@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { Map, MapOptions, NavigationControl } from "maplibre-gl";
+import { IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import { GoogleLatLng, GoogleToMaplibreControlPosition, LatLngToLngLat } from "./googleCommon";
 
 /*
@@ -14,8 +14,9 @@ import { GoogleLatLng, GoogleToMaplibreControlPosition, LatLngToLngLat } from ".
   });
 */
 class MigrationMap {
-  _map: Map;
+  #map: Map;
   _styleUrl: string; // This will be populated by the top level module that is passed our API key
+  #navigationControl: IControl;
 
   constructor(containerElement, options) {
     const maplibreOptions: MapOptions = {
@@ -54,72 +55,142 @@ class MigrationMap {
       maplibreOptions.pitch = options.tilt;
     }
 
-    this._map = new Map(maplibreOptions);
+    this.#map = new Map(maplibreOptions);
 
     // Add NavigationControl if zoomControl is true or not passed in (Google by default adds zoom control to map),
     // furthermore, you can specify zoomControlOptions without passing in zoomControl as an option
     if (options.zoomControl === undefined || options.zoomControl === true) {
-      // checks that 'position' option is set, only translates 8 out of 29 positions that Google offers,
-      // we will default to bottom-right for positions that MapLibre does not offer
-      if (
-        options.zoomControlOptions &&
-        options.zoomControlOptions.position &&
-        options.zoomControlOptions.position in GoogleToMaplibreControlPosition
-      ) {
-        this._map.addControl(
-          new NavigationControl(),
-          GoogleToMaplibreControlPosition[options.zoomControlOptions.position],
-        );
-      } else {
-        this._map.addControl(new NavigationControl(), "bottom-right");
-      }
+      this.#addNavigationControl(options.zoomControlOptions);
     }
   }
 
   getCenter() {
-    const center = this._map.getCenter();
+    const center = this.#map.getCenter();
 
     return GoogleLatLng(center?.lat, center?.lng);
   }
 
   getDiv() {
-    return this._map.getContainer();
+    return this.#map.getContainer();
   }
 
   getHeading() {
-    return this._map.getBearing();
+    return this.#map.getBearing();
   }
 
   getTilt() {
-    return this._map.getPitch();
+    return this.#map.getPitch();
   }
 
   getZoom() {
-    return this._map.getZoom();
+    return this.#map.getZoom();
   }
 
   setCenter(center) {
     const lnglat = LatLngToLngLat(center);
-    this._map.setCenter(lnglat);
+    this.#map.setCenter(lnglat);
+  }
+
+  setHeading(heading) {
+    this.#map.setBearing(heading);
+  }
+
+  // not implemented by Google Maps, used as private helper method when setting maxZoom in setOptions
+  #setMaxZoom(zoom) {
+    this.#map.setMaxZoom(zoom);
+  }
+
+  // not implemented by Google Maps, used as private helper method when setting minZoom in setOptions
+  #setMinZoom(zoom) {
+    this.#map.setMinZoom(zoom);
+  }
+
+  setOptions(options) {
+    if (options.center) {
+      const lnglat = LatLngToLngLat(options.center);
+      if (lnglat) {
+        this.#map.setCenter(lnglat);
+      } else {
+        console.error("Unrecognized center option", options.center);
+      }
+    }
+
+    if (options.zoom) {
+      this.setZoom(options.zoom);
+    }
+
+    if (options.maxZoom) {
+      this.#setMaxZoom(options.maxZoom);
+    }
+
+    if (options.minZoom) {
+      this.#setMinZoom(options.minZoom);
+    }
+
+    if (options.heading) {
+      this.setHeading(options.heading);
+    }
+
+    if (options.tilt) {
+      this.setTilt(options.tilt);
+    }
+
+    if (options.zoomControl === undefined) {
+      // if zoomControl not sent in, check if navControl exists:  navControl exists means map created with zoomControl option
+      // set to true or default, navControl not exists means map created without zoomControl option so don't create new navControl
+      if (this.#navigationControl !== undefined && options.zoomControlOptions && options.zoomControlOptions.position) {
+        this.#addNavigationControl(options.zoomControlOptions);
+      }
+    } else if (options.zoomControl === true) {
+      this.#addNavigationControl(options.zoomControlOptions);
+    } else if (options.zoomControl === false) {
+      this.#map.removeControl(this.#navigationControl);
+    }
+  }
+
+  setTilt(tilt) {
+    this.#map.setPitch(tilt);
+  }
+
+  setZoom(zoom) {
+    this.#map.setZoom(zoom);
   }
 
   fitBounds(bounds) {
     const northEast = bounds.getNorthEast();
     const southWest = bounds.getSouthWest();
 
-    this._map.fitBounds([
+    this.#map.fitBounds([
       [northEast.lng(), northEast.lat()],
       [southWest.lng(), southWest.lat()],
     ]);
   }
 
-  setZoom(zoom) {
-    this._map.setZoom(zoom);
+  // helper method for adding a NavigationControl to the map, checks that 'position' option is set,
+  // only translates 8 out of 29 positions that Google offers, we will default to bottom-right for
+  // positions that MapLibre does not offer
+  #addNavigationControl(zoomControlOptions) {
+    // remove old navControl so we don't have multiple
+    if (this.#navigationControl && this.#map.hasControl(this.#navigationControl)) {
+      this.#map.removeControl(this.#navigationControl);
+    }
+    // add new navControl
+    if (
+      zoomControlOptions &&
+      zoomControlOptions.position &&
+      zoomControlOptions.position in GoogleToMaplibreControlPosition
+    ) {
+      this.#navigationControl = new NavigationControl();
+      this.#map.addControl(this.#navigationControl, GoogleToMaplibreControlPosition[zoomControlOptions.position]);
+    } else {
+      this.#navigationControl = new NavigationControl();
+      this.#map.addControl(this.#navigationControl, "bottom-right");
+    }
   }
 
   // Internal method for migration logic that needs to access the underlying MapLibre map
   _getMap() {
-    return this._map;
+    return this.#map;
   }
 }
 

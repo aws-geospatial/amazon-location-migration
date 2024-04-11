@@ -95,6 +95,97 @@ test("should call setCenter from migration map with LatLngLiteral", () => {
   expect(Map.prototype.setCenter).toHaveBeenCalledWith([4, 3]);
 });
 
+test("should call setHeading from migration map", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.setHeading(45);
+
+  expect(Map.prototype.setBearing).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setBearing).toHaveBeenCalledWith(45);
+});
+
+test("should call setOptions from migration map", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.setOptions({
+    center: { lat: 30.268193, lng: -97.7457518 }, // Austin, TX :)
+    zoom: 9,
+    minZoom: 2,
+    maxZoom: 18,
+    tilt: 45,
+    heading: 90,
+    zoomControl: true,
+    zoomControlOptions: {
+      position: MigrationControlPosition.LEFT_TOP,
+    },
+  });
+
+  expect(Map.prototype.setCenter).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setCenter).toHaveBeenCalledWith([-97.7457518, 30.268193]);
+  expect(Map.prototype.setZoom).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setZoom).toHaveBeenCalledWith(9);
+  expect(Map.prototype.setMaxZoom).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setMaxZoom).toHaveBeenCalledWith(18);
+  expect(Map.prototype.setMinZoom).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setMinZoom).toHaveBeenCalledWith(2);
+  expect(Map.prototype.setPitch).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setPitch).toHaveBeenCalledWith(45);
+  expect(Map.prototype.setBearing).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setBearing).toHaveBeenCalledWith(90);
+  expect(Map.prototype.addControl).toHaveBeenCalledTimes(2);
+  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-left");
+});
+
+test("should call setOptions from migration map and remove NavigationControl", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.setOptions({
+    zoomControl: false,
+  });
+
+  expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(Map.prototype.removeControl).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.removeControl).toHaveBeenCalledWith(expect.any(NavigationControl));
+});
+
+test("should call setOptions from migration map and add new NavigationControl", () => {
+  const testMap = new MigrationMap(null, {
+    zoomControl: false,
+  });
+
+  testMap.setOptions({
+    zoomControl: true,
+  });
+
+  expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+});
+
+test("should call setOptions from migration map and add new NavigationControl with zoomControlOptions", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.setOptions({
+    zoomControlOptions: {
+      position: MigrationControlPosition.RIGHT_TOP,
+    },
+  });
+
+  expect(Map.prototype.addControl).toHaveBeenCalledTimes(2);
+  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-right");
+});
+
+test("should call setTilt from migration map", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.setTilt(30);
+
+  expect(Map.prototype.setPitch).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.setPitch).toHaveBeenCalledWith(30);
+});
+
 test("should call get methods from migration map", () => {
   const testMap = new MigrationMap(null, {});
 
