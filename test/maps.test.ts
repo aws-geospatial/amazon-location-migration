@@ -11,13 +11,16 @@ import { GoogleLatLng, GoogleLatLngBounds, MigrationControlPosition } from "../s
 jest.mock("maplibre-gl");
 import { Map, MapOptions, NavigationControl } from "maplibre-gl";
 
+const testLat = 30.268193; // Austin, TX :)
+const testLng = -97.7457518;
+
 afterEach(() => {
   jest.clearAllMocks();
 });
 
 test("should set migration map options", () => {
   const testMap = new MigrationMap(null, {
-    center: { lat: 30.268193, lng: -97.7457518 }, // Austin, TX :)
+    center: { lat: testLat, lng: testLng },
     zoom: 9,
     minZoom: 2,
     maxZoom: 18,
@@ -32,7 +35,7 @@ test("should set migration map options", () => {
   const expectedMaplibreOptions: MapOptions = {
     container: null,
     style: undefined,
-    center: [-97.7457518, 30.268193],
+    center: [testLng, testLat],
     zoom: 9,
     minZoom: 2,
     maxZoom: 18,
@@ -47,7 +50,7 @@ test("should set migration map options", () => {
 
 test("should set migration map options with control position not available in MapLibre", () => {
   const testMap = new MigrationMap(null, {
-    center: { lat: 30.268193, lng: -97.7457518 }, // Austin, TX :)
+    center: { lat: testLat, lng: testLng },
     zoom: 9,
     zoomControlOptions: {
       position: MigrationControlPosition.BLOCK_START_INLINE_CENTER,
@@ -57,7 +60,7 @@ test("should set migration map options with control position not available in Ma
   const expectedMaplibreOptions: MapOptions = {
     container: null,
     style: undefined,
-    center: [-97.7457518, 30.268193],
+    center: [testLng, testLat],
     zoom: 9,
   };
   expect(Map).toHaveBeenCalledTimes(1);
@@ -108,7 +111,7 @@ test("should call setOptions from migration map", () => {
   const testMap = new MigrationMap(null, {});
 
   testMap.setOptions({
-    center: { lat: 30.268193, lng: -97.7457518 }, // Austin, TX :)
+    center: { lat: testLat, lng: testLng },
     zoom: 9,
     minZoom: 2,
     maxZoom: 18,
@@ -121,7 +124,7 @@ test("should call setOptions from migration map", () => {
   });
 
   expect(Map.prototype.setCenter).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setCenter).toHaveBeenCalledWith([-97.7457518, 30.268193]);
+  expect(Map.prototype.setCenter).toHaveBeenCalledWith([testLng, testLat]);
   expect(Map.prototype.setZoom).toHaveBeenCalledTimes(1);
   expect(Map.prototype.setZoom).toHaveBeenCalledWith(9);
   expect(Map.prototype.setMaxZoom).toHaveBeenCalledTimes(1);
@@ -200,6 +203,43 @@ test("should call get methods from migration map", () => {
   expect(Map.prototype.getBearing).toHaveBeenCalledTimes(1);
   expect(Map.prototype.getPitch).toHaveBeenCalledTimes(1);
   expect(Map.prototype.getZoom).toHaveBeenCalledTimes(1);
+});
+
+test("should call moveCamera from migration map", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.moveCamera({
+    center: GoogleLatLng(testLat, testLng),
+    zoom: 16,
+    heading: 90,
+    tilt: 45,
+  });
+
+  expect(Map.prototype.jumpTo).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.jumpTo).toHaveBeenCalledWith({
+    center: [testLng, testLat],
+    zoom: 16,
+    bearing: 90,
+    pitch: 45,
+  });
+});
+
+test("should call panBy from migration map", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.panBy(50, 60);
+
+  expect(Map.prototype.panBy).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.panBy).toHaveBeenCalledWith([50, 60]);
+});
+
+test("should call panTo from migration map", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.panTo({ lat: testLat, lng: testLng });
+
+  expect(Map.prototype.panTo).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.panTo).toHaveBeenCalledWith([testLng, testLat]);
 });
 
 test("should call fitBounds from migration map", () => {

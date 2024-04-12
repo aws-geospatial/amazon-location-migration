@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
+import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import { GoogleLatLng, GoogleToMaplibreControlPosition, LatLngToLngLat } from "./googleCommon";
 
 /*
@@ -84,6 +84,42 @@ class MigrationMap {
 
   getZoom() {
     return this.#map.getZoom();
+  }
+
+  moveCamera(cameraOptions) {
+    const maplibreCameraOptions: CameraOptions = {};
+
+    if (cameraOptions.center) {
+      const lnglat = LatLngToLngLat(cameraOptions.center);
+      if (lnglat) {
+        maplibreCameraOptions.center = lnglat;
+      } else {
+        console.error("Unrecognized center option", cameraOptions.center);
+      }
+    }
+
+    if (cameraOptions.heading) {
+      maplibreCameraOptions.bearing = cameraOptions.heading;
+    }
+
+    if (cameraOptions.tilt) {
+      maplibreCameraOptions.pitch = cameraOptions.tilt;
+    }
+
+    if (cameraOptions.zoom) {
+      maplibreCameraOptions.zoom = cameraOptions.zoom;
+    }
+
+    this.#map.jumpTo(maplibreCameraOptions);
+  }
+
+  panBy(x, y) {
+    this.#map.panBy([x, y]);
+  }
+
+  panTo(latLng) {
+    const lnglat = LatLngToLngLat(latLng);
+    this.#map.panTo(lnglat);
   }
 
   setCenter(center) {
