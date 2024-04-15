@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
-import { GoogleLatLng, GoogleToMaplibreControlPosition, LatLngToLngLat } from "./googleCommon";
+import { GoogleLatLng, GoogleLatLngBounds, GoogleToMaplibreControlPosition, LatLngToLngLat } from "./googleCommon";
 
 /*
   This migration map class is a thin wrapper replacement for google.maps.Map, which
@@ -62,6 +62,11 @@ class MigrationMap {
     if (options.zoomControl === undefined || options.zoomControl === true) {
       this.#addNavigationControl(options.zoomControlOptions);
     }
+  }
+
+  getBounds() {
+    const bounds = this.#map.getBounds();
+    return GoogleLatLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
   }
 
   getCenter() {
@@ -192,14 +197,32 @@ class MigrationMap {
     this.#map.setZoom(zoom);
   }
 
-  fitBounds(bounds) {
+  fitBounds(bounds, padding?) {
     const northEast = bounds.getNorthEast();
     const southWest = bounds.getSouthWest();
-
-    this.#map.fitBounds([
+    const bbox: [[number, number], [number, number]] = [
       [northEast.lng(), northEast.lat()],
       [southWest.lng(), southWest.lat()],
-    ]);
+    ];
+    if (padding !== undefined) {
+      if (typeof padding === "number") {
+        this.#map.fitBounds(bbox, { padding: padding });
+      } else if (typeof padding === "object") {
+        this.#map.fitBounds(bbox, {
+          padding: {
+            top: padding.top && typeof padding.top === "number" ? padding.top : 0,
+            bottom: padding.bottom && typeof padding.bottom === "number" ? padding.bottom : 0,
+            left: padding.left && typeof padding.left === "number" ? padding.left : 0,
+            right: padding.right && typeof padding.right === "number" ? padding.right : 0,
+          },
+        });
+      } else {
+        // google does not error out on invalid padding parameter
+        this.#map.fitBounds(bbox);
+      }
+    } else {
+      this.#map.fitBounds(bbox);
+    }
   }
 
   // helper method for adding a NavigationControl to the map, checks that 'position' option is set,
@@ -227,6 +250,11 @@ class MigrationMap {
   // Internal method for migration logic that needs to access the underlying MapLibre map
   _getMap() {
     return this.#map;
+  }
+
+  // Internal method for manually setting the private #map property (used for mocking the map in unit testing)
+  _setMap(map) {
+    this.#map = map;
   }
 }
 
