@@ -9,6 +9,13 @@ import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
 
+// Dynamically load the MapLibre stylesheet so that our migration adapter is the only thing our users need to import
+// Without this, many MapLibre rendering features won't work (e.g. markers and info windows won't be visible)
+const style = document.createElement("link");
+style.setAttribute("rel", "stylesheet");
+style.setAttribute("href", "https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css");
+document.head.appendChild(style);
+
 // This migration helper will replace classes/methods in the google.maps namespace
 // to target our AWS Location Service migration server shim endpoint instead of
 // the Google Maps API endpoint
