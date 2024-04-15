@@ -205,6 +205,21 @@ test("should call get methods from migration map", () => {
   expect(Map.prototype.getZoom).toHaveBeenCalledTimes(1);
 });
 
+test("should call getBounds from migration map", () => {
+  // need to mock #map.getBounds() because if we do not, getBounds() will return undefined and when
+  // we try to call bounds.getSouthWest() and bounds.getNorthEast() on undefined in the line after,
+  // a null pointer exception is thrown and the test fails
+  const mockMap = {
+    getBounds: jest.fn().mockReturnValue(GoogleLatLngBounds({}, {})),
+  };
+  const testMap = new MigrationMap(null, {});
+  testMap._setMap(mockMap);
+
+  testMap.getBounds();
+
+  expect(mockMap.getBounds).toHaveBeenCalledTimes(1);
+});
+
 test("should call moveCamera from migration map", () => {
   const testMap = new MigrationMap(null, {});
 
@@ -251,6 +266,82 @@ test("should call fitBounds from migration map", () => {
   testMap.fitBounds(testBounds);
 
   expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.fitBounds).toHaveBeenCalledWith([
+    [testNorthEast.lng(), testNorthEast.lat()],
+    [testSouthWest.lng(), testSouthWest.lat()],
+  ]);
+});
+
+test("should call fitBounds from migration map with valid padding", () => {
+  const testMap = new MigrationMap(null, {});
+  const testSouthWest = GoogleLatLng(1, 2);
+  const testNorthEast = GoogleLatLng(3, 4);
+  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+
+  testMap.fitBounds(testBounds, 100);
+
+  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.fitBounds).toHaveBeenCalledWith(
+    [
+      [testNorthEast.lng(), testNorthEast.lat()],
+      [testSouthWest.lng(), testSouthWest.lat()],
+    ],
+    {
+      padding: 100,
+    },
+  );
+});
+
+test("should call fitBounds from migration map with valid padding specifying all four sides", () => {
+  const testMap = new MigrationMap(null, {});
+  const testSouthWest = GoogleLatLng(1, 2);
+  const testNorthEast = GoogleLatLng(3, 4);
+  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+
+  testMap.fitBounds(testBounds, { left: 10, right: 20, top: 30, bottom: 40 });
+
+  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.fitBounds).toHaveBeenCalledWith(
+    [
+      [testNorthEast.lng(), testNorthEast.lat()],
+      [testSouthWest.lng(), testSouthWest.lat()],
+    ],
+    {
+      padding: { left: 10, right: 20, top: 30, bottom: 40 },
+    },
+  );
+});
+
+test("should call fitBounds from migration map with valid padding specifying no sides", () => {
+  const testMap = new MigrationMap(null, {});
+  const testSouthWest = GoogleLatLng(1, 2);
+  const testNorthEast = GoogleLatLng(3, 4);
+  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+
+  testMap.fitBounds(testBounds, {});
+
+  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.fitBounds).toHaveBeenCalledWith(
+    [
+      [testNorthEast.lng(), testNorthEast.lat()],
+      [testSouthWest.lng(), testSouthWest.lat()],
+    ],
+    {
+      padding: { left: 0, right: 0, top: 0, bottom: 0 },
+    },
+  );
+});
+
+test("should call fitBounds from migration map with invalid padding", () => {
+  const testMap = new MigrationMap(null, {});
+  const testSouthWest = GoogleLatLng(1, 2);
+  const testNorthEast = GoogleLatLng(3, 4);
+  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+
+  testMap.fitBounds(testBounds, "bad bounds");
+
+  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
+  // still calls fitBounds, but with no padding
   expect(Map.prototype.fitBounds).toHaveBeenCalledWith([
     [testNorthEast.lng(), testNorthEast.lat()],
     [testSouthWest.lng(), testSouthWest.lat()],

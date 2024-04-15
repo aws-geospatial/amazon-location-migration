@@ -62,6 +62,8 @@ class MigrationLatLngBounds {
   getSouthWest() {
     return this.sw;
   }
+
+  // TODO: Add methods to match Google LatLngBounds
 }
 
 // Dynamic function to create a LatLng instance. It will first try google.maps.LatLng
