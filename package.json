@@ -75,7 +75,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-location": "^3.535.0",
-    "@aws/amazon-location-utilities-auth-helper": "^1.0.5",
+    "@aws/amazon-location-utilities-auth-helper": "^1.0.6",
     "maplibre-gl": "^4.1.1"
   },
   "devDependencies": {
