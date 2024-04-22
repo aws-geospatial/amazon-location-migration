@@ -165,6 +165,11 @@ GoogleToMaplibreControlPosition[MigrationControlPosition.RIGHT_BOTTOM] = "bottom
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_LEFT] = "bottom-left";
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_RIGHT] = "bottom-right";
 
+export const MigrationMapEvent = {
+  click: "click",
+  dblclick: "dblclick",
+};
+
 export interface QueryAutocompletePrediction {
   description: string;
   place_id?: string;

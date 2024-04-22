@@ -347,3 +347,78 @@ test("should call fitBounds from migration map with invalid padding", () => {
     [testSouthWest.lng(), testSouthWest.lat()],
   ]);
 });
+
+test("should call addListener from migration map", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.addListener("click", () => {});
+  testMap.addListener("dblclick", () => {});
+
+  expect(Map.prototype.on).toHaveBeenCalledTimes(2);
+  expect(Map.prototype.on).toHaveBeenCalledWith("click", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("dblclick", expect.any(Function));
+});
+
+test("should call handler with translated MapMouseEvent after click", () => {
+  // mock map so that we can mock on so that we can mock click
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMap.addListener("click", handlerSpy);
+
+  // mock click
+  const mockMapLibreMapMouseEvent = {
+    originalEvent: "click",
+    lngLat: { lat: 1, lng: 2 },
+  };
+  mockMap.on.mock.calls[0][1](mockMapLibreMapMouseEvent);
+
+  // expected translated MapMouseEvent (Google's version)
+  const expectedGoogleMapMouseEvent = {
+    domEvent: "click",
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMapMouseEvent);
+});
+
+test("should call handler with translated MapMouseEvent after dblclick", () => {
+  // mock map so that we can mock on so that we can mock click
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMap.addListener("dblclick", handlerSpy);
+
+  // mock click
+  const mockMapLibreMapMouseEvent = {
+    originalEvent: "dblclick",
+    lngLat: { lat: 3, lng: 4 },
+  };
+  mockMap.on.mock.calls[0][1](mockMapLibreMapMouseEvent);
+
+  // expected translated MapMouseEvent (Google's version)
+  const expectedGoogleMapMouseEvent = {
+    domEvent: "dblclick",
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMapMouseEvent);
+});

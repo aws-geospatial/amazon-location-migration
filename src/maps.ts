@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
-import { GoogleLatLng, GoogleLatLngBounds, GoogleToMaplibreControlPosition, LatLngToLngLat } from "./googleCommon";
+import {
+  GoogleLatLng,
+  GoogleLatLngBounds,
+  GoogleToMaplibreControlPosition,
+  LatLngToLngLat,
+  MigrationMapEvent,
+} from "./googleCommon";
 
 /*
   This migration map class is a thin wrapper replacement for google.maps.Map, which
@@ -62,6 +68,20 @@ class MigrationMap {
     if (options.zoomControl === undefined || options.zoomControl === true) {
       this.#addNavigationControl(options.zoomControlOptions);
     }
+  }
+
+  addListener(eventName, handler) {
+    if (eventName === MigrationMapEvent.click || eventName === MigrationMapEvent.dblclick) {
+      this.#map.on(eventName, (mapLibreMapMouseEvent) => {
+        const googleMapMouseEvent = {
+          domEvent: mapLibreMapMouseEvent.originalEvent,
+          latLng: GoogleLatLng(mapLibreMapMouseEvent.lngLat.lat, mapLibreMapMouseEvent.lngLat.lng),
+        };
+        handler(googleMapMouseEvent);
+      });
+    }
+
+    // TODO: add more else if statements with rest of the map events
   }
 
   getBounds() {
