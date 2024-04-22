@@ -165,10 +165,57 @@ GoogleToMaplibreControlPosition[MigrationControlPosition.RIGHT_BOTTOM] = "bottom
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_LEFT] = "bottom-left";
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_RIGHT] = "bottom-right";
 
+// Migration version of Google's Map Events
 export const MigrationMapEvent = {
   click: "click",
   dblclick: "dblclick",
+  contextmenu: "contextmenu",
+  mousemove: "mousemove",
+  mouseout: "mouseout",
+  mouseover: "mouseover",
+  tilesloaded: "tilesloaded",
+  tilt_changed: "tilt_changed",
+  zoom_changed: "zoom_changed",
+  drag: "drag",
+  dragend: "dragend",
+  dragstart: "dragstart",
 };
+
+// Constant responsible for translating Google Event names to corresponding MapLibre Event names,
+// these Event names are passed into MapLibre's 'on' method
+export const GoogleToMaplibreMapEvent = {};
+GoogleToMaplibreMapEvent[MigrationMapEvent.click] = "click";
+GoogleToMaplibreMapEvent[MigrationMapEvent.dblclick] = "dblclick";
+GoogleToMaplibreMapEvent[MigrationMapEvent.contextmenu] = "contextmenu";
+GoogleToMaplibreMapEvent[MigrationMapEvent.mousemove] = "mousemove";
+GoogleToMaplibreMapEvent[MigrationMapEvent.mouseout] = "mouseout";
+GoogleToMaplibreMapEvent[MigrationMapEvent.mouseover] = "mouseover";
+GoogleToMaplibreMapEvent[MigrationMapEvent.tilesloaded] = "load";
+GoogleToMaplibreMapEvent[MigrationMapEvent.tilt_changed] = "pitch";
+GoogleToMaplibreMapEvent[MigrationMapEvent.zoom_changed] = "zoom";
+GoogleToMaplibreMapEvent[MigrationMapEvent.drag] = "drag";
+GoogleToMaplibreMapEvent[MigrationMapEvent.dragend] = "dragend";
+GoogleToMaplibreMapEvent[MigrationMapEvent.dragstart] = "dragstart";
+
+// List of Google Events that include the MapMouseEvent parameter
+export const GoogleMapMouseEvent = [
+  MigrationMapEvent.click,
+  MigrationMapEvent.dblclick,
+  MigrationMapEvent.contextmenu,
+  MigrationMapEvent.mousemove,
+  MigrationMapEvent.mouseout,
+  MigrationMapEvent.mouseover,
+];
+
+// List of Google Events that do not have any parameters
+export const GoogleMapEvent = [
+  MigrationMapEvent.tilesloaded,
+  MigrationMapEvent.tilt_changed,
+  MigrationMapEvent.zoom_changed,
+  MigrationMapEvent.drag,
+  MigrationMapEvent.dragend,
+  MigrationMapEvent.dragstart,
+];
 
 export interface QueryAutocompletePrediction {
   description: string;
