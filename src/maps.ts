@@ -5,9 +5,11 @@ import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "map
 import {
   GoogleLatLng,
   GoogleLatLngBounds,
+  GoogleMapEvent,
+  GoogleMapMouseEvent,
   GoogleToMaplibreControlPosition,
+  GoogleToMaplibreMapEvent,
   LatLngToLngLat,
-  MigrationMapEvent,
 } from "./googleCommon";
 
 /*
@@ -71,17 +73,19 @@ class MigrationMap {
   }
 
   addListener(eventName, handler) {
-    if (eventName === MigrationMapEvent.click || eventName === MigrationMapEvent.dblclick) {
-      this.#map.on(eventName, (mapLibreMapMouseEvent) => {
+    if (GoogleMapMouseEvent.includes(eventName)) {
+      this.#map.on(GoogleToMaplibreMapEvent[eventName], (mapLibreMapMouseEvent) => {
         const googleMapMouseEvent = {
           domEvent: mapLibreMapMouseEvent.originalEvent,
           latLng: GoogleLatLng(mapLibreMapMouseEvent.lngLat.lat, mapLibreMapMouseEvent.lngLat.lng),
         };
         handler(googleMapMouseEvent);
       });
+    } else if (GoogleMapEvent.includes(eventName)) {
+      this.#map.on(GoogleToMaplibreMapEvent[eventName], () => {
+        handler();
+      });
     }
-
-    // TODO: add more else if statements with rest of the map events
   }
 
   getBounds() {

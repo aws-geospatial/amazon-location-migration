@@ -353,10 +353,30 @@ test("should call addListener from migration map", () => {
 
   testMap.addListener("click", () => {});
   testMap.addListener("dblclick", () => {});
+  testMap.addListener("contextmenu", () => {});
+  testMap.addListener("mousemove", () => {});
+  testMap.addListener("mouseout", () => {});
+  testMap.addListener("mouseover", () => {});
+  testMap.addListener("tilesloaded", () => {});
+  testMap.addListener("tilt_changed", () => {});
+  testMap.addListener("zoom_changed", () => {});
+  testMap.addListener("drag", () => {});
+  testMap.addListener("dragend", () => {});
+  testMap.addListener("dragstart", () => {});
 
-  expect(Map.prototype.on).toHaveBeenCalledTimes(2);
+  expect(Map.prototype.on).toHaveBeenCalledTimes(12);
   expect(Map.prototype.on).toHaveBeenCalledWith("click", expect.any(Function));
   expect(Map.prototype.on).toHaveBeenCalledWith("dblclick", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("contextmenu", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("mousemove", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("mouseout", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("mouseover", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("load", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("pitch", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("zoom", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("drag", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("dragend", expect.any(Function));
+  expect(Map.prototype.on).toHaveBeenCalledWith("dragstart", expect.any(Function));
 });
 
 test("should call handler with translated MapMouseEvent after click", () => {
@@ -403,7 +423,7 @@ test("should call handler with translated MapMouseEvent after dblclick", () => {
   const handlerSpy = jest.fn();
   migrationMap.addListener("dblclick", handlerSpy);
 
-  // mock click
+  // mock double click
   const mockMapLibreMapMouseEvent = {
     originalEvent: "dblclick",
     lngLat: { lat: 3, lng: 4 },
@@ -413,6 +433,134 @@ test("should call handler with translated MapMouseEvent after dblclick", () => {
   // expected translated MapMouseEvent (Google's version)
   const expectedGoogleMapMouseEvent = {
     domEvent: "dblclick",
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMapMouseEvent);
+});
+
+test("should call handler with translated MapMouseEvent after contextmenu", () => {
+  // mock map so that we can mock on so that we can mock click
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMap.addListener("contextmenu", handlerSpy);
+
+  // mock context menu
+  const mockMapLibreMapMouseEvent = {
+    originalEvent: "contextmenu",
+    lngLat: { lat: 3, lng: 4 },
+  };
+  mockMap.on.mock.calls[0][1](mockMapLibreMapMouseEvent);
+
+  // expected translated MapMouseEvent (Google's version)
+  const expectedGoogleMapMouseEvent = {
+    domEvent: "contextmenu",
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMapMouseEvent);
+});
+
+test("should call handler with translated MapMouseEvent after mousemove", () => {
+  // mock map so that we can mock on so that we can mock click
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMap.addListener("mousemove", handlerSpy);
+
+  // mock move mouse
+  const mockMapLibreMapMouseEvent = {
+    originalEvent: "mousemove",
+    lngLat: { lat: 3, lng: 4 },
+  };
+  mockMap.on.mock.calls[0][1](mockMapLibreMapMouseEvent);
+
+  // expected translated MapMouseEvent (Google's version)
+  const expectedGoogleMapMouseEvent = {
+    domEvent: "mousemove",
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMapMouseEvent);
+});
+
+test("should call handler with translated MapMouseEvent after mouseout", () => {
+  // mock map so that we can mock on so that we can mock click
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMap.addListener("mouseout", handlerSpy);
+
+  // mock mouseout
+  const mockMapLibreMapMouseEvent = {
+    originalEvent: "mouseout",
+    lngLat: { lat: 3, lng: 4 },
+  };
+  mockMap.on.mock.calls[0][1](mockMapLibreMapMouseEvent);
+
+  // expected translated MapMouseEvent (Google's version)
+  const expectedGoogleMapMouseEvent = {
+    domEvent: "mouseout",
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMapMouseEvent);
+});
+
+test("should call handler with translated MapMouseEvent after mouseover", () => {
+  // mock map so that we can mock on so that we can mock click
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMap.addListener("mouseover", handlerSpy);
+
+  // mock mouseover
+  const mockMapLibreMapMouseEvent = {
+    originalEvent: "mouseover",
+    lngLat: { lat: 3, lng: 4 },
+  };
+  mockMap.on.mock.calls[0][1](mockMapLibreMapMouseEvent);
+
+  // expected translated MapMouseEvent (Google's version)
+  const expectedGoogleMapMouseEvent = {
+    domEvent: "mouseover",
     latLng: {
       lat: expect.any(Function),
       lng: expect.any(Function),
