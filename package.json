@@ -38,7 +38,6 @@
     "lint:fix": "eslint --fix .",
     "typedoc": "typedoc",
     "test": "jest --collectCoverage --collectCoverageFrom=src/**/*.{ts,js}",
-    "posttest": "generate-coverage-data --language typescript",
     "build": "npm-run-all build:*",
     "build:ts": "npm-run-all build-ts:*",
     "build:bundle": "rollup -c",

@@ -6,9 +6,10 @@ TODO: Fill this README out!
 
 Prerequisites:
 
-- install `Prettier` and `ESLint` plugins for Visual Studio Code
-- select `Prettier` as your `Default Formatter` (Code &rarr; Settings &rarr; Settings &rarr; search `format`)
-- check off `Format On Save` (Code &rarr; Settings &rarr; Settings &rarr; search `format`)
+- Install `Node.js >= 18.x` from https://nodejs.org/en/download
+- Install `Prettier` and `ESLint` plugins for Visual Studio Code
+- Select `Prettier` as your `Default Formatter` (Code &rarr; Settings &rarr; Settings &rarr; search `format`)
+- Check off `Format On Save` (Code &rarr; Settings &rarr; Settings &rarr; search `format`)
 
 To develop this package, first create a fork of the repo and then set the upstream to this repository, e.g:
 
@@ -65,18 +66,18 @@ npm run hostExamples
 
 ### Basic map
 
-http://localhost:3000/examples/basicMap/index.html
-http://localhost:3000/examples/basicMap/google.html
+- http://localhost:3000/examples/basicMap/index.html
+- http://localhost:3000/examples/basicMap/google.html
 
 ### Autocomplete
 
-http://localhost:3000/examples/autoComplete/index.html
-http://localhost:3000/examples/autoComplete/google.html
+- http://localhost:3000/examples/autoComplete/index.html
+- http://localhost:3000/examples/autoComplete/google.html
 
 ### Directions
 
-http://localhost:3000/examples/directions/index.html
-http://localhost:3000/examples/directions/google.html
+- http://localhost:3000/examples/directions/index.html
+- http://localhost:3000/examples/directions/google.html
 
 ## Security
 
