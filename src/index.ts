@@ -16,12 +16,6 @@ style.setAttribute("rel", "stylesheet");
 style.setAttribute("href", "https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css");
 document.head.appendChild(style);
 
-// This migration helper will replace classes/methods in the google.maps namespace
-// to target our AWS Location Service migration server shim endpoint instead of
-// the Google Maps API endpoint
-// TODO: Move the region to be specified by url param also, but keep this as default
-const region = "us-west-2";
-
 // Parse URL params from the query string this script was imported with so we can retrieve
 // params (e.g. API key, place index, etc...)
 const currentScript = document.currentScript as HTMLScriptElement;
@@ -35,6 +29,10 @@ if (!apiKey) {
   throw Error("Migration script missing 'apiKey' parameter.");
 }
 
+// Optional, the region to be used (us-west-2 by default)
+const defaultRegion = "us-west-2";
+const region = urlParams.get("region") || defaultRegion;
+
 // Optional, but if user wants to perform any Places requests, this is required
 const placeIndexName = urlParams.get("placeIndex");
 
@@ -44,8 +42,11 @@ const routeCalculatorName = urlParams.get("routeCalculator");
 // Optional, will invoke after migrationInit has been called
 const postMigrationCallback = urlParams.get("callback");
 
-// TODO: Query for map name
-const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/MigrationTestMap/style-descriptor?key=${apiKey}`;
+// Optional, but if user wants to use a Map, this is required
+const mapName = urlParams.get("map" || "UNKNOWN_MAP_NAME");
+
+// Style URL is used by the Map for making requests
+const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/${mapName}/style-descriptor?key=${apiKey}`;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 (window as any).migrationInit = async function () {
