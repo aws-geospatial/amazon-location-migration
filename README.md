@@ -66,18 +66,18 @@ npm run hostExamples
 
 ### Basic map
 
-- http://localhost:3000/examples/basicMap/index.html
-- http://localhost:3000/examples/basicMap/google.html
+- http://localhost:8080/examples/basicMap/index.html
+- http://localhost:8080/examples/basicMap/google.html
 
 ### Autocomplete
 
-- http://localhost:3000/examples/autoComplete/index.html
-- http://localhost:3000/examples/autoComplete/google.html
+- http://localhost:8080/examples/autoComplete/index.html
+- http://localhost:8080/examples/autoComplete/google.html
 
 ### Directions
 
-- http://localhost:3000/examples/directions/index.html
-- http://localhost:3000/examples/directions/google.html
+- http://localhost:8080/examples/directions/index.html
+- http://localhost:8080/examples/directions/google.html
 
 ## Security
 
