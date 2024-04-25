@@ -6,7 +6,7 @@ export default defineConfig({
     global: {},
   },
   server: {
-    open: "/examples/index.html",
+    open: "/examples/landingPage.html",
     port: 8080,
   },
 });

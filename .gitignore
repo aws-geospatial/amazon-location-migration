@@ -6,6 +6,11 @@
 # testing
 /coverage
 
+# examples (generated config and html files from templates)
+/examples/config.json
+index.html
+google.html
+
 # production
 /build
 /dist
