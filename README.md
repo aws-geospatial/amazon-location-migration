@@ -54,11 +54,21 @@ npm test
 
 There are several examples under the `<root>/examples` folder that you can run locally with the built migration adapter.
 
+The examples are generated from templates that have placeholder values for your resources (e.g. API keys, map name, place index, etc...). You will need to fill out an `examples/config.json` file with your specific values.
+
+First, copy the `examples/config.template.json` file:
+
+```
+cp examples/config.template.json examples/config.json
+```
+
+Next, open your new `examples/config.json` file and fill it in with your resource values. Anytime you run the examples, they will be auto-generated reading from your `examples/config.json`.
+
 Each example has an `index.html` and a `google.html` page, of which the only difference between them is that the `index.html` imports our migration adapter.
 The examples also have an `example.js` script that holds the client logic for the example. This client logic is shared between both `index` and `google` example pages
 in order to showcase that the client logic can invoke the same `google.maps` APIs, but will be re-routed by the migration adapter for any APIs that the migration adapter supports.
 
-The examples can be hosted on a local webserver with the following command:
+The examples can be generated + hosted on a local webserver with the following command:
 
 ```
 npm run hostExamples
