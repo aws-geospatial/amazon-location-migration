@@ -34,3 +34,8 @@ body {
   line-height: 30px;
   padding-left: 10px;
 }
+
+.example-links {
+  font-size: 1.5em;
+  margin-right: 5px;
+}
