@@ -80,6 +80,7 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/${mapNam
   // Replace the Google Maps classes with our migration classes
   (window as any).google.maps.Map = MigrationMap;
   (window as any).google.maps.Marker = MigrationMarker;
+  (window as any).google.maps.marker.AdvancedMarkerElement = MigrationMarker;
 
   (window as any).google.maps.places.AutocompleteService = MigrationAutocompleteService;
   (window as any).google.maps.places.PlacesService = MigrationPlacesService;
