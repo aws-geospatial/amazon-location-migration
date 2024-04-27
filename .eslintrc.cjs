@@ -16,4 +16,9 @@ module.exports = {
     },
   ],
   root: true,
+  // needed so that lint won't error on 'window' and 'jest' in setupFilesAfterEnv.js
+  env: {
+    browser: true,
+    jest: true,
+  },
 };
