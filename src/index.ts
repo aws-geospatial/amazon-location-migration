@@ -49,7 +49,8 @@ const mapName = urlParams.get("map" || "UNKNOWN_MAP_NAME");
 const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/${mapName}/style-descriptor?key=${apiKey}`;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-(window as any).migrationInit = async function () {
+const anyWindow = window as any;
+anyWindow.migrationInit = async function () {
   // Pass our style url (which includes the API key) to our Migration Map class
   MigrationMap.prototype._styleUrl = styleUrl;
 
@@ -78,15 +79,17 @@ const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/${mapNam
   MigrationDirectionsService.prototype._placesService = new MigrationPlacesService();
 
   // Replace the Google Maps classes with our migration classes
-  (window as any).google.maps.Map = MigrationMap;
-  (window as any).google.maps.Marker = MigrationMarker;
-  (window as any).google.maps.marker.AdvancedMarkerElement = MigrationMarker;
+  anyWindow.google.maps.Map = MigrationMap;
+  anyWindow.google.maps.Marker = MigrationMarker;
+  if (anyWindow.google.maps.marker) {
+    anyWindow.google.maps.marker.AdvancedMarkerElement = MigrationMarker;
+  }
 
-  (window as any).google.maps.places.AutocompleteService = MigrationAutocompleteService;
-  (window as any).google.maps.places.PlacesService = MigrationPlacesService;
+  anyWindow.google.maps.places.AutocompleteService = MigrationAutocompleteService;
+  anyWindow.google.maps.places.PlacesService = MigrationPlacesService;
 
-  (window as any).google.maps.DirectionsRenderer = MigrationDirectionsRenderer;
-  (window as any).google.maps.DirectionsService = MigrationDirectionsService;
+  anyWindow.google.maps.DirectionsRenderer = MigrationDirectionsRenderer;
+  anyWindow.google.maps.DirectionsService = MigrationDirectionsService;
 
   if (postMigrationCallback) {
     window[postMigrationCallback]();
