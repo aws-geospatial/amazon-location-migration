@@ -15,7 +15,8 @@
     "url": "ssh://git.amazon.com/pkg/AWSWaypointMigrationAdapter"
   },
   "contributors": [
-    "Chris Galvan <chgalvan@amazon.com>"
+    "Chris Galvan <chgalvan@amazon.com>",
+    "Jonathan Yuan <jonayuan@amazon.com>"
   ],
   "engines": {
     "node": ">= 16.0.0"
@@ -63,6 +64,10 @@
       "cobertura",
       "html",
       "text"
+    ],
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "./setupFilesAfterEnv.js"
     ]
   },
   "lint-staged": {
@@ -92,6 +97,8 @@
     "eslint": "^8.37.0",
     "husky": "^8.0.3",
     "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^24.0.0",
     "lint-staged": "^13.2.2",
     "mustache": "^4.2.0",
     "npm-run-all2": "^6.1.2",

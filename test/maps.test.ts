@@ -42,6 +42,7 @@ test("should set migration map options", () => {
     pitch: 45,
     bearing: 90,
   };
+  expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
   expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
@@ -63,6 +64,7 @@ test("should set migration map options with control position not available in Ma
     center: [testLng, testLat],
     zoom: 9,
   };
+  expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
   expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
