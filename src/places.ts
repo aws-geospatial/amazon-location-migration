@@ -11,7 +11,42 @@ import {
   SearchPlaceIndexForTextRequest,
 } from "@aws-sdk/client-location";
 
-import { GoogleLatLng, PlacesServiceStatus, QueryAutocompletePrediction } from "./googleCommon";
+import { GoogleLatLng, LatLngToLngLat, PlacesServiceStatus, QueryAutocompletePrediction } from "./googleCommon";
+
+const convertAmazonPlaceToGoogle = (placeObject, fields) => {
+  const place = placeObject.Place;
+  const googlePlace = {};
+
+  let includeAllFields = false;
+  if (fields.includes("ALL")) {
+    includeAllFields = true;
+  }
+
+  if (includeAllFields || fields.includes("formatted_address")) {
+    googlePlace["formatted_address"] = place.Label;
+  }
+
+  if (includeAllFields || fields.includes("geometry") || fields.includes("geometry.location")) {
+    const point = place.Geometry.Point;
+    googlePlace["geometry"] = {
+      location: GoogleLatLng(point[1], point[0]),
+    };
+  }
+
+  if (includeAllFields || fields.includes("name")) {
+    googlePlace["name"] = place.Label.split(",")[0];
+  }
+
+  if (includeAllFields || fields.includes("place_id")) {
+    googlePlace["place_id"] = placeObject.PlaceId;
+  }
+
+  if (includeAllFields || fields.includes("reference")) {
+    googlePlace["reference"] = placeObject.PlaceId;
+  }
+
+  return googlePlace;
+};
 
 class MigrationPlacesService {
   _client: LocationClient; // This will be populated by the top level module that creates our location client
@@ -29,10 +64,9 @@ class MigrationPlacesService {
     };
 
     if (locationBias) {
-      if (typeof locationBias.lat === "function") {
-        input.BiasPosition = [locationBias.lng(), locationBias.lat()];
-      } else {
-        input.BiasPosition = [locationBias.lng, locationBias.lat];
+      const lngLat = LatLngToLngLat(locationBias);
+      if (lngLat) {
+        input.BiasPosition = lngLat;
       }
     }
 
@@ -45,22 +79,8 @@ class MigrationPlacesService {
 
         const results = response.Results;
         if (results.length !== 0) {
-          results.forEach(function (result) {
-            const place = result.Place;
-            const placeResponse = {};
-
-            // TODO: We might be able to consolidate converting a google Place object to Amazon Location Place object if
-            // expected responses have the same format
-            fields.forEach(function (item) {
-              if (item === "name") {
-                placeResponse[item] = place.Label.split(",")[0];
-              } else if (item === "geometry") {
-                const point = place.Geometry.Point;
-                placeResponse[item] = {
-                  location: GoogleLatLng(point[1], point[0]),
-                };
-              }
-            });
+          results.forEach(function (place) {
+            const placeResponse = convertAmazonPlaceToGoogle(place, fields);
 
             googleResults.push(placeResponse);
           });
@@ -87,6 +107,7 @@ class MigrationPlacesService {
     this._client
       .send(command)
       .then((response) => {
+        // TODO: Consolidate to use same convertAmazonPlaceToGoogle helper
         const place = response.Place;
         const point = place.Geometry.Point;
         const googleResult = {
