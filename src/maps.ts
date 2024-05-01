@@ -254,7 +254,7 @@ class MigrationMap {
   // positions that MapLibre does not offer
   #addNavigationControl(zoomControlOptions) {
     // remove old navControl so we don't have multiple
-    if (this.#navigationControl && this.#map.hasControl(this.#navigationControl)) {
+    if (this.#navigationControl) {
       this.#map.removeControl(this.#navigationControl);
     }
     // add new navControl
