@@ -78,6 +78,7 @@ test("should log error with invalid map option center", () => {
     center: "THIS_IS_NOT_A_VALID_CENTER",
   });
 
+  expect(testMap).not.toBeNull();
   expect(console.error).toHaveBeenCalledTimes(1);
   expect(console.error).toHaveBeenCalledWith("Unrecognized center option", "THIS_IS_NOT_A_VALID_CENTER");
 });
