@@ -14,6 +14,8 @@ import { Map, MapOptions, NavigationControl } from "maplibre-gl";
 const testLat = 30.268193; // Austin, TX :)
 const testLng = -97.7457518;
 
+jest.spyOn(console, "error").mockImplementation(() => {});
+
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -69,6 +71,15 @@ test("should set migration map options with control position not available in Ma
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
   expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
   expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+});
+
+test("should log error with invalid map option center", () => {
+  const testMap = new MigrationMap(null, {
+    center: "THIS_IS_NOT_A_VALID_CENTER",
+  });
+
+  expect(console.error).toHaveBeenCalledTimes(1);
+  expect(console.error).toHaveBeenCalledWith("Unrecognized center option", "THIS_IS_NOT_A_VALID_CENTER");
 });
 
 test("should call setZoom from migration map", () => {
@@ -180,6 +191,19 @@ test("should call setOptions from migration map and add new NavigationControl wi
   expect(Map.prototype.addControl).toHaveBeenCalledTimes(2);
   expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
   expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-right");
+  expect(Map.prototype.removeControl).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.removeControl).toHaveBeenCalledWith(expect.any(NavigationControl));
+});
+
+test("should log error when setOptions is called with invalid center", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.setOptions({
+    center: "ANOTHER_INVALID_CENTER",
+  });
+
+  expect(console.error).toHaveBeenCalledTimes(1);
+  expect(console.error).toHaveBeenCalledWith("Unrecognized center option", "ANOTHER_INVALID_CENTER");
 });
 
 test("should call setTilt from migration map", () => {
@@ -239,6 +263,20 @@ test("should call moveCamera from migration map", () => {
     bearing: 90,
     pitch: 45,
   });
+});
+
+test("should log error when moveCamera is called with invalid center", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.moveCamera({
+    center: "NOT_A_REAL_CENTER",
+    zoom: 16,
+    heading: 90,
+    tilt: 45,
+  });
+
+  expect(console.error).toHaveBeenCalledTimes(1);
+  expect(console.error).toHaveBeenCalledWith("Unrecognized center option", "NOT_A_REAL_CENTER");
 });
 
 test("should call panBy from migration map", () => {
@@ -571,4 +609,22 @@ test("should call handler with translated MapMouseEvent after mouseover", () => 
 
   expect(handlerSpy).toHaveBeenCalledTimes(1);
   expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMapMouseEvent);
+});
+
+test("should call GoogleMapEvent handler after tilesloaded", () => {
+  // mock map so that we can mock on so that we can mock tilesloaded
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMap.addListener("tilesloaded", handlerSpy);
+
+  // Simulate mocked tilesloaded call
+  mockMap.on.mock.calls[0][1]();
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
