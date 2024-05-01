@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Marker, MarkerOptions } from "maplibre-gl";
-import { LatLngToLngLat } from "./googleCommon";
+import { GoogleLatLng, LatLngToLngLat } from "./googleCommon";
 
 class MigrationMarker {
   #marker: Marker;
@@ -42,11 +42,13 @@ class MigrationMarker {
 
     this.#marker = new Marker(maplibreOptions);
 
-    if (typeof options.draggable !== "undefined") {
+    // need to use 'in' because 'false' is valid input
+    if ("draggable" in options) {
       this.setDraggable(options.draggable);
     }
 
-    if (typeof options.gmpDraggable !== "undefined") {
+    // need to use 'in' because 'false' is valid input
+    if ("gmpDraggable" in options) {
       this.setDraggable(options.gmpDraggable);
     }
 
@@ -58,9 +60,24 @@ class MigrationMarker {
       this.setOpacity(options.opacity);
     }
 
-    if (options.map) {
+    // need to use 'in' because null and undefined are valid inputs
+    if ("map" in options) {
       this.setMap(options.map);
     }
+  }
+
+  getDraggable() {
+    return this.#marker.isDraggable();
+  }
+
+  getIcon() {
+    return (this.#marker.getElement() as HTMLImageElement).src;
+  }
+
+  getPosition() {
+    const position = this.#marker.getLngLat();
+
+    return GoogleLatLng(position?.lat, position?.lng);
   }
 
   setDraggable(draggable) {
@@ -76,8 +93,29 @@ class MigrationMarker {
     this.#marker.setOpacity(opacity);
   }
 
+  // only need to handle legacy marker options (setOptions not an Advanced Marker method)
+  setOptions(options) {
+    if ("draggable" in options) {
+      this.setDraggable(options.draggable);
+    }
+
+    if (options.position) {
+      this.setPosition(options.position);
+    }
+
+    // need to use 'in' because 0 is valid input
+    if ("opacity" in options) {
+      this.setOpacity(options.opacity);
+    }
+
+    // need to use 'in' because null and undefined are valid inputs
+    if ("map" in options) {
+      this.setMap(options.map);
+    }
+  }
+
   setMap(map) {
-    if (map) {
+    if (map !== null && map !== undefined) {
       this.#marker.addTo(map._getMap());
     } else {
       this.#marker.remove();
@@ -86,6 +124,11 @@ class MigrationMarker {
 
   remove() {
     this.#marker.remove();
+  }
+
+  // Internal method for manually setting the private #map property (used for mocking the map in unit testing)
+  _setMarker(marker) {
+    this.#marker = marker;
   }
 }
 
