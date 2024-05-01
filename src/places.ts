@@ -13,12 +13,15 @@ import {
 
 import { GoogleLatLng, LatLngToLngLat, PlacesServiceStatus, QueryAutocompletePrediction } from "./googleCommon";
 
-const convertAmazonPlaceToGoogle = (placeObject, fields) => {
+const convertAmazonPlaceToGoogle = (placeObject, fields, includeDetailFields) => {
   const place = placeObject.Place;
   const googlePlace = {};
 
+  // For findPlaceFromQuery, the fields are required.
+  // But for getDetails, they are optional, and if they aren't specified
+  // then it is the same as requesting all fields.
   let includeAllFields = false;
-  if (fields.includes("ALL")) {
+  if (!fields || fields.includes("ALL")) {
     includeAllFields = true;
   }
 
@@ -43,6 +46,37 @@ const convertAmazonPlaceToGoogle = (placeObject, fields) => {
 
   if (includeAllFields || fields.includes("reference")) {
     googlePlace["reference"] = placeObject.PlaceId;
+  }
+
+  // Handle additional fields for getDetails request
+  if (includeDetailFields) {
+    // Our time zone offset is given in seconds, but Google's uses minutes
+    // Google's utc_offset field is deprecated in favor of utc_offset_minutes,
+    // but they still support it so we support both
+    let timeZoneOffsetInMinutes;
+    if (place.TimeZone) {
+      timeZoneOffsetInMinutes = place.TimeZone.Offset / 60;
+    }
+    if (includeAllFields || fields.includes("utc_offset")) {
+      googlePlace["utc_offset"] = timeZoneOffsetInMinutes;
+    }
+    if (includeAllFields || fields.includes("utc_offset_minutes")) {
+      googlePlace["utc_offset_minutes"] = timeZoneOffsetInMinutes;
+    }
+
+    // vicinity is in the format of "AddressNumber Street, Municipality",
+    // but street number or name might not be there depending on what was
+    // searched for (e.g. just a city name)
+    if (includeAllFields || fields.includes("vicinity")) {
+      let vicinity = place.Municipality;
+      if (place.Street) {
+        vicinity = `${place.Street}, ${vicinity}`;
+      }
+      if (place.AddressNumber) {
+        vicinity = `${place.AddressNumber} ${vicinity}`;
+      }
+      googlePlace["vicinity"] = vicinity;
+    }
   }
 
   return googlePlace;
@@ -80,7 +114,7 @@ class MigrationPlacesService {
         const results = response.Results;
         if (results.length !== 0) {
           results.forEach(function (place) {
-            const placeResponse = convertAmazonPlaceToGoogle(place, fields);
+            const placeResponse = convertAmazonPlaceToGoogle(place, fields, false);
 
             googleResults.push(placeResponse);
           });
@@ -97,6 +131,7 @@ class MigrationPlacesService {
 
   getDetails(request, callback) {
     const placeId = request.placeId;
+    const fields = request.fields; // optional
 
     const input: GetPlaceRequest = {
       IndexName: this._placeIndexName, // required
@@ -107,24 +142,15 @@ class MigrationPlacesService {
     this._client
       .send(command)
       .then((response) => {
-        // TODO: Consolidate to use same convertAmazonPlaceToGoogle helper
         const place = response.Place;
-        const point = place.Geometry.Point;
-        const googleResult = {
-          formatted_address: place.Label,
-          name: place.Label.split(",")[0],
-          geometry: {
-            location: GoogleLatLng(point[1], point[0]),
-          },
-          place_id: placeId,
-        };
+        const googlePlace = convertAmazonPlaceToGoogle({ Place: place, PlaceId: placeId }, fields, true);
 
-        callback(googleResult, PlacesServiceStatus.OK);
+        callback(googlePlace, PlacesServiceStatus.OK);
       })
       .catch((error) => {
         console.error(error);
 
-        callback([], PlacesServiceStatus.UNKNOWN_ERROR);
+        callback(null, PlacesServiceStatus.UNKNOWN_ERROR);
       });
   }
 }
