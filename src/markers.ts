@@ -10,6 +10,7 @@ class MigrationMarker {
   constructor(options) {
     const maplibreOptions: MarkerOptions = {};
 
+    // Advanced Marker content customizability
     // handles:
     // - HTML-based marker
     // - custom graphic file
@@ -24,15 +25,16 @@ class MigrationMarker {
       }
     }
 
-    // handles:
-    // - url parameter
-    // - simple icon interface parameter (no customizability),
-    // - does not handle svg parameter
+    // Legacy Marker content customizability
     if (options.icon || options.label) {
       // container for icon and label
       const imgContainer = document.createElement("div");
 
       // if icon specified, then add it to container
+      // handles:
+      // - url parameter
+      // - simple icon interface parameter (no customizability),
+      // - does not handle svg parameter
       if (options.icon) {
         const imgElement = new Image();
         imgElement.src =
@@ -162,8 +164,10 @@ class MigrationMarker {
     this.#marker = marker;
   }
 
-  // code copied from MapLibre: https://github.com/maplibre/maplibre-gl-js/blob/0502606ae5eb5cc0df5bac242ef2a4104bd425d1/src/ui/marker.ts#L171
-  // cannot unit test due to being a DOM based function, our current unit test infrastructure does not support testing these kinds of functions
+  // Code copied from MapLibre: https://github.com/maplibre/maplibre-gl-js/blob/0502606ae5eb5cc0df5bac242ef2a4104bd425d1/src/ui/marker.ts#L171
+  // Needed because we do not want the inner circle if the 'label' MarkerOption is specified and we cannot change MapLibre's default marker
+  // as it is a private property of the Marker class. Cannot unit test due to being a DOM based function, our current unit test infrastructure
+  // does not support testing these kinds of functions.
   _createDefaultMarker(removeInnerCircle?: boolean) {
     // create default map marker SVG
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
