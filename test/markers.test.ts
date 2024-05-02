@@ -77,10 +77,12 @@ test("should set marker with url icon", () => {
     icon: blueHeartImg,
   });
 
+  const imageContainer = document.createElement("div");
   const expectedImage = new Image();
   expectedImage.src = blueHeartImg;
+  imageContainer.appendChild(expectedImage);
   const expectedMaplibreOptions: MarkerOptions = {
-    element: expectedImage,
+    element: imageContainer,
   };
 
   expect(Marker).toHaveBeenCalledTimes(1);
@@ -95,10 +97,12 @@ test("should set marker with icon object", () => {
     icon: redDotImg,
   });
 
+  const imageContainer = document.createElement("div");
   const expectedImage = new Image();
   expectedImage.src = redDotImg.url;
+  imageContainer.appendChild(expectedImage);
   const expectedMaplibreOptions: MarkerOptions = {
-    element: expectedImage,
+    element: imageContainer,
   };
 
   expect(Marker).toHaveBeenCalledTimes(1);
