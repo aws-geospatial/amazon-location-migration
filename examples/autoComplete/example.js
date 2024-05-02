@@ -11,6 +11,7 @@
 let map;
 let placesService;
 let predictionItems = [];
+let markers = [];
 
 function initMap() {
   const austinCoords = { lat: 30.268193, lng: -97.7457518 }; // Austin, TX :)
@@ -30,7 +31,7 @@ function initMap() {
       for (let i = 0; i < predictionItems.length; i++) {
         let prediction = predictionItems[i];
         if (prediction.description === ui.item.label) {
-          getPlaceDetails(prediction.place_id);
+          getPredictionInfo(prediction);
 
           // Clear our cached prediction items after making selection,
           // otherwise when the input widget loses focus it will trigger
@@ -77,9 +78,26 @@ function initMap() {
       searchInput.val(prediction.description);
       searchInput.autocomplete("close");
 
-      getPlaceDetails(prediction.place_id);
+      getPredictionInfo(prediction);
     }
   });
+}
+
+function getPredictionInfo(prediction) {
+  // Clear out any previous markers before we place new ones for the new prediction
+  markers.map((marker) => {
+    marker.setMap(null);
+  });
+  markers = [];
+
+  // If the prediction has a place_id, then we can do a getDetails
+  // Otherwise, the prediction is a query string (e.g. whataburgers in austin)
+  // so instead we need to do a textSearch to gather the place results
+  if (prediction.place_id) {
+    getPlaceDetails(prediction.place_id);
+  } else {
+    getTextSearch(prediction.description);
+  }
 }
 
 function getPlaceDetails(placeId) {
@@ -96,6 +114,29 @@ function getPlaceDetails(placeId) {
   });
 }
 
+function getTextSearch(query) {
+  var request = {
+    query: query,
+    location: map.getCenter(),
+  };
+
+  const resultsBounds = new google.maps.LatLngBounds();
+
+  placesService.textSearch(request, function (results, status) {
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+      results.map((result) => {
+        createMarker(result);
+
+        resultsBounds.extend(result.geometry.location);
+      });
+
+      // Adjust the map to fit all the new markers we added
+      const paddingInPixels = 50;
+      map.fitBounds(resultsBounds, paddingInPixels);
+    }
+  });
+}
+
 function createMarker(place) {
   if (!place.geometry || !place.geometry.location) return;
 
@@ -103,6 +144,8 @@ function createMarker(place) {
     map,
     position: place.geometry.location,
   });
+
+  markers.push(marker);
 
   // TODO: Add support for re-routing these event listeners to our MapLibre markers
   google.maps.event.addListener(marker, "click", () => {

@@ -153,6 +153,76 @@ class MigrationPlacesService {
         callback(null, PlacesServiceStatus.UNKNOWN_ERROR);
       });
   }
+
+  textSearch(request, callback) {
+    const query = request.query; // optional
+    const locationBias = request.location; // optional
+    const bounds = request.bounds; // optional
+    const language = request.language; // optional
+    const region = request.region; // optional
+
+    const input: SearchPlaceIndexForTextRequest = {
+      IndexName: this._placeIndexName,
+      Text: query, // required
+    };
+
+    // If bounds is specified, then location bias is ignored
+    if (bounds) {
+      // TODO: Change this to use GoogleLatLngBounds once MigrationLatLngBounds has
+      // been updated to handle all the constructor variants, which will handle converting
+      // either bounds from both LatLngBounds|LatLngBoundsLiteral for us
+      let southWest;
+      let northEast;
+      if (bounds.getSouthWest !== undefined) {
+        southWest = bounds.getSouthWest();
+        northEast = bounds.getNorthEast();
+      } else {
+        southWest = GoogleLatLng(bounds.south, bounds.west);
+        northEast = GoogleLatLng(bounds.north, bounds.east);
+      }
+
+      input.FilterBBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
+    } else if (locationBias) {
+      const lngLat = LatLngToLngLat(locationBias);
+      if (lngLat) {
+        input.BiasPosition = lngLat;
+      }
+    }
+
+    if (language) {
+      input.Language = language;
+    }
+
+    if (region) {
+      input.FilterCountries = [region];
+    }
+
+    const command = new SearchPlaceIndexForTextCommand(input);
+
+    this._client
+      .send(command)
+      .then((response) => {
+        const googleResults = [];
+
+        const results = response.Results;
+        if (results.length !== 0) {
+          results.forEach(function (place) {
+            // Include all supported fields as in findPlaceFromQuery,
+            // but not the additional fields for getDetails
+            const placeResponse = convertAmazonPlaceToGoogle(place, ["ALL"], false);
+
+            googleResults.push(placeResponse);
+          });
+        }
+
+        callback(googleResults, PlacesServiceStatus.OK);
+      })
+      .catch((error) => {
+        console.error(error);
+
+        callback([], PlacesServiceStatus.UNKNOWN_ERROR);
+      });
+  }
 }
 
 class MigrationAutocompleteService {
