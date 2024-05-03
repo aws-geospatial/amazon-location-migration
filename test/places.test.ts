@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationPlacesService } from "../src/places";
-import { PlacesServiceStatus } from "../src/googleCommon";
+import { GoogleLatLng, GoogleLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
 
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});
@@ -241,6 +241,158 @@ test("getDetails should handle client error", (done) => {
 
   placesService.getDetails(request, (result, status) => {
     expect(result).toBeNull();
+    expect(status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+
+    expect(console.error).toHaveBeenCalledTimes(1);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("textSearch should only use bounds if location was also specified", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    query: "cool places in austin",
+    bounds: GoogleLatLngBounds(GoogleLatLng(south, west), GoogleLatLng(east, north)),
+    location: GoogleLatLng(4, 5),
+  };
+
+  placesService.textSearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, north, east]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(firstResult.name).toStrictEqual("Austin");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("textSearch should accept bounds as a literal", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    query: "cool places in austin",
+    bounds: { east: east, north: north, south: south, west: west },
+  };
+
+  placesService.textSearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(firstResult.name).toStrictEqual("Austin");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("textSearch should accept location bias if there is no bounds specified", (done) => {
+  const request = {
+    query: "cool places in austin",
+    location: GoogleLatLng(testLat, testLng),
+  };
+
+  placesService.textSearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.FilterBBox).toBeUndefined();
+
+    expect(firstResult.name).toStrictEqual("Austin");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("textSearch should accept language", (done) => {
+  const request = {
+    query: "cool places in austin",
+    location: GoogleLatLng(testLat, testLng),
+    language: "en",
+  };
+
+  placesService.textSearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Language).toStrictEqual("en");
+
+    expect(firstResult.name).toStrictEqual("Austin");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("textSearch should convert region to countries filter", (done) => {
+  const request = {
+    query: "cool places in austin",
+    location: GoogleLatLng(testLat, testLng),
+    region: "us",
+  };
+
+  placesService.textSearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.FilterCountries).toStrictEqual(["us"]);
+
+    expect(firstResult.name).toStrictEqual("Austin");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("textSearch should handle client error", (done) => {
+  const request = {
+    query: clientErrorQuery,
+  };
+
+  placesService.textSearch(request, (results, status) => {
+    expect(results).toHaveLength(0);
     expect(status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
 
     expect(console.error).toHaveBeenCalledTimes(1);
