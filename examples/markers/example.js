@@ -21,6 +21,13 @@ function initMap() {
     map,
   });
 
+  // A basic marker with a label
+  new google.maps.Marker({
+    position: { lat: 30.225, lng: -97.75 },
+    map,
+    label: "A",
+  });
+
   // A marker that sets the icon property to an Image object: https://developers.google.com/maps/documentation/javascript/markers?hl=en#complex_icons
   const redDotImg = {
     url: "../images/red_dot.png",
@@ -37,6 +44,15 @@ function initMap() {
     position: { lat: 30.2, lng: -97.8 },
     map,
     icon: blueHeartImg,
+  });
+
+  // A marker that sets the icon property to the URL of an image and has a label
+  const yellowSquareImg = "../images/yellow_square.png";
+  new google.maps.Marker({
+    position: { lat: 30.325, lng: -97.75 },
+    map,
+    icon: yellowSquareImg,
+    label: "B",
   });
 
   // An advanced marker with a with a URL pointing to a PNG: https://developers.google.com/maps/documentation/javascript/advanced-markers/graphic-markers?hl=en#custom-graphic-file

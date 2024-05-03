@@ -10,6 +10,7 @@ class MigrationMarker {
   constructor(options) {
     const maplibreOptions: MarkerOptions = {};
 
+    // Advanced Marker content customizability
     // handles:
     // - HTML-based marker
     // - custom graphic file
@@ -30,17 +31,56 @@ class MigrationMarker {
     // - does not handle svg parameter
     if (options.icon) {
       if (typeof options.icon === "object") {
-        const img = new Image();
-        img.src = options.icon.url;
-        maplibreOptions.element = img;
+        const imgContainer = document.createElement("div");
+        const imgElement = new Image();
+        imgElement.src = options.icon.url;
+        imgContainer.appendChild(imgElement);
+        maplibreOptions.element = imgContainer;
       } else if (typeof options.icon === "string") {
-        const img = new Image();
-        img.src = options.icon;
-        maplibreOptions.element = img;
+        const imgContainer = document.createElement("div");
+        const imgElement = new Image();
+        imgElement.src = options.icon;
+        imgContainer.appendChild(imgElement);
+        maplibreOptions.element = imgContainer;
       }
     }
 
     this.#marker = new Marker(maplibreOptions);
+
+    // Cannot unit test due to being a DOM based function, our current unit test infrastructure
+    // does not support testing these kinds of functions.
+    if (options.label) {
+      // check if marker is default or custom icon, if default marker, then remove inner circle
+      const marker = this.#marker._element;
+      const svg = marker.querySelector("svg");
+      if (svg) {
+        const firstG = svg.querySelector("g");
+        const removedChild = firstG.removeChild(firstG.children[4]);
+        removedChild.remove();
+      }
+
+      // create label
+      const defaultMarker = svg === null ? false : true;
+      const label =
+        typeof options.label === "object"
+          ? this._createLabel(
+              defaultMarker,
+              options.label.text,
+              options.label.className,
+              options.label.color,
+              options.label.fontFamily,
+              options.label.fontSize,
+              options.label.fontWeight,
+            )
+          : typeof options.label === "string"
+          ? this._createLabel(defaultMarker, options.label)
+          : undefined;
+
+      // add label to marker
+      if (label !== undefined) {
+        marker.appendChild(label);
+      }
+    }
 
     // need to use 'in' because 'false' is valid input
     if ("draggable" in options) {
@@ -129,6 +169,43 @@ class MigrationMarker {
   // Internal method for manually setting the private #map property (used for mocking the map in unit testing)
   _setMarker(marker) {
     this.#marker = marker;
+  }
+
+  // Internal method for creating a span element containing the label to add to the Marker element
+  _createLabel(
+    defaultMarker: boolean,
+    text: string,
+    className?: string,
+    color?: string,
+    fontFamily?: string,
+    fontSize?: string,
+    fontWeight?: string,
+  ) {
+    const textElement = document.createElement("span");
+
+    // default style requirements
+    textElement.textContent = text;
+    textElement.style.position = "absolute";
+    // if default marker center text in upper half of default marker, else center text in the middle of the icon
+    defaultMarker === true ? (textElement.style.top = "35%") : (textElement.style.top = "50%");
+    textElement.style.left = "50%";
+    textElement.style.transform = "translate(-50%, -50%)";
+
+    // customizable properties, defined: https://developers.google.com/maps/documentation/javascript/reference/marker#MarkerLabel
+    textElement.style.color = typeof color === "undefined" ? "black" : color;
+    // handle both "14px" input as well as "14" input
+    textElement.style.fontSize =
+      typeof fontSize === "undefined" ? "14px" : fontSize.slice(-2) === "px" ? `${fontSize}` : `${fontSize}px`;
+    if (typeof className !== "undefined") {
+      textElement.className = className;
+    }
+    if (typeof fontWeight !== "undefined") {
+      textElement.style.fontWeight = fontWeight;
+    }
+    if (typeof fontFamily !== "undefined") {
+      textElement.style.fontFamily = fontFamily;
+    }
+    return textElement;
   }
 }
 
