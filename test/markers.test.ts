@@ -78,6 +78,7 @@ test("should set marker with url icon", () => {
   });
 
   const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
   const expectedImage = new Image();
   expectedImage.src = blueHeartImg;
   imageContainer.appendChild(expectedImage);
@@ -98,9 +99,43 @@ test("should set marker with icon object", () => {
   });
 
   const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
   const expectedImage = new Image();
   expectedImage.src = redDotImg.url;
   imageContainer.appendChild(expectedImage);
+  const expectedMaplibreOptions: MarkerOptions = {
+    element: imageContainer,
+  };
+
+  expect(Marker).toHaveBeenCalledTimes(1);
+  expect(Marker).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set marker with symbol object", () => {
+  const svgMarker = {
+    path: "M 0 25 L 25 25 L 12.5 0 Z",
+    fillColor: "red",
+    fillOpacity: 0.6,
+    strokeWeight: 2,
+    strokeColor: "green",
+    rotation: 0,
+  };
+  new MigrationMarker({
+    icon: svgMarker,
+  });
+
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M 0 25 L 25 25 L 12.5 0 Z");
+  path.setAttribute("fill", "red");
+  path.setAttribute("fill-opacity", "0.6");
+  path.setAttribute("stroke", "green");
+  path.setAttribute("stroke-width", "2");
+  path.setAttribute("stroke-opacity", "undefined");
+  svg.appendChild(path);
+  imageContainer.appendChild(svg);
   const expectedMaplibreOptions: MarkerOptions = {
     element: imageContainer,
   };
@@ -119,18 +154,108 @@ test("should call get methods from marker", () => {
   expect(Marker.prototype.getLngLat).toHaveBeenCalledTimes(1);
 });
 
-test("should call getIcon from marker", () => {
+test("should call getIcon from marker with svg", () => {
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  svgPath.setAttribute("d", "");
+  svgPath.setAttribute("fill", "");
+  svgPath.setAttribute("fill-opacity", "");
+  svgPath.setAttribute("stroke", "");
+  svgPath.setAttribute("stroke-opacity", "");
+  svgPath.setAttribute("stroke-width", "");
   const mockMarker = {
     getElement: jest.fn().mockReturnValue({
       src: null,
+      classList: imageContainer.classList,
+      querySelector: jest.fn().mockReturnValue({
+        querySelector: jest.fn().mockReturnValue(svgPath),
+      }),
     }),
   };
   const testMarker = new MigrationMarker({});
   testMarker._setMarker(mockMarker);
 
-  testMarker.getIcon();
+  const iconResult = testMarker.getIcon();
 
+  expect(iconResult).toStrictEqual({
+    fillColor: "",
+    fillOpacity: "",
+    path: "",
+    strokeColor: "",
+    strokeOpacity: "",
+    strokeWeight: "",
+  });
   expect(mockMarker.getElement).toHaveBeenCalledTimes(1);
+});
+
+test("should call getIcon from marker with img", () => {
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      src: null,
+      classList: imageContainer.classList,
+      querySelector: jest.fn().mockImplementation(
+        (selector) =>
+          selector === "img" && {
+            src: "img_src",
+          },
+      ),
+    }),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  const iconResult = testMarker.getIcon();
+
+  expect(iconResult).toBe("img_src");
+  expect(mockMarker.getElement).toHaveBeenCalledTimes(1);
+});
+
+test("should call getIcon from marker with default marker", () => {
+  const imageContainer = document.createElement("div");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      classList: imageContainer.classList,
+    }),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  const iconResult = testMarker.getIcon();
+
+  expect(iconResult).toBe(undefined);
+  expect(mockMarker.getElement).toHaveBeenCalledTimes(1);
+});
+
+test("should call getVisible from marker", () => {
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      style: {
+        visibility: false,
+      },
+    }),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  const visibleResult = testMarker.getVisible();
+
+  expect(visibleResult).toBe(false);
+  expect(mockMarker.getElement).toHaveBeenCalledTimes(1);
+});
+
+test("should call getOpacity from marker", () => {
+  const mockMarker = {
+    _opacity: 0.5,
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  const opacityResult = testMarker.getOpacity();
+
+  expect(opacityResult).toBe(0.5);
 });
 
 test("should call set methods from marker", () => {
@@ -152,6 +277,40 @@ test("should call set methods from marker", () => {
   expect(Marker.prototype.addTo).toHaveBeenCalledWith(testMap._getMap());
 });
 
+test("should call setVisible from marker to false", () => {
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      style: {
+        visibility: true,
+      },
+    }),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setVisible(false);
+
+  expect(testMarker).not.toBeNull();
+  expect(testMarker._getMarker().getElement().style.visibility).toBe("hidden");
+});
+
+test("should setVisible from marker to true", () => {
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      style: {
+        visibility: false,
+      },
+    }),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setVisible(true);
+
+  expect(testMarker).not.toBeNull();
+  expect(testMarker._getMarker().getElement().style.visibility).toBe("visible");
+});
+
 test("should call setOptions from marker", () => {
   const testMap = new MigrationMap(null, {});
   const testMarker = new MigrationMarker({});
@@ -171,6 +330,24 @@ test("should call setOptions from marker", () => {
   expect(Marker.prototype.setOpacity).toHaveBeenCalledWith(0);
   expect(Marker.prototype.addTo).toHaveBeenCalledTimes(1);
   expect(Marker.prototype.addTo).toHaveBeenCalledWith(testMap._getMap());
+});
+
+test("should call setOptions from marker with visible", () => {
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      style: {
+        visibility: false,
+      },
+    }),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setOptions({
+    visible: false,
+  });
+
+  expect(testMarker._getMarker().getElement().style.visibility).toBe("hidden");
 });
 
 test("should call setMap with null and undefined from marker", () => {

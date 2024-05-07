@@ -14,9 +14,10 @@ class MigrationMarker {
     // handles:
     // - HTML-based marker
     // - custom graphic file
-    // - does not support inline SVG or any customization that uses PinElement
+    // - inline SVG
+    // - does not support any customization that uses PinElement
     if (options.content) {
-      if (options.content instanceof HTMLElement) {
+      if (options.content instanceof HTMLElement || options.content instanceof SVGElement) {
         maplibreOptions.element = options.content;
       } else if (typeof options.content === "string") {
         const img = new Image();
@@ -28,16 +29,43 @@ class MigrationMarker {
     // handles:
     // - url parameter
     // - simple icon interface parameter (no customizability),
-    // - does not handle svg parameter
+    // - svg parameter (Symbol) excluding anchor, rotation, and scale customizability properties
     if (options.icon) {
       if (typeof options.icon === "object") {
-        const imgContainer = document.createElement("div");
-        const imgElement = new Image();
-        imgElement.src = options.icon.url;
-        imgContainer.appendChild(imgElement);
-        maplibreOptions.element = imgContainer;
+        if ("url" in options.icon) {
+          const imgContainer = document.createElement("div");
+          imgContainer.classList.add("non-default-legacy-marker");
+          const imgElement = new Image();
+          imgElement.src = options.icon.url;
+          imgContainer.appendChild(imgElement);
+          maplibreOptions.element = imgContainer;
+        } else if ("path" in options.icon) {
+          const imgContainer = document.createElement("div");
+          imgContainer.classList.add("non-default-legacy-marker");
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("d", options.icon.path);
+          path.setAttribute("fill", options.icon.fillColor);
+          path.setAttribute("fill-opacity", options.icon.fillOpacity);
+          path.setAttribute("stroke", options.icon.strokeColor);
+          path.setAttribute("stroke-width", options.icon.strokeWeight);
+          path.setAttribute("stroke-opacity", options.icon.strokeOpacity);
+          svg.appendChild(path);
+          imgContainer.appendChild(svg);
+          maplibreOptions.element = imgContainer;
+          svg.addEventListener("load", () => {
+            if (options.icon && typeof options.icon === "object" && "path" in options.icon) {
+              const svg = this.#marker._element.querySelector("svg");
+              const pathBBox = svg.querySelector("path").getBBox();
+              svg.setAttribute("viewBox", `${pathBBox.x} ${pathBBox.y} ${pathBBox.width} ${pathBBox.height}`);
+              svg.setAttribute("width", `${pathBBox.width}`);
+              svg.setAttribute("height", `${pathBBox.height}`);
+            }
+          });
+        }
       } else if (typeof options.icon === "string") {
         const imgContainer = document.createElement("div");
+        imgContainer.classList.add("non-default-legacy-marker");
         const imgElement = new Image();
         imgElement.src = options.icon;
         imgContainer.appendChild(imgElement);
@@ -53,14 +81,14 @@ class MigrationMarker {
       // check if marker is default or custom icon, if default marker, then remove inner circle
       const marker = this.#marker._element;
       const svg = marker.querySelector("svg");
-      if (svg) {
+      if (svg && !marker.classList.contains("non-default-legacy-marker")) {
         const firstG = svg.querySelector("g");
         const removedChild = firstG.removeChild(firstG.children[4]);
         removedChild.remove();
       }
 
       // create label
-      const defaultMarker = svg === null ? false : true;
+      const defaultMarker = marker.classList.contains("non-default-legacy-marker") ? false : true;
       const label =
         typeof options.label === "object"
           ? this._createLabel(
@@ -100,6 +128,12 @@ class MigrationMarker {
       this.setOpacity(options.opacity);
     }
 
+    // unable to test because testing requires a mocked map to be applied to a MigrationMap object
+    // and this will run before a MigrationMap object is created
+    if ("visible" in options) {
+      this.setVisible(options.visible);
+    }
+
     // need to use 'in' because null and undefined are valid inputs
     if ("map" in options) {
       this.setMap(options.map);
@@ -111,13 +145,54 @@ class MigrationMarker {
   }
 
   getIcon() {
-    return (this.#marker.getElement() as HTMLImageElement).src;
+    const markerElement = this.#marker.getElement();
+    if (markerElement.classList.contains("non-default-legacy-marker")) {
+      const svg = markerElement.querySelector("svg");
+      if (svg) {
+        const symbol = {};
+        const path = svg.querySelector("path");
+        if (path.hasAttribute("d")) {
+          symbol["path"] = path.getAttribute("d");
+        }
+        if (path.hasAttribute("fill")) {
+          symbol["fillColor"] = path.getAttribute("fill");
+        }
+        if (path.hasAttribute("fill-opacity")) {
+          symbol["fillOpacity"] = path.getAttribute("fill-opacity");
+        }
+        if (path.hasAttribute("stroke")) {
+          symbol["strokeColor"] = path.getAttribute("stroke");
+        }
+        if (path.hasAttribute("stroke-opacity")) {
+          symbol["strokeOpacity"] = path.getAttribute("stroke-opacity");
+        }
+        if (path.hasAttribute("stroke-width")) {
+          symbol["strokeWeight"] = path.getAttribute("stroke-width");
+        }
+        return symbol;
+      }
+      const img = markerElement.querySelector("img");
+      if (img) {
+        // cannot differentiate between when to return img url and icon class, will always return url
+        return img.src;
+      }
+    } else {
+      return undefined;
+    }
+  }
+
+  getOpacity() {
+    return this.#marker._opacity;
   }
 
   getPosition() {
     const position = this.#marker.getLngLat();
 
     return GoogleLatLng(position?.lat, position?.lng);
+  }
+
+  getVisible() {
+    return this.#marker.getElement().style.visibility;
   }
 
   setDraggable(draggable) {
@@ -152,6 +227,10 @@ class MigrationMarker {
     if ("map" in options) {
       this.setMap(options.map);
     }
+
+    if ("visible" in options) {
+      this.setVisible(options.visible);
+    }
   }
 
   setMap(map) {
@@ -162,11 +241,24 @@ class MigrationMarker {
     }
   }
 
+  setVisible(visible) {
+    if (visible === false) {
+      this.#marker.getElement().style.visibility = "hidden";
+    } else if (visible === true) {
+      this.#marker.getElement().style.visibility = "visible";
+    }
+  }
+
   remove() {
     this.#marker.remove();
   }
 
-  // Internal method for manually setting the private #map property (used for mocking the map in unit testing)
+  // Internal method for manually getting the private #marker property
+  _getMarker() {
+    return this.#marker;
+  }
+
+  // Internal method for manually setting the private #marker property (used for mocking the marker in unit testing)
   _setMarker(marker) {
     this.#marker = marker;
   }
