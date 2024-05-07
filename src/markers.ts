@@ -227,6 +227,10 @@ class MigrationMarker {
     if ("map" in options) {
       this.setMap(options.map);
     }
+
+    if ("visible" in options) {
+      this.setVisible(options.visible);
+    }
   }
 
   setMap(map) {
