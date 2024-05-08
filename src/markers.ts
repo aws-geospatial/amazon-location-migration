@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Marker, MarkerOptions } from "maplibre-gl";
-import { GoogleLatLng, LatLngToLngLat } from "./googleCommon";
+import {
+  GoogleLatLng,
+  GoogleMarkerMouseDOMEvent,
+  GoogleMarkerMouseEvent,
+  LatLngToLngLat,
+  MigrationEvent,
+} from "./googleCommon";
 
 class MigrationMarker {
   #marker: Marker;
@@ -137,6 +143,34 @@ class MigrationMarker {
     // need to use 'in' because null and undefined are valid inputs
     if ("map" in options) {
       this.setMap(options.map);
+    }
+  }
+
+  // handles two types of events:
+  // handles events that MapLibre markers does not support, adds event listener to marker DOM element instead - click, dblclick, contextmenu
+  // handles events that MapLibre markers inherently supports, uses 'on' method - drag, dragstart, dragend
+  addListener(eventName, handler) {
+    if (GoogleMarkerMouseDOMEvent.includes(eventName)) {
+      this.#marker.getElement().addEventListener(eventName, (mapLibreMouseEvent) => {
+        // needed for 'click' so that map does not also register a click when clicking marker if map has a click event listener
+        // needed for 'dblclick' so that map does not auto zoom when marker is double clicked
+        if (eventName === MigrationEvent.click || eventName === MigrationEvent.dblclick) {
+          mapLibreMouseEvent.stopPropagation();
+        }
+        const googleMapMouseEvent = {
+          domEvent: mapLibreMouseEvent,
+          latLng: this.getPosition(),
+        };
+        handler(googleMapMouseEvent);
+      });
+    } else if (GoogleMarkerMouseEvent.includes(eventName)) {
+      this.#marker.on(eventName, (mapLibreMouseEvent) => {
+        const googleMapMouseEvent = {
+          domEvent: mapLibreMouseEvent,
+          latLng: this.getPosition(),
+        };
+        handler(googleMapMouseEvent);
+      });
     }
   }
 

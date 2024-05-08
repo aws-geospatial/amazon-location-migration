@@ -3,6 +3,7 @@
 
 import { MigrationMap } from "../src/maps";
 import { MigrationMarker } from "../src/markers";
+import { GoogleLatLng } from "../src/googleCommon";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
@@ -364,4 +365,241 @@ test("should call remove from marker", () => {
   testMarker.remove();
 
   expect(Marker.prototype.remove).toHaveBeenCalledTimes(1);
+});
+
+test("should call handler with translated MouseEvent after drag", () => {
+  // mock marker so that we can mock on so that we can mock drag
+  const mockMarker = {
+    on: jest.fn(),
+    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMarker.addListener("drag", handlerSpy);
+
+  // mock drag
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "drag",
+  };
+  mockMarker.on.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  // expected translated MouseEvent (Google's version)
+  const expectedGoogleMouseEvent = {
+    domEvent: {
+      target: {},
+      type: "drag",
+    },
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
+});
+
+test("should call handler with translated MouseEvent after dragstart", () => {
+  // mock marker so that we can mock on so that we can mock dragstart
+  const mockMarker = {
+    on: jest.fn(),
+    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMarker.addListener("dragstart", handlerSpy);
+
+  // mock dragstart
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "dragstart",
+  };
+  mockMarker.on.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  // expected translated MouseEvent (Google's version)
+  const expectedGoogleMouseEvent = {
+    domEvent: {
+      target: {},
+      type: "dragstart",
+    },
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
+});
+
+test("should call handler with translated MouseEvent after dragend", () => {
+  // mock marker so that we can mock on so that we can mock dragend
+  const mockMarker = {
+    on: jest.fn(),
+    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMarker.addListener("dragend", handlerSpy);
+
+  // mock dragend
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "dragend",
+  };
+  mockMarker.on.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  // expected translated MouseEvent (Google's version)
+  const expectedGoogleMouseEvent = {
+    domEvent: {
+      target: {},
+      type: "dragend",
+    },
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
+});
+
+test("should call handler with translated MouseEvent after click", () => {
+  // mock element so that we can mock addEventListener so that we can mock click
+  const mockElement = {
+    addEventListener: jest.fn(),
+  };
+
+  // mock marker to return mockElement when getElement is called
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMarker.addListener("click", handlerSpy);
+
+  // mock click
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "click",
+    stopPropagation: jest.fn().mockReturnValue(null),
+  };
+  mockElement.addEventListener.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  // expected translated MouseEvent (Google's version)
+  const expectedGoogleMouseEvent = {
+    domEvent: {
+      target: {},
+      type: "click",
+      stopPropagation: expect.any(Function),
+    },
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
+});
+
+test("should call handler with translated MouseEvent after dblclick", () => {
+  // mock element so that we can mock addEventListener so that we can mock dblclick
+  const mockElement = {
+    addEventListener: jest.fn(),
+  };
+
+  // mock marker to return mockElement when getElement is called
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMarker.addListener("dblclick", handlerSpy);
+
+  // mock dblclick
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "dblclick",
+    stopPropagation: jest.fn().mockReturnValue(null),
+  };
+  mockElement.addEventListener.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  // expected translated MouseEvent (Google's version)
+  const expectedGoogleMouseEvent = {
+    domEvent: {
+      target: {},
+      type: "dblclick",
+      stopPropagation: expect.any(Function),
+    },
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
+});
+
+test("should call handler with translated MouseEvent after contextmenu", () => {
+  // mock element so that we can mock addEventListener so that we can mock contextmenu
+  const mockElement = {
+    addEventListener: jest.fn(),
+  };
+
+  // mock marker to return mockElement when getElement is called
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationMarker.addListener("contextmenu", handlerSpy);
+
+  // mock contextmenu
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "contextmenu",
+    stopPropagation: jest.fn().mockReturnValue(null),
+  };
+  mockElement.addEventListener.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  // expected translated MouseEvent (Google's version)
+  const expectedGoogleMouseEvent = {
+    domEvent: {
+      target: {},
+      type: "contextmenu",
+      stopPropagation: expect.any(Function),
+    },
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
 });
