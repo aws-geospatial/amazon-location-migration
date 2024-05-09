@@ -8,7 +8,7 @@ import {
   GoogleMapEvent,
   GoogleMapMouseEvent,
   GoogleToMaplibreControlPosition,
-  GoogleToMaplibreMapEvent,
+  GoogleToMaplibreEvent,
   LatLngToLngLat,
 } from "./googleCommon";
 
@@ -74,7 +74,7 @@ class MigrationMap {
 
   addListener(eventName, handler) {
     if (GoogleMapMouseEvent.includes(eventName)) {
-      this.#map.on(GoogleToMaplibreMapEvent[eventName], (mapLibreMapMouseEvent) => {
+      this.#map.on(GoogleToMaplibreEvent[eventName], (mapLibreMapMouseEvent) => {
         const googleMapMouseEvent = {
           domEvent: mapLibreMapMouseEvent.originalEvent,
           latLng: GoogleLatLng(mapLibreMapMouseEvent.lngLat.lat, mapLibreMapMouseEvent.lngLat.lng),
@@ -82,7 +82,7 @@ class MigrationMap {
         handler(googleMapMouseEvent);
       });
     } else if (GoogleMapEvent.includes(eventName)) {
-      this.#map.on(GoogleToMaplibreMapEvent[eventName], () => {
+      this.#map.on(GoogleToMaplibreEvent[eventName], () => {
         handler();
       });
     }
