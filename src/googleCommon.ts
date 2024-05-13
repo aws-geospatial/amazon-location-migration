@@ -29,6 +29,7 @@ export class MigrationLatLng {
   ) {
     if (latOrLatLngOrLatLngLiteral == null) {
       this.#lat = NaN;
+      this.#lng = NaN;
     } else if (typeof latOrLatLngOrLatLngLiteral === "number") {
       this.#lat = latOrLatLngOrLatLngLiteral;
     } else if (latOrLatLngOrLatLngLiteral.lat !== undefined && latOrLatLngOrLatLngLiteral.lat !== undefined) {
