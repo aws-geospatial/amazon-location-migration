@@ -147,8 +147,8 @@ function createMarker(place) {
 
   markers.push(marker);
 
-  // TODO: Add support for re-routing these event listeners to our MapLibre markers
-  google.maps.event.addListener(marker, "click", () => {
+  // TODO: Update this example to display an InfoWindow when clicking on the marker to display additional details (from getDetails)
+  marker.addListener(marker, "click", () => {
     console.log("MARKER CLICKED", place.name);
   });
 }

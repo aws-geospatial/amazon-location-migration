@@ -10,9 +10,6 @@
 
     <!-- Client logic example -->
     <script type="text/javascript" src="./example.js"></script>
-
-    <!-- Migration script import -->
-    <script src="../../dist/amazonLocationMigrationAdapter.js?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
   </head>
   <body>
     <!-- Search box and map elements for the example -->
@@ -21,10 +18,11 @@
     </div>
     <div id="map"></div>
 
-    <!-- Google Maps API import -->
+    <!-- Migration script import -->
     <script
+      async
       defer
-      src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_API_KEY}}&callback=migrationInit&libraries=places"
+      src="../../dist/amazonLocationMigrationAdapter.js?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
     ></script>
   </body>
 </html>

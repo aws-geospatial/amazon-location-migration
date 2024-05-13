@@ -273,6 +273,14 @@ export const PlacesServiceStatus = {
   NOT_FOUND: "NOT_FOUND",
 };
 
+export const TravelMode = {
+  DRIVING: "DRIVING",
+  WALKING: "WALKING",
+  BICYCLING: "BICYCLING",
+  TRANSIT: "TRANSIT",
+  TWO_WHEELER: "TWO_WHEELER",
+};
+
 export const DirectionsStatus = {
   OK: "OK",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
