@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationPlacesService } from "../src/places";
-import { GoogleLatLng, GoogleLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
+import { MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
 
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});
@@ -257,8 +257,8 @@ test("textSearch should only use bounds if location was also specified", (done) 
   const west = 3;
   const request = {
     query: "cool places in austin",
-    bounds: GoogleLatLngBounds(GoogleLatLng(south, west), GoogleLatLng(east, north)),
-    location: GoogleLatLng(4, 5),
+    bounds: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(east, north)),
+    location: new MigrationLatLng(4, 5),
   };
 
   placesService.textSearch(request, (results, status) => {
@@ -312,7 +312,7 @@ test("textSearch should accept bounds as a literal", (done) => {
 test("textSearch should accept location bias if there is no bounds specified", (done) => {
   const request = {
     query: "cool places in austin",
-    location: GoogleLatLng(testLat, testLng),
+    location: new MigrationLatLng(testLat, testLng),
   };
 
   placesService.textSearch(request, (results, status) => {
@@ -337,7 +337,7 @@ test("textSearch should accept location bias if there is no bounds specified", (
 test("textSearch should accept language", (done) => {
   const request = {
     query: "cool places in austin",
-    location: GoogleLatLng(testLat, testLng),
+    location: new MigrationLatLng(testLat, testLng),
     language: "en",
   };
 
@@ -363,7 +363,7 @@ test("textSearch should accept language", (done) => {
 test("textSearch should convert region to countries filter", (done) => {
   const request = {
     query: "cool places in austin",
-    location: GoogleLatLng(testLat, testLng),
+    location: new MigrationLatLng(testLat, testLng),
     region: "us",
   };
 

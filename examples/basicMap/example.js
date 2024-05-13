@@ -7,7 +7,7 @@
 // and retain the same functionality when using the migration adapter.
 
 function initMap() {
-  const austinCoords = { lat: 30.268193, lng: -97.7457518 }; // Austin, TX :)
+  const austinCoords = new google.maps.LatLng(30.268193, -97.7457518); // Austin, TX :)
 
   const map = new google.maps.Map(document.getElementById("map"), {
     center: austinCoords,

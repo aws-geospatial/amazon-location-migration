@@ -5,6 +5,7 @@ import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
 
 import { MigrationDirectionsRenderer, MigrationDirectionsService } from "./directions";
+import { MigrationLatLng, MigrationLatLngBounds } from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
@@ -79,6 +80,8 @@ anyWindow.migrationInit = async function () {
   MigrationDirectionsService.prototype._placesService = new MigrationPlacesService();
 
   // Replace the Google Maps classes with our migration classes
+  anyWindow.google.maps.LatLng = MigrationLatLng;
+  anyWindow.google.maps.LatLngBounds = MigrationLatLngBounds;
   anyWindow.google.maps.Map = MigrationMap;
   anyWindow.google.maps.Marker = MigrationMarker;
   if (anyWindow.google.maps.marker) {

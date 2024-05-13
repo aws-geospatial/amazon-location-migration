@@ -3,7 +3,7 @@
 
 import { CalculateRouteCommand, CalculateRouteRequest, LocationClient } from "@aws-sdk/client-location";
 
-import { DirectionsStatus, GoogleLatLng, GoogleLatLngBounds } from "./googleCommon";
+import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationPlacesService } from "./places";
@@ -68,8 +68,8 @@ class MigrationDirectionsService {
                       text: step.DurationSeconds + " seconds", // TODO: Add conversion logic to make this seconds/minutes/hours
                       value: step.DurationSeconds,
                     },
-                    start_location: GoogleLatLng(step.StartPosition[1], step.StartPosition[0]),
-                    end_location: GoogleLatLng(step.EndPosition[1], step.EndPosition[0]),
+                    start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
+                    end_location: new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]),
                   });
                 });
 
@@ -82,7 +82,7 @@ class MigrationDirectionsService {
               });
 
               const googleRoute = {
-                bounds: GoogleLatLngBounds(
+                bounds: new MigrationLatLngBounds(
                   {
                     lng: bounds[0],
                     lat: bounds[1],

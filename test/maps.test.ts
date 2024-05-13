@@ -2,14 +2,66 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationMap } from "../src/maps";
-import { GoogleLatLng, GoogleLatLngBounds, MigrationControlPosition } from "../src/googleCommon";
+import { MigrationControlPosition, MigrationLatLng, MigrationLatLngBounds } from "../src/googleCommon";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
 // the values we pass to our google migration classes get transformed
 // correctly and our called
-jest.mock("maplibre-gl");
-import { Map, MapOptions, NavigationControl } from "maplibre-gl";
+const mockAddControl = jest.fn();
+const mockRemoveControl = jest.fn();
+const mockFitBounds = jest.fn();
+const mockGetBounds = jest.fn();
+const mockGetCenter = jest.fn();
+const mockSetCenter = jest.fn();
+const mockGetContainer = jest.fn();
+const mockJumpTo = jest.fn();
+const mockOn = jest.fn();
+const mockPanBy = jest.fn();
+const mockPanTo = jest.fn();
+const mockGetBearing = jest.fn();
+const mockSetBearing = jest.fn();
+const mockGetPitch = jest.fn();
+const mockSetPitch = jest.fn();
+const mockGetZoom = jest.fn();
+const mockSetZoom = jest.fn();
+const mockSetMinZoom = jest.fn();
+const mockSetMaxZoom = jest.fn();
+
+jest.mock("maplibre-gl", () => ({
+  ...jest.requireActual("maplibre-gl"),
+  Map: jest.fn().mockImplementation(() => {
+    return {
+      addControl: mockAddControl,
+      removeControl: mockRemoveControl,
+
+      fitBounds: mockFitBounds,
+      getBounds: mockGetBounds,
+
+      getCenter: mockGetCenter,
+      setCenter: mockSetCenter,
+
+      getContainer: mockGetContainer,
+
+      jumpTo: mockJumpTo,
+      on: mockOn,
+
+      panBy: mockPanBy,
+      panTo: mockPanTo,
+
+      getBearing: mockGetBearing,
+      setBearing: mockSetBearing,
+      getPitch: mockGetPitch,
+      setPitch: mockSetPitch,
+      getZoom: mockGetZoom,
+      setZoom: mockSetZoom,
+      setMinZoom: mockSetMinZoom,
+      setMaxZoom: mockSetMaxZoom,
+    };
+  }),
+}));
+
+import { LngLatBounds, Map, MapOptions, NavigationControl } from "maplibre-gl";
 
 const testLat = 30.268193; // Austin, TX :)
 const testLng = -97.7457518;
@@ -47,8 +99,8 @@ test("should set migration map options", () => {
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
-  expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-left");
+  expect(mockAddControl).toHaveBeenCalledTimes(1);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-left");
 });
 
 test("should set migration map options with control position not available in MapLibre", () => {
@@ -69,8 +121,8 @@ test("should set migration map options with control position not available in Ma
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
-  expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(mockAddControl).toHaveBeenCalledTimes(1);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
 });
 
 test("should log error with invalid map option center", () => {
@@ -88,18 +140,18 @@ test("should call setZoom from migration map", () => {
 
   testMap.setZoom(3);
 
-  expect(Map.prototype.setZoom).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setZoom).toHaveBeenCalledWith(3);
+  expect(mockSetZoom).toHaveBeenCalledTimes(1);
+  expect(mockSetZoom).toHaveBeenCalledWith(3);
 });
 
 test("should call setCenter from migration map with LatLng", () => {
   const testMap = new MigrationMap(null, {});
-  const testCenter = GoogleLatLng(1, 2);
+  const testCenter = new MigrationLatLng(1, 2);
 
   testMap.setCenter(testCenter);
 
-  expect(Map.prototype.setCenter).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setCenter).toHaveBeenCalledWith([2, 1]);
+  expect(mockSetCenter).toHaveBeenCalledTimes(1);
+  expect(mockSetCenter).toHaveBeenCalledWith([2, 1]);
 });
 
 test("should call setCenter from migration map with LatLngLiteral", () => {
@@ -108,8 +160,8 @@ test("should call setCenter from migration map with LatLngLiteral", () => {
 
   testMap.setCenter(testCenter);
 
-  expect(Map.prototype.setCenter).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setCenter).toHaveBeenCalledWith([4, 3]);
+  expect(mockSetCenter).toHaveBeenCalledTimes(1);
+  expect(mockSetCenter).toHaveBeenCalledWith([4, 3]);
 });
 
 test("should call setHeading from migration map", () => {
@@ -117,8 +169,8 @@ test("should call setHeading from migration map", () => {
 
   testMap.setHeading(45);
 
-  expect(Map.prototype.setBearing).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setBearing).toHaveBeenCalledWith(45);
+  expect(mockSetBearing).toHaveBeenCalledTimes(1);
+  expect(mockSetBearing).toHaveBeenCalledWith(45);
 });
 
 test("should call setOptions from migration map", () => {
@@ -137,21 +189,21 @@ test("should call setOptions from migration map", () => {
     },
   });
 
-  expect(Map.prototype.setCenter).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setCenter).toHaveBeenCalledWith([testLng, testLat]);
-  expect(Map.prototype.setZoom).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setZoom).toHaveBeenCalledWith(9);
-  expect(Map.prototype.setMaxZoom).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setMaxZoom).toHaveBeenCalledWith(18);
-  expect(Map.prototype.setMinZoom).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setMinZoom).toHaveBeenCalledWith(2);
-  expect(Map.prototype.setPitch).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setPitch).toHaveBeenCalledWith(45);
-  expect(Map.prototype.setBearing).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setBearing).toHaveBeenCalledWith(90);
-  expect(Map.prototype.addControl).toHaveBeenCalledTimes(2);
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-left");
+  expect(mockSetCenter).toHaveBeenCalledTimes(1);
+  expect(mockSetCenter).toHaveBeenCalledWith([testLng, testLat]);
+  expect(mockSetZoom).toHaveBeenCalledTimes(1);
+  expect(mockSetZoom).toHaveBeenCalledWith(9);
+  expect(mockSetMaxZoom).toHaveBeenCalledTimes(1);
+  expect(mockSetMaxZoom).toHaveBeenCalledWith(18);
+  expect(mockSetMinZoom).toHaveBeenCalledTimes(1);
+  expect(mockSetMinZoom).toHaveBeenCalledWith(2);
+  expect(mockSetPitch).toHaveBeenCalledTimes(1);
+  expect(mockSetPitch).toHaveBeenCalledWith(45);
+  expect(mockSetBearing).toHaveBeenCalledTimes(1);
+  expect(mockSetBearing).toHaveBeenCalledWith(90);
+  expect(mockAddControl).toHaveBeenCalledTimes(2);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-left");
 });
 
 test("should call setOptions from migration map and remove NavigationControl", () => {
@@ -161,10 +213,10 @@ test("should call setOptions from migration map and remove NavigationControl", (
     zoomControl: false,
   });
 
-  expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
-  expect(Map.prototype.removeControl).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.removeControl).toHaveBeenCalledWith(expect.any(NavigationControl));
+  expect(mockAddControl).toHaveBeenCalledTimes(1);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(mockRemoveControl).toHaveBeenCalledTimes(1);
+  expect(mockRemoveControl).toHaveBeenCalledWith(expect.any(NavigationControl));
 });
 
 test("should call setOptions from migration map and add new NavigationControl", () => {
@@ -176,8 +228,8 @@ test("should call setOptions from migration map and add new NavigationControl", 
     zoomControl: true,
   });
 
-  expect(Map.prototype.addControl).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(mockAddControl).toHaveBeenCalledTimes(1);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
 });
 
 test("should call setOptions from migration map and add new NavigationControl with zoomControlOptions", () => {
@@ -189,11 +241,11 @@ test("should call setOptions from migration map and add new NavigationControl wi
     },
   });
 
-  expect(Map.prototype.addControl).toHaveBeenCalledTimes(2);
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
-  expect(Map.prototype.addControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-right");
-  expect(Map.prototype.removeControl).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.removeControl).toHaveBeenCalledWith(expect.any(NavigationControl));
+  expect(mockAddControl).toHaveBeenCalledTimes(2);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-right");
+  expect(mockRemoveControl).toHaveBeenCalledTimes(1);
+  expect(mockRemoveControl).toHaveBeenCalledWith(expect.any(NavigationControl));
 });
 
 test("should log error when setOptions is called with invalid center", () => {
@@ -212,8 +264,8 @@ test("should call setTilt from migration map", () => {
 
   testMap.setTilt(30);
 
-  expect(Map.prototype.setPitch).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.setPitch).toHaveBeenCalledWith(30);
+  expect(mockSetPitch).toHaveBeenCalledTimes(1);
+  expect(mockSetPitch).toHaveBeenCalledWith(30);
 });
 
 test("should call get methods from migration map", () => {
@@ -225,40 +277,48 @@ test("should call get methods from migration map", () => {
   testMap.getTilt();
   testMap.getZoom();
 
-  expect(Map.prototype.getCenter).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.getContainer).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.getBearing).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.getPitch).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.getZoom).toHaveBeenCalledTimes(1);
+  expect(mockGetCenter).toHaveBeenCalledTimes(1);
+  expect(mockGetContainer).toHaveBeenCalledTimes(1);
+  expect(mockGetBearing).toHaveBeenCalledTimes(1);
+  expect(mockGetPitch).toHaveBeenCalledTimes(1);
+  expect(mockGetZoom).toHaveBeenCalledTimes(1);
 });
 
 test("should call getBounds from migration map", () => {
   // need to mock #map.getBounds() because if we do not, getBounds() will return undefined and when
   // we try to call bounds.getSouthWest() and bounds.getNorthEast() on undefined in the line after,
   // a null pointer exception is thrown and the test fails
+  const west = 1;
+  const south = 2;
+  const east = 3;
+  const north = 4;
   const mockMap = {
-    getBounds: jest.fn().mockReturnValue(GoogleLatLngBounds({}, {})),
+    getBounds: jest.fn().mockReturnValue(new LngLatBounds([west, south, east, north])),
   };
   const testMap = new MigrationMap(null, {});
   testMap._setMap(mockMap);
 
-  testMap.getBounds();
+  const bounds = testMap.getBounds();
 
   expect(mockMap.getBounds).toHaveBeenCalledTimes(1);
+  expect(bounds.getSouthWest().lat()).toStrictEqual(south);
+  expect(bounds.getSouthWest().lng()).toStrictEqual(west);
+  expect(bounds.getNorthEast().lat()).toStrictEqual(north);
+  expect(bounds.getNorthEast().lng()).toStrictEqual(east);
 });
 
 test("should call moveCamera from migration map", () => {
   const testMap = new MigrationMap(null, {});
 
   testMap.moveCamera({
-    center: GoogleLatLng(testLat, testLng),
+    center: new MigrationLatLng(testLat, testLng),
     zoom: 16,
     heading: 90,
     tilt: 45,
   });
 
-  expect(Map.prototype.jumpTo).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.jumpTo).toHaveBeenCalledWith({
+  expect(mockJumpTo).toHaveBeenCalledTimes(1);
+  expect(mockJumpTo).toHaveBeenCalledWith({
     center: [testLng, testLat],
     zoom: 16,
     bearing: 90,
@@ -285,8 +345,8 @@ test("should call panBy from migration map", () => {
 
   testMap.panBy(50, 60);
 
-  expect(Map.prototype.panBy).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.panBy).toHaveBeenCalledWith([50, 60]);
+  expect(mockPanBy).toHaveBeenCalledTimes(1);
+  expect(mockPanBy).toHaveBeenCalledWith([50, 60]);
 });
 
 test("should call panTo from migration map", () => {
@@ -294,99 +354,75 @@ test("should call panTo from migration map", () => {
 
   testMap.panTo({ lat: testLat, lng: testLng });
 
-  expect(Map.prototype.panTo).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.panTo).toHaveBeenCalledWith([testLng, testLat]);
+  expect(mockPanTo).toHaveBeenCalledTimes(1);
+  expect(mockPanTo).toHaveBeenCalledWith([testLng, testLat]);
 });
 
 test("should call fitBounds from migration map", () => {
   const testMap = new MigrationMap(null, {});
-  const testSouthWest = GoogleLatLng(1, 2);
-  const testNorthEast = GoogleLatLng(3, 4);
-  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+  const testSouthWest = new MigrationLatLng(1, 2);
+  const testNorthEast = new MigrationLatLng(3, 4);
+  const testBounds = new MigrationLatLngBounds(testSouthWest, testNorthEast);
 
   testMap.fitBounds(testBounds);
 
-  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.fitBounds).toHaveBeenCalledWith([
-    [testNorthEast.lng(), testNorthEast.lat()],
-    [testSouthWest.lng(), testSouthWest.lat()],
-  ]);
+  expect(mockFitBounds).toHaveBeenCalledTimes(1);
+  expect(mockFitBounds).toHaveBeenCalledWith(testBounds._getBounds());
 });
 
 test("should call fitBounds from migration map with valid padding", () => {
   const testMap = new MigrationMap(null, {});
-  const testSouthWest = GoogleLatLng(1, 2);
-  const testNorthEast = GoogleLatLng(3, 4);
-  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+  const testSouthWest = new MigrationLatLng(1, 2);
+  const testNorthEast = new MigrationLatLng(3, 4);
+  const testBounds = new MigrationLatLngBounds(testSouthWest, testNorthEast);
 
   testMap.fitBounds(testBounds, 100);
 
-  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.fitBounds).toHaveBeenCalledWith(
-    [
-      [testNorthEast.lng(), testNorthEast.lat()],
-      [testSouthWest.lng(), testSouthWest.lat()],
-    ],
-    {
-      padding: 100,
-    },
-  );
+  expect(mockFitBounds).toHaveBeenCalledTimes(1);
+  expect(mockFitBounds).toHaveBeenCalledWith(testBounds._getBounds(), {
+    padding: 100,
+  });
 });
 
 test("should call fitBounds from migration map with valid padding specifying all four sides", () => {
   const testMap = new MigrationMap(null, {});
-  const testSouthWest = GoogleLatLng(1, 2);
-  const testNorthEast = GoogleLatLng(3, 4);
-  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+  const testSouthWest = new MigrationLatLng(1, 2);
+  const testNorthEast = new MigrationLatLng(3, 4);
+  const testBounds = new MigrationLatLngBounds(testSouthWest, testNorthEast);
 
   testMap.fitBounds(testBounds, { left: 10, right: 20, top: 30, bottom: 40 });
 
-  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.fitBounds).toHaveBeenCalledWith(
-    [
-      [testNorthEast.lng(), testNorthEast.lat()],
-      [testSouthWest.lng(), testSouthWest.lat()],
-    ],
-    {
-      padding: { left: 10, right: 20, top: 30, bottom: 40 },
-    },
-  );
+  expect(mockFitBounds).toHaveBeenCalledTimes(1);
+  expect(mockFitBounds).toHaveBeenCalledWith(testBounds._getBounds(), {
+    padding: { left: 10, right: 20, top: 30, bottom: 40 },
+  });
 });
 
 test("should call fitBounds from migration map with valid padding specifying no sides", () => {
   const testMap = new MigrationMap(null, {});
-  const testSouthWest = GoogleLatLng(1, 2);
-  const testNorthEast = GoogleLatLng(3, 4);
-  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+  const testSouthWest = new MigrationLatLng(1, 2);
+  const testNorthEast = new MigrationLatLng(3, 4);
+  const testBounds = new MigrationLatLngBounds(testSouthWest, testNorthEast);
 
   testMap.fitBounds(testBounds, {});
 
-  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.fitBounds).toHaveBeenCalledWith(
-    [
-      [testNorthEast.lng(), testNorthEast.lat()],
-      [testSouthWest.lng(), testSouthWest.lat()],
-    ],
-    {
-      padding: { left: 0, right: 0, top: 0, bottom: 0 },
-    },
-  );
+  expect(mockFitBounds).toHaveBeenCalledTimes(1);
+  expect(mockFitBounds).toHaveBeenCalledWith(testBounds._getBounds(), {
+    padding: { left: 0, right: 0, top: 0, bottom: 0 },
+  });
 });
 
 test("should call fitBounds from migration map with invalid padding", () => {
   const testMap = new MigrationMap(null, {});
-  const testSouthWest = GoogleLatLng(1, 2);
-  const testNorthEast = GoogleLatLng(3, 4);
-  const testBounds = GoogleLatLngBounds(testSouthWest, testNorthEast);
+  const testSouthWest = new MigrationLatLng(1, 2);
+  const testNorthEast = new MigrationLatLng(3, 4);
+  const testBounds = new MigrationLatLngBounds(testSouthWest, testNorthEast);
 
   testMap.fitBounds(testBounds, "bad bounds");
 
-  expect(Map.prototype.fitBounds).toHaveBeenCalledTimes(1);
+  expect(mockFitBounds).toHaveBeenCalledTimes(1);
   // still calls fitBounds, but with no padding
-  expect(Map.prototype.fitBounds).toHaveBeenCalledWith([
-    [testNorthEast.lng(), testNorthEast.lat()],
-    [testSouthWest.lng(), testSouthWest.lat()],
-  ]);
+  expect(mockFitBounds).toHaveBeenCalledWith(testBounds._getBounds());
 });
 
 test("should call addListener from migration map", () => {
@@ -405,19 +441,19 @@ test("should call addListener from migration map", () => {
   testMap.addListener("dragend", () => {});
   testMap.addListener("dragstart", () => {});
 
-  expect(Map.prototype.on).toHaveBeenCalledTimes(12);
-  expect(Map.prototype.on).toHaveBeenCalledWith("click", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("dblclick", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("contextmenu", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("mousemove", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("mouseout", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("mouseover", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("load", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("pitch", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("zoom", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("drag", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("dragend", expect.any(Function));
-  expect(Map.prototype.on).toHaveBeenCalledWith("dragstart", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledTimes(12);
+  expect(mockOn).toHaveBeenCalledWith("click", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("dblclick", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("contextmenu", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("mousemove", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("mouseout", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("mouseover", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("load", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("pitch", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("zoom", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("drag", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("dragend", expect.any(Function));
+  expect(mockOn).toHaveBeenCalledWith("dragstart", expect.any(Function));
 });
 
 test("should call handler with translated MapMouseEvent after click", () => {

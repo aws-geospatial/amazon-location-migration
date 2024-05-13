@@ -3,13 +3,13 @@
 
 import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
-  GoogleLatLng,
-  GoogleLatLngBounds,
   GoogleMapEvent,
   GoogleMapMouseEvent,
   GoogleToMaplibreControlPosition,
   GoogleToMaplibreEvent,
   LatLngToLngLat,
+  MigrationLatLng,
+  MigrationLatLngBounds,
 } from "./googleCommon";
 
 /*
@@ -77,7 +77,7 @@ class MigrationMap {
       this.#map.on(GoogleToMaplibreEvent[eventName], (mapLibreMapMouseEvent) => {
         const googleMapMouseEvent = {
           domEvent: mapLibreMapMouseEvent.originalEvent,
-          latLng: GoogleLatLng(mapLibreMapMouseEvent.lngLat.lat, mapLibreMapMouseEvent.lngLat.lng),
+          latLng: new MigrationLatLng(mapLibreMapMouseEvent.lngLat.lat, mapLibreMapMouseEvent.lngLat.lng),
         };
         handler(googleMapMouseEvent);
       });
@@ -90,13 +90,19 @@ class MigrationMap {
 
   getBounds() {
     const bounds = this.#map.getBounds();
-    return GoogleLatLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
+
+    return new MigrationLatLngBounds({
+      west: bounds.getWest(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      north: bounds.getNorth(),
+    });
   }
 
   getCenter() {
     const center = this.#map.getCenter();
 
-    return GoogleLatLng(center?.lat, center?.lng);
+    return new MigrationLatLng(center?.lat, center?.lng);
   }
 
   getDiv() {
@@ -222,17 +228,14 @@ class MigrationMap {
   }
 
   fitBounds(bounds, padding?) {
-    const northEast = bounds.getNorthEast();
-    const southWest = bounds.getSouthWest();
-    const bbox: [[number, number], [number, number]] = [
-      [northEast.lng(), northEast.lat()],
-      [southWest.lng(), southWest.lat()],
-    ];
+    // This will handle both LatLngBounds | LatLngBoundsLiteral input for us
+    const latLngBounds = new MigrationLatLngBounds(bounds);
+
     if (padding !== undefined) {
       if (typeof padding === "number") {
-        this.#map.fitBounds(bbox, { padding: padding });
+        this.#map.fitBounds(latLngBounds._getBounds(), { padding: padding });
       } else if (typeof padding === "object") {
-        this.#map.fitBounds(bbox, {
+        this.#map.fitBounds(latLngBounds._getBounds(), {
           padding: {
             top: padding.top && typeof padding.top === "number" ? padding.top : 0,
             bottom: padding.bottom && typeof padding.bottom === "number" ? padding.bottom : 0,
@@ -242,10 +245,10 @@ class MigrationMap {
         });
       } else {
         // google does not error out on invalid padding parameter
-        this.#map.fitBounds(bbox);
+        this.#map.fitBounds(latLngBounds._getBounds());
       }
     } else {
-      this.#map.fitBounds(bbox);
+      this.#map.fitBounds(latLngBounds._getBounds());
     }
   }
 
