@@ -3,11 +3,11 @@
 
 import { Marker, MarkerOptions } from "maplibre-gl";
 import {
-  GoogleLatLng,
   GoogleMarkerMouseDOMEvent,
   GoogleMarkerMouseEvent,
   LatLngToLngLat,
   MigrationEvent,
+  MigrationLatLng,
 } from "./googleCommon";
 
 class MigrationMarker {
@@ -222,7 +222,7 @@ class MigrationMarker {
   getPosition() {
     const position = this.#marker.getLngLat();
 
-    return GoogleLatLng(position?.lat, position?.lng);
+    return new MigrationLatLng(position?.lat, position?.lng);
   }
 
   getVisible() {

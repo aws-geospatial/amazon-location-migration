@@ -11,7 +11,13 @@ import {
   SearchPlaceIndexForTextRequest,
 } from "@aws-sdk/client-location";
 
-import { GoogleLatLng, LatLngToLngLat, PlacesServiceStatus, QueryAutocompletePrediction } from "./googleCommon";
+import {
+  LatLngToLngLat,
+  MigrationLatLng,
+  MigrationLatLngBounds,
+  PlacesServiceStatus,
+  QueryAutocompletePrediction,
+} from "./googleCommon";
 
 const convertAmazonPlaceToGoogle = (placeObject, fields, includeDetailFields) => {
   const place = placeObject.Place;
@@ -32,7 +38,7 @@ const convertAmazonPlaceToGoogle = (placeObject, fields, includeDetailFields) =>
   if (includeAllFields || fields.includes("geometry") || fields.includes("geometry.location")) {
     const point = place.Geometry.Point;
     googlePlace["geometry"] = {
-      location: GoogleLatLng(point[1], point[0]),
+      location: new MigrationLatLng(point[1], point[0]),
     };
   }
 
@@ -168,18 +174,9 @@ class MigrationPlacesService {
 
     // If bounds is specified, then location bias is ignored
     if (bounds) {
-      // TODO: Change this to use GoogleLatLngBounds once MigrationLatLngBounds has
-      // been updated to handle all the constructor variants, which will handle converting
-      // either bounds from both LatLngBounds|LatLngBoundsLiteral for us
-      let southWest;
-      let northEast;
-      if (bounds.getSouthWest !== undefined) {
-        southWest = bounds.getSouthWest();
-        northEast = bounds.getNorthEast();
-      } else {
-        southWest = GoogleLatLng(bounds.south, bounds.west);
-        northEast = GoogleLatLng(bounds.north, bounds.east);
-      }
+      const latLngBounds = new MigrationLatLngBounds(bounds);
+      const southWest = latLngBounds.getSouthWest();
+      const northEast = latLngBounds.getNorthEast();
 
       input.FilterBBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
     } else if (locationBias) {

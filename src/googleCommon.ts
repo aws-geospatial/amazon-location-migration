@@ -1,29 +1,90 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import { LngLatBounds } from "maplibre-gl";
+
+interface LatLngLiteral {
+  lat: number;
+  lng: number;
+}
+
+type LatLngLike = LatLngLiteral | MigrationLatLng;
+
+interface LatLngBoundsLiteral {
+  east: number;
+  north: number;
+  south: number;
+  west: number;
+}
+
 // Migration version of google.maps.LatLng
-// This is only used in adapter standalone mode and in unit tests
-class MigrationLatLng {
-  lat: any;
-  lng: any;
+export class MigrationLatLng {
+  #lat: number;
+  #lng: number;
 
-  constructor(lat: number, lng: number, noWrap?: boolean) {
-    // TODO: Need to implement handling of noWrap
-    // TODO: Add support for handling LatLngLiteral
+  constructor(
+    latOrLatLngOrLatLngLiteral: number | LatLngLiteral | MigrationLatLng,
+    lngOrNoClampNoWrap?: number | boolean | null,
+    noClampNoWrap?: boolean,
+  ) {
+    if (latOrLatLngOrLatLngLiteral == null) {
+      this.#lat = NaN;
+    } else if (typeof latOrLatLngOrLatLngLiteral === "number") {
+      this.#lat = latOrLatLngOrLatLngLiteral;
+    } else if (latOrLatLngOrLatLngLiteral.lat !== undefined && latOrLatLngOrLatLngLiteral.lat !== undefined) {
+      if (typeof latOrLatLngOrLatLngLiteral.lat === "number" && typeof latOrLatLngOrLatLngLiteral.lng === "number") {
+        this.#lat = latOrLatLngOrLatLngLiteral.lat;
+        this.#lng = latOrLatLngOrLatLngLiteral.lng;
+      } else if (
+        typeof latOrLatLngOrLatLngLiteral.lat === "function" &&
+        typeof latOrLatLngOrLatLngLiteral.lng === "function"
+      ) {
+        this.#lat = latOrLatLngOrLatLngLiteral.lat();
+        this.#lng = latOrLatLngOrLatLngLiteral.lng();
+      }
+    }
 
-    // These are implemented as property functions instead of prototype functions
-    // to match the google.maps API
-    this.lat = function () {
-      return lat;
-    };
+    let shouldClamp = true;
+    if (typeof lngOrNoClampNoWrap === "number") {
+      this.#lng = lngOrNoClampNoWrap;
+    } else if (typeof lngOrNoClampNoWrap === "boolean") {
+      shouldClamp = !lngOrNoClampNoWrap;
+    }
 
-    this.lng = function () {
-      return lng;
-    };
+    if (typeof noClampNoWrap === "boolean") {
+      shouldClamp = !noClampNoWrap;
+    }
+
+    if (shouldClamp && this.#lat != null && this.#lng != null) {
+      // Latitude should be clamped to [-90, 90]
+      if (this.#lat < -90) {
+        this.#lat = -90;
+      } else if (this.#lat > 90) {
+        this.#lat = 90;
+      }
+
+      // Longitude should be wrapped to [-180, 180]
+      const minLongitude = -180;
+      const maxLongitude = 180;
+      if (this.#lng < minLongitude || this.#lng > maxLongitude) {
+        const range = maxLongitude - minLongitude;
+        const wrapped = ((((this.#lng - minLongitude) % range) + range) % range) + minLongitude;
+
+        this.#lng = wrapped;
+      }
+    }
   }
 
   equals(other) {
     return other ? this.lat() == other.lat() && this.lng() == other.lng() : false;
+  }
+
+  lat() {
+    return this.#lat;
+  }
+
+  lng() {
+    return this.#lng;
   }
 
   toString() {
@@ -37,62 +98,167 @@ class MigrationLatLng {
     };
   }
 
-  toUrlValue() {
-    return this.lat() + "," + this.lng();
+  // Rounded to 6 decimal places by default
+  toUrlValue(precision = 6) {
+    // Trim trailing 0's by using trick of dividing by 1 afterwards
+    const latDigits = this.lat().toPrecision(precision);
+    const latTrimmed = parseFloat(latDigits) / 1;
+    const lngDigits = this.lng().toPrecision(precision);
+    const lngTrimmed = parseFloat(lngDigits) / 1;
+
+    return `${latTrimmed},${lngTrimmed}`;
   }
 }
 
 // Migration version of google.maps.LatLngBounds
-// This is only used in adapter standalone mode and in unit tests
-class MigrationLatLngBounds {
-  sw: MigrationLatLng;
-  ne: MigrationLatLng;
+export class MigrationLatLngBounds {
+  #lngLatBounds: LngLatBounds;
 
-  constructor(swOrLatLngBounds, ne) {
-    // TODO: Handle LatLngBoundsLiteral
+  constructor(
+    swOrLatLngBounds?: MigrationLatLng | null | LatLngLiteral | MigrationLatLngBounds | LatLngBoundsLiteral,
+    ne?: MigrationLatLng | null | LatLngLiteral,
+  ) {
+    let west, south, east, north;
 
-    this.sw = swOrLatLngBounds;
-    this.ne = ne;
+    if (!swOrLatLngBounds) {
+      // Inputs are empty, so create an empty LngLatBounds
+      this.#lngLatBounds = new LngLatBounds();
+      return;
+    } else {
+      let southWest, northEast;
+      if (ne) {
+        southWest = new MigrationLatLng(swOrLatLngBounds as LatLngLike);
+        northEast = new MigrationLatLng(ne);
+
+        west = southWest.lng();
+        south = southWest.lat();
+        east = northEast.lng();
+        north = northEast.lat();
+      } else if (swOrLatLngBounds instanceof MigrationLatLngBounds) {
+        southWest = swOrLatLngBounds.getSouthWest();
+        northEast = swOrLatLngBounds.getNorthEast();
+
+        west = southWest.lng();
+        south = southWest.lat();
+        east = northEast.lng();
+        north = northEast.lat();
+      } /* LatLngBoundsLiteral */ else {
+        const boundsLiteral = swOrLatLngBounds as LatLngBoundsLiteral;
+        west = boundsLiteral.west;
+        south = boundsLiteral.south;
+        east = boundsLiteral.east;
+        north = boundsLiteral.north;
+      }
+
+      // west, south, east, north
+      this.#lngLatBounds = new LngLatBounds([west, south, east, north]);
+    }
+  }
+
+  contains(latLng) {
+    return this.#lngLatBounds.contains(LatLngToLngLat(latLng));
+  }
+
+  equals(other) {
+    const otherBounds = new MigrationLatLngBounds(other);
+
+    return (
+      this.getSouthWest().equals(otherBounds.getSouthWest()) && this.getNorthEast().equals(otherBounds.getNorthEast())
+    );
+  }
+
+  extend(point) {
+    const lngLat = LatLngToLngLat(point);
+
+    this.#lngLatBounds.extend(lngLat);
+
+    return this;
+  }
+
+  getCenter() {
+    const lngLatCenter = this.#lngLatBounds.getCenter();
+    return new MigrationLatLng(lngLatCenter.lat, lngLatCenter.lng);
   }
 
   getNorthEast() {
-    return this.ne;
+    const northEast = this.#lngLatBounds.getNorthEast();
+    return new MigrationLatLng(northEast.lat, northEast.lng);
   }
 
   getSouthWest() {
-    return this.sw;
+    const southWest = this.#lngLatBounds.getSouthWest();
+    return new MigrationLatLng(southWest.lat, southWest.lng);
   }
 
-  // TODO: Add methods to match Google LatLngBounds
+  isEmpty() {
+    return this.#lngLatBounds.isEmpty();
+  }
+
+  toJSON() {
+    return {
+      east: this.#lngLatBounds.getEast(),
+      north: this.#lngLatBounds.getNorth(),
+      west: this.#lngLatBounds.getWest(),
+      south: this.#lngLatBounds.getSouth(),
+    };
+  }
+
+  toSpan() {
+    const latSpan = this.#lngLatBounds.getNorth() - this.#lngLatBounds.getSouth();
+    const lngSpan = this.#lngLatBounds.getEast() - this.#lngLatBounds.getWest();
+
+    return new MigrationLatLng(latSpan, lngSpan);
+  }
+
+  toString() {
+    const south = this.#lngLatBounds.getSouth();
+    const west = this.#lngLatBounds.getWest();
+    const north = this.#lngLatBounds.getNorth();
+    const east = this.#lngLatBounds.getEast();
+
+    return `((${south}, ${west}), (${north}, ${east}))`;
+  }
+
+  // Rounded to 6 decimal places by default
+  toUrlValue(precision = 6) {
+    // Trim trailing 0's by using trick of dividing by 1 afterwards
+    const southDigits = this.#lngLatBounds.getSouth().toPrecision(precision);
+    const southTrimmed = parseFloat(southDigits) / 1;
+    const westDigits = this.#lngLatBounds.getWest().toPrecision(precision);
+    const westTrimmed = parseFloat(westDigits) / 1;
+    const northDigits = this.#lngLatBounds.getNorth().toPrecision(precision);
+    const northTrimmed = parseFloat(northDigits) / 1;
+    const eastDigits = this.#lngLatBounds.getEast().toPrecision(precision);
+    const eastTrimmed = parseFloat(eastDigits) / 1;
+
+    return `${southTrimmed},${westTrimmed},${northTrimmed},${eastTrimmed}`;
+  }
+
+  union(other) {
+    const bounds = new MigrationLatLngBounds(other);
+
+    this.#lngLatBounds.extend(bounds._getBounds());
+
+    return this;
+  }
+
+  // Internal method for migration logic that needs to access the underlying MapLibre LngLatBounds
+  _getBounds() {
+    return this.#lngLatBounds;
+  }
 }
-
-// Dynamic function to create a LatLng instance. It will first try google.maps.LatLng
-// and if it's not found, our migration version will be used.
-export const GoogleLatLng = function (lat, lng, noWrap = false) {
-  return typeof google !== "undefined"
-    ? new google.maps.LatLng(lat, lng, noWrap)
-    : new MigrationLatLng(lat, lng, noWrap);
-};
-
-// Dynamic function to create a LatLngBounds instance. It will first try google.maps.LatLngBounds
-// and if it's not found, our migration version will be used.
-export const GoogleLatLngBounds = function (swOrLatLngBounds, ne) {
-  return typeof google !== "undefined"
-    ? new google.maps.LatLngBounds(swOrLatLngBounds, ne)
-    : new MigrationLatLngBounds(swOrLatLngBounds, ne);
-};
 
 // function that takes in a Google LatLng or LatLngLiteral and returns array containing a
 // longitude and latitude (valid MapLibre input), returns 'null' if 'coord' parameter
 // is not a Google LatLng or LatLngLiteral
 export const LatLngToLngLat = function (coord): [number, number] {
-  if (coord.lng !== undefined && coord.lat !== undefined) {
-    if (typeof coord.lng === "number" && typeof coord.lat === "number") {
-      return [coord.lng, coord.lat];
-    } else if (typeof coord.lng === "function" && typeof coord.lat === "function") {
-      return [coord.lng(), coord.lat()];
-    }
+  const latLng = new MigrationLatLng(coord);
+  const lat = latLng.lat();
+  const lng = latLng.lng();
+  if (isFinite(lat) && isFinite(lng)) {
+    return [lng, lat];
   }
+
   return null;
 };
 

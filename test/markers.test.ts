@@ -3,7 +3,7 @@
 
 import { MigrationMap } from "../src/maps";
 import { MigrationMarker } from "../src/markers";
-import { GoogleLatLng } from "../src/googleCommon";
+import { MigrationLatLng } from "../src/googleCommon";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
@@ -371,7 +371,7 @@ test("should call handler with translated MouseEvent after drag", () => {
   // mock marker so that we can mock on so that we can mock drag
   const mockMarker = {
     on: jest.fn(),
-    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
   };
   const migrationMarker = new MigrationMarker({});
   migrationMarker._setMarker(mockMarker);
@@ -407,7 +407,7 @@ test("should call handler with translated MouseEvent after dragstart", () => {
   // mock marker so that we can mock on so that we can mock dragstart
   const mockMarker = {
     on: jest.fn(),
-    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
   };
   const migrationMarker = new MigrationMarker({});
   migrationMarker._setMarker(mockMarker);
@@ -443,7 +443,7 @@ test("should call handler with translated MouseEvent after dragend", () => {
   // mock marker so that we can mock on so that we can mock dragend
   const mockMarker = {
     on: jest.fn(),
-    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
   };
   const migrationMarker = new MigrationMarker({});
   migrationMarker._setMarker(mockMarker);
@@ -484,7 +484,7 @@ test("should call handler with translated MouseEvent after click", () => {
   // mock marker to return mockElement when getElement is called
   const mockMarker = {
     getElement: jest.fn().mockReturnValue(mockElement),
-    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
   };
   const migrationMarker = new MigrationMarker({});
   migrationMarker._setMarker(mockMarker);
@@ -527,7 +527,7 @@ test("should call handler with translated MouseEvent after dblclick", () => {
   // mock marker to return mockElement when getElement is called
   const mockMarker = {
     getElement: jest.fn().mockReturnValue(mockElement),
-    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
   };
   const migrationMarker = new MigrationMarker({});
   migrationMarker._setMarker(mockMarker);
@@ -570,7 +570,7 @@ test("should call handler with translated MouseEvent after contextmenu", () => {
   // mock marker to return mockElement when getElement is called
   const mockMarker = {
     getElement: jest.fn().mockReturnValue(mockElement),
-    getLngLat: jest.fn().mockReturnValue(GoogleLatLng(1, 2)),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
   };
   const migrationMarker = new MigrationMarker({});
   migrationMarker._setMarker(mockMarker);
