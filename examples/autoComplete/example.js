@@ -13,16 +13,19 @@ let placesService;
 let predictionItems = [];
 let markers = [];
 
-function initMap() {
+async function initMap() {
   const austinCoords = { lat: 30.268193, lng: -97.7457518 }; // Austin, TX :)
 
-  map = new google.maps.Map(document.getElementById("map"), {
+  const { Map } = await google.maps.importLibrary("maps");
+  map = new Map(document.getElementById("map"), {
     center: austinCoords,
     zoom: 11,
+    mapId: "DEMO_MAP_ID",
   });
 
-  placesService = new google.maps.places.PlacesService(map);
-  const autocompleteService = new google.maps.places.AutocompleteService();
+  const { AutocompleteService, PlacesService, PlacesServiceStatus } = await google.maps.importLibrary("places");
+  placesService = new PlacesService(map);
+  const autocompleteService = new AutocompleteService();
 
   const searchInput = $("#search-input");
   searchInput.autocomplete({
@@ -48,7 +51,7 @@ function initMap() {
           locationBias: map.getCenter(),
         },
         function (predictions, status) {
-          if (status != google.maps.places.PlacesServiceStatus.OK || !predictions) {
+          if (status != PlacesServiceStatus.OK || !predictions) {
             response([]);
             return;
           }
@@ -100,13 +103,15 @@ function getPredictionInfo(prediction) {
   }
 }
 
-function getPlaceDetails(placeId) {
+async function getPlaceDetails(placeId) {
+  const { PlacesServiceStatus } = await google.maps.importLibrary("places");
+
   var request = {
     placeId: placeId,
   };
 
   placesService.getDetails(request, function (result, status) {
-    if (status === google.maps.places.PlacesServiceStatus.OK) {
+    if (status === PlacesServiceStatus.OK) {
       createMarker(result);
       map.setCenter(result.geometry.location);
       map.setZoom(14);
@@ -114,16 +119,19 @@ function getPlaceDetails(placeId) {
   });
 }
 
-function getTextSearch(query) {
+async function getTextSearch(query) {
   var request = {
     query: query,
     location: map.getCenter(),
   };
 
-  const resultsBounds = new google.maps.LatLngBounds();
+  const { PlacesServiceStatus } = await google.maps.importLibrary("places");
+
+  const { LatLngBounds } = await google.maps.importLibrary("core");
+  const resultsBounds = new LatLngBounds();
 
   placesService.textSearch(request, function (results, status) {
-    if (status === google.maps.places.PlacesServiceStatus.OK) {
+    if (status === PlacesServiceStatus.OK) {
       results.map((result) => {
         createMarker(result);
 
@@ -137,10 +145,11 @@ function getTextSearch(query) {
   });
 }
 
-function createMarker(place) {
+async function createMarker(place) {
   if (!place.geometry || !place.geometry.location) return;
 
-  const marker = new google.maps.Marker({
+  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+  const marker = new AdvancedMarkerElement({
     map,
     position: place.geometry.location,
   });
@@ -148,7 +157,9 @@ function createMarker(place) {
   markers.push(marker);
 
   // TODO: Update this example to display an InfoWindow when clicking on the marker to display additional details (from getDetails)
-  marker.addListener(marker, "click", () => {
+  marker.addListener("click", () => {
     console.log("MARKER CLICKED", place.name);
   });
 }
+
+initMap();
