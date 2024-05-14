@@ -5,7 +5,14 @@ import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
 
 import { MigrationDirectionsRenderer, MigrationDirectionsService } from "./directions";
-import { MigrationLatLng, MigrationLatLngBounds } from "./googleCommon";
+import {
+  DirectionsStatus,
+  MigrationControlPosition,
+  MigrationLatLng,
+  MigrationLatLngBounds,
+  PlacesServiceStatus,
+  TravelMode,
+} from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
@@ -25,10 +32,8 @@ const queryString = currentScriptSrc.substring(currentScriptSrc.indexOf("?"));
 const urlParams = new URLSearchParams(queryString);
 
 // API key is required to be passed in, so if it's not we need to log an error and bail out
+// TODO: Add cognito support as well
 const apiKey = urlParams.get("apiKey");
-if (!apiKey) {
-  throw Error("Migration script missing 'apiKey' parameter.");
-}
 
 // Optional, the region to be used (us-west-2 by default)
 const defaultRegion = "us-west-2";
@@ -40,18 +45,16 @@ const placeIndexName = urlParams.get("placeIndex");
 // Optional, but if user wants to perform any Route requests, this is required
 const routeCalculatorName = urlParams.get("routeCalculator");
 
-// Optional, will invoke after migrationInit has been called
+// Optional, will invoke after migrationInit has finished executing
 const postMigrationCallback = urlParams.get("callback");
 
 // Optional, but if user wants to use a Map, this is required
-const mapName = urlParams.get("map" || "UNKNOWN_MAP_NAME");
+const mapName = urlParams.get("map");
 
 // Style URL is used by the Map for making requests
 const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/${mapName}/style-descriptor?key=${apiKey}`;
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const anyWindow = window as any;
-anyWindow.migrationInit = async function () {
+const migrationInit = async function () {
   // Pass our style url (which includes the API key) to our Migration Map class
   MigrationMap.prototype._styleUrl = styleUrl;
 
@@ -79,23 +82,36 @@ anyWindow.migrationInit = async function () {
   // and place index name.
   MigrationDirectionsService.prototype._placesService = new MigrationPlacesService();
 
-  // Replace the Google Maps classes with our migration classes
-  anyWindow.google.maps.LatLng = MigrationLatLng;
-  anyWindow.google.maps.LatLngBounds = MigrationLatLngBounds;
-  anyWindow.google.maps.Map = MigrationMap;
-  anyWindow.google.maps.Marker = MigrationMarker;
-  if (anyWindow.google.maps.marker) {
-    anyWindow.google.maps.marker.AdvancedMarkerElement = MigrationMarker;
-  }
+  // Create the Google Maps namespace with our migration classes
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  (window as any).google = {
+    maps: {
+      LatLng: MigrationLatLng,
+      LatLngBounds: MigrationLatLngBounds,
 
-  anyWindow.google.maps.places.AutocompleteService = MigrationAutocompleteService;
-  anyWindow.google.maps.places.PlacesService = MigrationPlacesService;
+      Map: MigrationMap,
+      Marker: MigrationMarker,
+      marker: {
+        AdvancedMarkerElement: MigrationMarker,
+      },
+      ControlPosition: MigrationControlPosition,
 
-  anyWindow.google.maps.DirectionsRenderer = MigrationDirectionsRenderer;
-  anyWindow.google.maps.DirectionsService = MigrationDirectionsService;
+      DirectionsRenderer: MigrationDirectionsRenderer,
+      DirectionsService: MigrationDirectionsService,
+      DirectionsStatus: DirectionsStatus,
+      TravelMode: TravelMode,
+
+      places: {
+        AutocompleteService: MigrationAutocompleteService,
+        PlacesService: MigrationPlacesService,
+        PlacesServiceStatus: PlacesServiceStatus,
+      },
+    },
+  };
 
   if (postMigrationCallback) {
     window[postMigrationCallback]();
   }
 };
-/* eslint-enable @typescript-eslint/no-explicit-any */
+
+migrationInit();
