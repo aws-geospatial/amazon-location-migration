@@ -15,14 +15,19 @@ import { Marker, Popup, PopupOptions } from "maplibre-gl";
 const testLat = 30.268193; // Austin, TX :)
 const testLng = -97.7457518;
 
+jest.spyOn(console, "error").mockImplementation(() => {});
+
 afterEach(() => {
   jest.clearAllMocks();
 });
 
-test("should set marker options", () => {
+test("should set infowindow options", () => {
+  const label = "testLabel";
   const testInfoWindow = new MigrationInfoWindow({
     maxWidth: 100,
+    minWidth: 50,
     position: { lat: testLat, lng: testLng },
+    ariaLabel: label,
   });
 
   const expectedMaplibreOptions: PopupOptions = {
@@ -34,9 +39,11 @@ test("should set marker options", () => {
   expect(Popup).toHaveBeenCalledWith(expectedMaplibreOptions);
   expect(Popup.prototype.setLngLat).toHaveBeenCalledTimes(1);
   expect(Popup.prototype.setLngLat).toHaveBeenCalledWith([testLng, testLat]);
+  expect(testInfoWindow._getMinWidth()).toBe(50);
+  expect(testInfoWindow._getAriaLabel()).toBe(label);
 });
 
-test("should set marker content option with string", () => {
+test("should set infowindow content option with string", () => {
   const testString = "Hello World!";
   const testInfoWindow = new MigrationInfoWindow({
     content: testString,
@@ -48,7 +55,7 @@ test("should set marker content option with string", () => {
   expect(Popup.prototype.setText).toHaveBeenCalledWith(testString);
 });
 
-test("should set marker content option with string containing HTML", () => {
+test("should set infowindow content option with string containing HTML", () => {
   const htmlString = "<h1>Hello World!</h1>";
   const testInfoWindow = new MigrationInfoWindow({
     content: htmlString,
@@ -60,7 +67,7 @@ test("should set marker content option with string containing HTML", () => {
   expect(Popup.prototype.setHTML).toHaveBeenCalledWith(htmlString);
 });
 
-test("should set marker content option with HTML elements", () => {
+test("should set infowindow content option with HTML elements", () => {
   const h1Element = document.createElement("h1");
   h1Element.textContent = "Hello World!";
   const testInfoWindow = new MigrationInfoWindow({
@@ -73,7 +80,7 @@ test("should set marker content option with HTML elements", () => {
   expect(Popup.prototype.setDOMContent).toHaveBeenCalledWith(h1Element);
 });
 
-test("should call open method on marker with anchor option", () => {
+test("should call open method on infowindow with anchor option", () => {
   const testInfoWindow = new MigrationInfoWindow({});
   const testMarker = new MigrationMarker({});
 
@@ -89,7 +96,7 @@ test("should call open method on marker with anchor option", () => {
   expect(Popup.prototype.isOpen).toHaveBeenCalledTimes(1);
 });
 
-test("should call open method on marker with anchor parameter", () => {
+test("should call open method on infowindow with anchor parameter", () => {
   const testInfoWindow = new MigrationInfoWindow({});
   const testMarker = new MigrationMarker({});
 
@@ -103,9 +110,8 @@ test("should call open method on marker with anchor parameter", () => {
   expect(Popup.prototype.isOpen).toHaveBeenCalledTimes(1);
 });
 
-test("should call open method on marker with lat lng set and map option", () => {
+test("should call open method on infowindow with lat lng set and map option", () => {
   const testInfoWindow = new MigrationInfoWindow({});
-  const testMarker = new MigrationMarker({});
   const testMap = new MigrationMap(null, {});
 
   testInfoWindow.setPosition({ lat: testLat, lng: testLng });
@@ -114,8 +120,103 @@ test("should call open method on marker with lat lng set and map option", () => 
   });
 
   expect(testInfoWindow).not.toBeNull();
-  expect(testMarker).not.toBeNull();
   expect(testMap).not.toBeNull();
   expect(Popup.prototype.addTo).toHaveBeenCalledTimes(1);
   expect(Popup.prototype.addTo).toHaveBeenCalledWith(testMap._getMap());
+});
+
+test("should call open method on infowindow with shouldFocus option set to true", () => {
+  const mockInfoWindow = {
+    options: {
+      focusAfterOpen: null,
+    },
+  };
+  const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
+
+  testInfoWindow.open({
+    shouldFocus: true,
+  });
+
+  expect(testInfoWindow).not.toBeNull();
+  expect(mockInfoWindow.options.focusAfterOpen).toBe(true);
+});
+
+test("should call open method on infowindow with minWidth set", () => {
+  const mockStyle = {
+    _minWidth: undefined,
+    set minWidth(value: string) {
+      this._minWidth = value;
+    },
+    get minWidth() {
+      return this._minWidth;
+    },
+  };
+  const mockInfoWindow = {
+    getElement: jest.fn().mockReturnValue({
+      style: mockStyle,
+    }),
+  };
+  const testInfoWindow = new MigrationInfoWindow({
+    minWidth: 50,
+  });
+  testInfoWindow._setPopup(mockInfoWindow);
+  const spy = jest.spyOn(mockInfoWindow.getElement().style, "minWidth", "set");
+
+  testInfoWindow.open({});
+
+  expect(spy).toHaveBeenCalledWith("50px");
+});
+
+test("should call open method on infowindow with ariaLabel set", () => {
+  const mockAriaLabel = {
+    _ariaLabel: undefined,
+    set ariaLabel(value: string) {
+      this._ariaLabel = value;
+    },
+    get ariaLabel() {
+      return this._ariaLabel;
+    },
+  };
+  const mockInfoWindow = {
+    getElement: jest.fn().mockReturnValue(mockAriaLabel),
+  };
+  const testLabel = "label";
+  const testInfoWindow = new MigrationInfoWindow({
+    ariaLabel: testLabel,
+  });
+  testInfoWindow._setPopup(mockInfoWindow);
+  const spy = jest.spyOn(mockInfoWindow.getElement(), "ariaLabel", "set");
+
+  testInfoWindow.open({});
+
+  expect(spy).toHaveBeenCalledWith(testLabel);
+});
+
+test("should call focus method on infowindow", () => {
+  const mockFirstFocusable = {
+    focus: jest.fn(),
+  };
+  const mockInfoWindow = {
+    getElement: jest.fn().mockReturnValue({
+      querySelector: jest.fn().mockReturnValue(mockFirstFocusable),
+    }),
+  };
+  const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
+
+  testInfoWindow.focus();
+
+  expect(testInfoWindow).not.toBeNull();
+  expect(mockFirstFocusable.focus).toHaveBeenCalledTimes(1);
+});
+
+test("should call focus method on infowindow with early return due to unrendered infowindow", () => {
+  const testInfoWindow = new MigrationInfoWindow({});
+
+  testInfoWindow.focus();
+
+  expect(testInfoWindow).not.toBeNull();
+  expect(console.error).toHaveBeenCalledTimes(1);
+  expect(console.error).toHaveBeenCalledWith("InfoWindow is not visible");
 });
