@@ -16,6 +16,7 @@ import {
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
+import { MigrationInfoWindow } from "./infoWindow";
 
 // Dynamically load the MapLibre stylesheet so that our migration adapter is the only thing our users need to import
 // Without this, many MapLibre rendering features won't work (e.g. markers and info windows won't be visible)
@@ -94,6 +95,7 @@ const migrationInit = async function () {
       marker: {
         AdvancedMarkerElement: MigrationMarker,
       },
+      InfoWindow: MigrationInfoWindow,
       ControlPosition: MigrationControlPosition,
 
       DirectionsRenderer: MigrationDirectionsRenderer,
