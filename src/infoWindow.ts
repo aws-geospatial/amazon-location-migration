@@ -4,8 +4,20 @@
 import { Popup, PopupOptions } from "maplibre-gl";
 import { LatLngToLngLat } from "./googleCommon";
 
+const focusQuerySelector = [
+  "a[href]",
+  "[tabindex]:not([tabindex='-1'])",
+  "[contenteditable]:not([contenteditable='false'])",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+].join(", ");
+
 class MigrationInfoWindow {
   #popup: Popup;
+  #minWidth: number;
+  #ariaLabel: string;
 
   constructor(options?) {
     const maplibreOptions: PopupOptions = {};
@@ -34,10 +46,28 @@ class MigrationInfoWindow {
       this.setPosition(options.position);
     }
 
-    // TODO:
-    // pixelOffset - set 'offset' MapLibre option
-    // minWidth - set by HTMLElement.style.minWidth
-    // ariaLabel - add to DOM element
+    // cannot set minWidth on popup if popup is not open (on the DOM tree), have to store in local variable
+    if ("minWidth" in options) {
+      this.#minWidth = options.minWidth;
+    }
+
+    // cannot set minWidth on popup if popup is not open (on the DOM tree), have to store in local variable
+    if ("ariaLabel" in options) {
+      this.#ariaLabel = options.ariaLabel;
+    }
+  }
+
+  focus() {
+    const container = this.#popup.getElement();
+    // popup/infowindow not yet rendered
+    if (container === undefined) {
+      console.error("InfoWindow is not visible");
+      return;
+    }
+    const firstFocusable = container.querySelector(focusQuerySelector) as HTMLElement;
+    if (firstFocusable) {
+      firstFocusable.focus();
+    }
   }
 
   // Google:
@@ -46,6 +76,10 @@ class MigrationInfoWindow {
   // - Marker popup/infowindow -> Marker.setPopup then Marker.togglePopup (to open Popup)
   // - LatLng popup/infowindow -> Popup.setLngLat (in options when creating popup) then Popup.addTo
   open(options?, anchor?) {
+    if (options && "shouldFocus" in options) {
+      this.#popup.options.focusAfterOpen = options.shouldFocus;
+    }
+
     if (anchor || options.anchor) {
       // Marker specific info window
       const marker = anchor !== undefined ? anchor._getMarker() : options.anchor._getMarker();
@@ -58,7 +92,15 @@ class MigrationInfoWindow {
       this.#popup.addTo(options.map._getMap());
     }
 
-    // TODO: shouldFocus - focusAfterOpening, use focus method on DOM element
+    // set style property to local variable once popup is opened
+    if (this.#minWidth !== undefined) {
+      this.#popup.getElement().style.minWidth = this.#minWidth + "px";
+    }
+
+    // set ariaLabel property to local variable once popup is opened
+    if (this.#ariaLabel !== undefined) {
+      this.#popup.getElement().ariaLabel = this.#ariaLabel;
+    }
   }
 
   setPosition(position?) {
@@ -68,9 +110,24 @@ class MigrationInfoWindow {
     }
   }
 
-  // Internal method for manually getting the private #marker property
+  // Internal method for manually getting the private #popup property
   _getPopup() {
     return this.#popup;
+  }
+
+  // Internal method for manually getting the private #minWidth property
+  _getMinWidth() {
+    return this.#minWidth;
+  }
+
+  // Internal method for manually getting the private #ariaLabel property
+  _getAriaLabel() {
+    return this.#ariaLabel;
+  }
+
+  // Internal method for manually setting the private #popup property (used for mocking the marker in unit testing)
+  _setPopup(popup) {
+    this.#popup = popup;
   }
 
   // Internal method for checking if a string contains valid HTML
