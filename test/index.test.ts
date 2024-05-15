@@ -24,6 +24,9 @@ const mockMigrationCallback = jest.fn();
 // Import the migration adapter after our mock script HTMLScriptElement has been setup
 import "../src/index";
 
+// Spy on console.error so we can verify it gets called in error cases
+jest.spyOn(console, "error").mockImplementation(() => {});
+
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -54,4 +57,70 @@ test("importing the adapter should populate google.maps namespace for direct loa
 
   // Verify our mock callback has been invoked after loading the adapter
   expect(mockMigrationCallback).toHaveBeenCalledTimes(1);
+});
+
+test("can dynamically import core classes", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { ControlPosition, LatLng, LatLngBounds } = await google.maps.importLibrary("core");
+
+  expect(ControlPosition).toBeDefined();
+  expect(LatLng).toBeDefined();
+  expect(LatLngBounds).toBeDefined();
+});
+
+test("can dynamically import maps classes", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { InfoWindow, Map } = await google.maps.importLibrary("maps");
+
+  expect(InfoWindow).toBeDefined();
+  expect(Map).toBeDefined();
+});
+
+test("can dynamically import places classes", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { AutocompleteService, PlacesService, PlacesServiceStatus } = await google.maps.importLibrary("places");
+
+  expect(AutocompleteService).toBeDefined();
+  expect(PlacesService).toBeDefined();
+  expect(PlacesServiceStatus).toBeDefined();
+});
+
+test("can dynamically import routes classes", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { DirectionsRenderer, DirectionsService, DirectionsStatus, TravelMode } = await google.maps.importLibrary(
+    "routes",
+  );
+
+  expect(DirectionsRenderer).toBeDefined();
+  expect(DirectionsService).toBeDefined();
+  expect(DirectionsStatus).toBeDefined();
+  expect(TravelMode).toBeDefined();
+});
+
+test("can dynamically import marker classes", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { AdvancedMarkerElement, Marker } = await google.maps.importLibrary("marker");
+
+  expect(AdvancedMarkerElement).toBeDefined();
+  expect(Marker).toBeDefined();
+});
+
+test("should report an error if a library we don't support is requested", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { ThisClassWontExist } = await google.maps.importLibrary("INVALID_LIBRARY");
+
+  expect(ThisClassWontExist).toBeUndefined();
+  expect(console.error).toHaveBeenCalledTimes(1);
 });

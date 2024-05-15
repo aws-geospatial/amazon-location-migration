@@ -9,7 +9,7 @@
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 
     <!-- Client logic example -->
-    <script type="text/javascript" src="./example.js"></script>
+    <script type="module" src="./example.js"></script>
   </head>
   <body>
     <!-- Search box and map elements for the example -->
@@ -19,10 +19,6 @@
     <div id="map"></div>
 
     <!-- Migration script import -->
-    <script
-      async
-      defer
-      src="../../dist/amazonLocationMigrationAdapter.js?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
-    ></script>
+    <script src="../../dist/amazonLocationMigrationAdapter.js?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
   </body>
 </html>

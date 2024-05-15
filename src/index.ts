@@ -108,6 +108,57 @@ const migrationInit = async function () {
         PlacesService: MigrationPlacesService,
         PlacesServiceStatus: PlacesServiceStatus,
       },
+
+      // Handle dynamic imports, e.g. const { Map } = await google.maps.importLibrary("maps");
+      importLibrary: (library) => {
+        return new Promise((resolve) => {
+          switch (library) {
+            case "core":
+              resolve({
+                ControlPosition: MigrationControlPosition,
+                LatLng: MigrationLatLng,
+                LatLngBounds: MigrationLatLngBounds,
+              });
+              break;
+
+            case "maps":
+              resolve({
+                InfoWindow: MigrationInfoWindow,
+                Map: MigrationMap,
+              });
+              break;
+
+            case "places":
+              resolve({
+                AutocompleteService: MigrationAutocompleteService,
+                PlacesService: MigrationPlacesService,
+                PlacesServiceStatus: PlacesServiceStatus,
+              });
+              break;
+
+            case "routes":
+              resolve({
+                DirectionsRenderer: MigrationDirectionsRenderer,
+                DirectionsService: MigrationDirectionsService,
+                DirectionsStatus: DirectionsStatus,
+                TravelMode: TravelMode,
+              });
+              break;
+
+            case "marker":
+              resolve({
+                AdvancedMarkerElement: MigrationMarker,
+                Marker: MigrationMarker,
+              });
+              break;
+
+            default:
+              console.error(`Unsupported library: ${library}`);
+              resolve({});
+              break;
+          }
+        });
+      },
     },
   };
 
