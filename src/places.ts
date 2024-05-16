@@ -228,19 +228,25 @@ class MigrationAutocompleteService {
 
   getQueryPredictions(request, callback) {
     const query = request.input;
-    const locationBias = request.locationBias; // optional
+    const locationBias = request.location; // optional
+    const bounds = request.bounds; // optional
 
     const input: SearchPlaceIndexForSuggestionsRequest = {
       IndexName: this._placeIndexName,
       Text: query, // required
     };
 
-    // TODO: Create helper methods for converting to/from LatLng concrete and literal
-    if (locationBias) {
-      if (typeof locationBias.lat === "function") {
-        input.BiasPosition = [locationBias.lng(), locationBias.lat()];
-      } else {
-        input.BiasPosition = [locationBias.lng, locationBias.lat];
+    // If bounds is specified, then location bias is ignored
+    if (bounds) {
+      const latLngBounds = new MigrationLatLngBounds(bounds);
+      const southWest = latLngBounds.getSouthWest();
+      const northEast = latLngBounds.getNorthEast();
+
+      input.FilterBBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
+    } else if (locationBias) {
+      const lngLat = LatLngToLngLat(locationBias);
+      if (lngLat) {
+        input.BiasPosition = lngLat;
       }
     }
 
@@ -254,10 +260,6 @@ class MigrationAutocompleteService {
         const results = response.Results;
         if (results && results.length !== 0) {
           results.forEach(function (result) {
-            if (!result.Text) {
-              return;
-            }
-
             const prediction: QueryAutocompletePrediction = {
               description: result.Text,
             };

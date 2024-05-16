@@ -48,7 +48,7 @@ async function initMap() {
       autocompleteService.getQueryPredictions(
         {
           input: request.term,
-          locationBias: map.getCenter(),
+          location: map.getCenter(),
         },
         function (predictions, status) {
           if (status != PlacesServiceStatus.OK || !predictions) {

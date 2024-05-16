@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { MigrationPlacesService } from "../src/places";
+import { MigrationAutocompleteService, MigrationPlacesService } from "../src/places";
 import { MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
 
 // Spy on console.error so we can verify it gets called in error cases
@@ -57,6 +57,23 @@ const mockedClientSend = jest.fn((command) => {
           },
         });
       }
+    } else if (command instanceof SearchPlaceIndexForSuggestionsCommand) {
+      if (command.input.Text == clientErrorQuery) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          Results: [
+            {
+              Text: "cool places near austin",
+            },
+            {
+              PlaceId: "COOL_PLACE_1",
+              Text: "123 cool place way, austin, tx",
+            },
+          ],
+        });
+      }
     } else {
       reject();
     }
@@ -71,8 +88,15 @@ jest.mock("@aws-sdk/client-location", () => ({
     };
   }),
 }));
-import { GetPlaceCommand, LocationClient, SearchPlaceIndexForTextCommand } from "@aws-sdk/client-location";
+import {
+  GetPlaceCommand,
+  LocationClient,
+  SearchPlaceIndexForSuggestionsCommand,
+  SearchPlaceIndexForTextCommand,
+} from "@aws-sdk/client-location";
 
+const autocompleteService = new MigrationAutocompleteService();
+autocompleteService._client = new LocationClient();
 const placesService = new MigrationPlacesService();
 placesService._client = new LocationClient();
 
@@ -250,14 +274,14 @@ test("getDetails should handle client error", (done) => {
   });
 });
 
-test("textSearch should only use bounds if location was also specified", (done) => {
+test("textSearch should ignore location if bounds was also specified", (done) => {
   const east = 0;
   const north = 1;
   const south = 2;
   const west = 3;
   const request = {
     query: "cool places in austin",
-    bounds: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(east, north)),
+    bounds: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
     location: new MigrationLatLng(4, 5),
   };
 
@@ -269,7 +293,7 @@ test("textSearch should only use bounds if location was also specified", (done) 
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
     const clientInput = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toStrictEqual([west, south, north, east]);
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(firstResult.name).toStrictEqual("Austin");
@@ -392,6 +416,124 @@ test("textSearch should handle client error", (done) => {
   };
 
   placesService.textSearch(request, (results, status) => {
+    expect(results).toHaveLength(0);
+    expect(status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+
+    expect(console.error).toHaveBeenCalledTimes(1);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should ignore location if bounds was also specified", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    input: "cool place",
+    bounds: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
+    location: new MigrationLatLng(4, 5),
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should accept bounds as a literal", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    input: "cool place",
+    bounds: { east: east, north: north, south: south, west: west },
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should accept location bias if there is no bounds specified", (done) => {
+  const request = {
+    input: "cool place",
+    location: new MigrationLatLng(testLat, testLng),
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.FilterBBox).toBeUndefined();
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should handle client error", (done) => {
+  const request = {
+    input: clientErrorQuery,
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(results).toHaveLength(0);
     expect(status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
 
