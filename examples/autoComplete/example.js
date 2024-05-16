@@ -154,11 +154,30 @@ async function createMarker(place) {
     position: place.geometry.location,
   });
 
-  markers.push(marker);
+  createInfoWindow(marker, place);
 
-  // TODO: Update this example to display an InfoWindow when clicking on the marker to display additional details (from getDetails)
+  markers.push(marker);
+}
+
+async function createInfoWindow(marker, place) {
+  const infoWindowContainer = document.createElement("div");
+  const infoWindowHeader = document.createElement("h2");
+  const infoWindowBody = document.createElement("p");
+  infoWindowHeader.textContent = place.name;
+  infoWindowBody.textContent = place.formatted_address;
+  infoWindowContainer.appendChild(infoWindowHeader);
+  infoWindowContainer.appendChild(infoWindowBody);
+
+  const infoWindow = new google.maps.InfoWindow({
+    content: infoWindowContainer,
+    minWidth: 300,
+  });
+
   marker.addListener("click", () => {
-    console.log("MARKER CLICKED", place.name);
+    infoWindow.open({
+      map,
+      anchor: marker,
+    });
   });
 }
 
