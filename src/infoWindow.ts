@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Popup, PopupOptions } from "maplibre-gl";
-import { LatLngToLngLat } from "./googleCommon";
+import {
+  GoogleInfoWindowEvent,
+  GoogleToMaplibreEvent,
+  LatLngToLngLat,
+  MigrationEvent,
+  MigrationLatLng,
+} from "./googleCommon";
 
 const focusQuerySelector = [
   "a[href]",
@@ -17,6 +23,7 @@ const focusQuerySelector = [
 class MigrationInfoWindow {
   #popup: Popup;
   #minWidth: number;
+  #maxWidth: number;
   #ariaLabel: string;
 
   constructor(options?) {
@@ -25,21 +32,14 @@ class MigrationInfoWindow {
     // maxWidth - set MapLibre 'maxWidth' option
     if ("maxWidth" in options) {
       maplibreOptions.maxWidth = options.maxWidth + "px";
+      this.#maxWidth = options.maxWidth;
     }
 
     this.#popup = new Popup(maplibreOptions);
 
     // content can be string, HTMLElement, or string containing HTML
     if ("content" in options) {
-      if (typeof options.content === "string") {
-        if (this._containsOnlyHTMLElements(options.content)) {
-          this.#popup.setHTML(options.content);
-        } else {
-          this.#popup.setText(options.content);
-        }
-      } else if (options.content instanceof HTMLElement) {
-        this.#popup.setDOMContent(options.content);
-      }
+      this.setContent(options.content);
     }
 
     if ("position" in options) {
@@ -57,6 +57,27 @@ class MigrationInfoWindow {
     }
   }
 
+  addListener(eventName, handler) {
+    if (GoogleInfoWindowEvent.includes(eventName)) {
+      // if close then use 'on' method on popup instance
+      if (eventName === MigrationEvent.close) {
+        this.#popup.on(GoogleToMaplibreEvent[eventName], () => {
+          handler();
+        });
+      } else if (eventName === MigrationEvent.closeclick) {
+        // if closeclick then use 'addEventListener' method on button element
+        const closeButton = this.#popup.getElement().querySelector("button.maplibregl-popup-close-button");
+        closeButton.addEventListener(GoogleToMaplibreEvent[eventName], () => {
+          handler();
+        });
+      }
+    }
+  }
+
+  close() {
+    this.#popup.remove();
+  }
+
   focus() {
     const container = this.#popup.getElement();
     // popup/infowindow not yet rendered
@@ -68,6 +89,16 @@ class MigrationInfoWindow {
     if (firstFocusable) {
       firstFocusable.focus();
     }
+  }
+
+  getContent() {
+    return this.#popup._content;
+  }
+
+  getPosition() {
+    const position = this.#popup.getLngLat();
+
+    return new MigrationLatLng(position?.lat, position?.lng);
   }
 
   // Google:
@@ -97,9 +128,54 @@ class MigrationInfoWindow {
       this.#popup.getElement().style.minWidth = this.#minWidth + "px";
     }
 
+    // use setMaxWidth MapLibre method if maxWidth is set in setOptions Google method
+    if (this.#maxWidth !== undefined) {
+      this.#popup.setMaxWidth(this.#maxWidth + "px");
+    }
+
     // set ariaLabel property to local variable once popup is opened
     if (this.#ariaLabel !== undefined) {
       this.#popup.getElement().ariaLabel = this.#ariaLabel;
+    }
+  }
+
+  setContent(content?) {
+    if (typeof content === "string") {
+      if (this._containsOnlyHTMLElements(content)) {
+        this.#popup.setHTML(content);
+      } else {
+        this.#popup.setText(content);
+      }
+    } else if (content instanceof HTMLElement) {
+      this.#popup.setDOMContent(content);
+    }
+  }
+
+  setOptions(options?) {
+    // have to close and reopen infowindowto register new minWidth
+    if ("minWidth" in options) {
+      this.#minWidth = options.minWidth;
+    }
+
+    // have to close and reopen infowindow to register new maxWidth
+    if ("maxWidth" in options) {
+      this.#maxWidth = options.maxWidth;
+    }
+
+    // applies new ariaLabel immediately
+    if ("ariaLabel" in options) {
+      this.#popup.getElement().ariaLabel = options.ariaLabel;
+      this.#ariaLabel = options.ariaLabel;
+    }
+
+    // applies new content immediately
+    if ("content" in options) {
+      this.setContent(options.content);
+    }
+
+    // applies new position immediately
+    if ("position" in options) {
+      this.setPosition(options.position);
     }
   }
 
@@ -120,6 +196,11 @@ class MigrationInfoWindow {
     return this.#minWidth;
   }
 
+  // Internal method for manually getting the private #maxWidth property
+  _getMaxWidth() {
+    return this.#maxWidth;
+  }
+
   // Internal method for manually getting the private #ariaLabel property
   _getAriaLabel() {
     return this.#ariaLabel;
@@ -128,6 +209,11 @@ class MigrationInfoWindow {
   // Internal method for manually setting the private #popup property (used for mocking the marker in unit testing)
   _setPopup(popup) {
     this.#popup = popup;
+  }
+
+  // Internal method for manually setting the private #maxWidth property
+  _setMaxWidth(maxWidth) {
+    this.#maxWidth = maxWidth;
   }
 
   // Internal method for checking if a string contains valid HTML

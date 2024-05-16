@@ -354,6 +354,8 @@ export const MigrationEvent = {
   drag: "drag",
   dragend: "dragend",
   dragstart: "dragstart",
+  close: "close",
+  closeclick: "closeclick",
 };
 
 // Constant responsible for translating Google Event names to corresponding MapLibre Event names,
@@ -371,6 +373,8 @@ GoogleToMaplibreEvent[MigrationEvent.zoom_changed] = "zoom";
 GoogleToMaplibreEvent[MigrationEvent.drag] = "drag";
 GoogleToMaplibreEvent[MigrationEvent.dragend] = "dragend";
 GoogleToMaplibreEvent[MigrationEvent.dragstart] = "dragstart";
+GoogleToMaplibreEvent[MigrationEvent.close] = "close";
+GoogleToMaplibreEvent[MigrationEvent.closeclick] = "click";
 
 // List of Google Map Events that include the MapMouseEvent parameter
 export const GoogleMapMouseEvent = [
@@ -398,6 +402,9 @@ export const GoogleMarkerMouseEvent = [MigrationEvent.drag, MigrationEvent.drags
 // List of Google Marker Events that are not supported by MapLibre Markers that include the MapMouseEvent parameter
 // (must add event listener using DOM element)
 export const GoogleMarkerMouseDOMEvent = [MigrationEvent.click, MigrationEvent.dblclick, MigrationEvent.contextmenu];
+
+// List of Google InfoWindow Events
+export const GoogleInfoWindowEvent = [MigrationEvent.close, MigrationEvent.closeclick];
 
 export interface QueryAutocompletePrediction {
   description: string;

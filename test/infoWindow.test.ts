@@ -4,6 +4,7 @@
 import { MigrationMap } from "../src/maps";
 import { MigrationMarker } from "../src/markers";
 import { MigrationInfoWindow } from "../src/infoWindow";
+import { MigrationLatLng } from "../src/googleCommon";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
@@ -168,6 +169,15 @@ test("should call open method on infowindow with minWidth set", () => {
   expect(spy).toHaveBeenCalledWith("50px");
 });
 
+test("should call open method on infowindow with maxWidth set", () => {
+  const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setMaxWidth(200);
+
+  testInfoWindow.open({});
+  expect(Popup.prototype.setMaxWidth).toHaveBeenCalledTimes(1);
+  expect(Popup.prototype.setMaxWidth).toHaveBeenCalledWith("200px");
+});
+
 test("should call open method on infowindow with ariaLabel set", () => {
   const mockAriaLabel = {
     _ariaLabel: undefined,
@@ -219,4 +229,133 @@ test("should call focus method on infowindow with early return due to unrendered
   expect(testInfoWindow).not.toBeNull();
   expect(console.error).toHaveBeenCalledTimes(1);
   expect(console.error).toHaveBeenCalledWith("InfoWindow is not visible");
+});
+
+test("should call close method on infowindow", () => {
+  const mockInfoWindow = {
+    remove: jest.fn(),
+  };
+  const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
+
+  testInfoWindow.close();
+
+  expect(testInfoWindow).not.toBeNull();
+  expect(mockInfoWindow.remove).toHaveBeenCalledTimes(1);
+});
+
+test("should call getContent method on infowindow", () => {
+  const content = "testContent";
+  const mockInfoWindow = {
+    _content: content,
+  };
+  const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
+
+  const resultContent = testInfoWindow.getContent();
+
+  expect(testInfoWindow).not.toBeNull();
+  expect(resultContent).toBe(content);
+});
+
+test("should call getPosition method on infowindow", () => {
+  const mockInfoWindow = {
+    getLngLat: jest.fn().mockReturnValue({ lat: testLat, lng: testLng }),
+  };
+  const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
+
+  const resultPosition = testInfoWindow.getPosition();
+
+  expect(testInfoWindow).not.toBeNull();
+  expect(resultPosition).toStrictEqual(new MigrationLatLng(testLat, testLng));
+});
+
+test("should call setOptions on infowindow", () => {
+  const testContent = "content";
+  const testInfoWindow = new MigrationInfoWindow({});
+
+  testInfoWindow.setOptions({
+    minWidth: 100,
+    maxWidth: 200,
+    content: testContent,
+    position: { lat: testLat, lng: testLng },
+  });
+
+  expect(testInfoWindow._getMinWidth()).toBe(100);
+  expect(testInfoWindow._getMaxWidth()).toBe(200);
+  expect(Popup.prototype.setText).toHaveBeenCalledTimes(1);
+  expect(Popup.prototype.setText).toHaveBeenCalledWith(testContent);
+  expect(Popup.prototype.setLngLat).toHaveBeenCalledTimes(1);
+  expect(Popup.prototype.setLngLat).toHaveBeenCalledWith([testLng, testLat]);
+});
+
+test("should call setOptions on infowindow with ariaLabel", () => {
+  const testLabel = "label";
+  const mockAriaLabel = {
+    _ariaLabel: undefined,
+    set ariaLabel(value: string) {
+      this._ariaLabel = value;
+    },
+    get ariaLabel() {
+      return this._ariaLabel;
+    },
+  };
+  const mockInfoWindow = {
+    getElement: jest.fn().mockReturnValue(mockAriaLabel),
+  };
+  const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
+
+  testInfoWindow.setOptions({
+    ariaLabel: testLabel,
+  });
+
+  expect(testInfoWindow._getAriaLabel()).toBe(testLabel);
+});
+
+test("should call handler after close", () => {
+  // mock infowindow so that we can mock on so that we can mock close
+  const mockInfoWindow = {
+    on: jest.fn(),
+  };
+  const migrationInfoWindow = new MigrationInfoWindow({});
+  migrationInfoWindow._setPopup(mockInfoWindow);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationInfoWindow.addListener("close", handlerSpy);
+
+  // mock close
+  mockInfoWindow.on.mock.calls[0][1]();
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+});
+
+test("should call handler after closeclick", () => {
+  // mock button so that we can mock addEventListener so that we can mock click
+  const mockButton = {
+    addEventListener: jest.fn(),
+  };
+
+  // mock container so that we can mock the button
+  const mockContainer = {
+    querySelector: jest.fn().mockReturnValue(mockButton),
+  };
+
+  // mock marker to return mockElement when getElement is called
+  const mockInfoWindow = {
+    getElement: jest.fn().mockReturnValue(mockContainer),
+  };
+  const migrationInfoWindow = new MigrationInfoWindow({});
+  migrationInfoWindow._setPopup(mockInfoWindow);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  migrationInfoWindow.addListener("closeclick", handlerSpy);
+
+  // mock click button
+  mockButton.addEventListener.mock.calls[0][1]();
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
