@@ -32,7 +32,7 @@ export class MigrationLatLng {
       this.#lng = NaN;
     } else if (typeof latOrLatLngOrLatLngLiteral === "number") {
       this.#lat = latOrLatLngOrLatLngLiteral;
-    } else if (latOrLatLngOrLatLngLiteral.lat !== undefined && latOrLatLngOrLatLngLiteral.lat !== undefined) {
+    } else if (latOrLatLngOrLatLngLiteral.lat !== undefined && latOrLatLngOrLatLngLiteral.lng !== undefined) {
       if (typeof latOrLatLngOrLatLngLiteral.lat === "number" && typeof latOrLatLngOrLatLngLiteral.lng === "number") {
         this.#lat = latOrLatLngOrLatLngLiteral.lat;
         this.#lng = latOrLatLngOrLatLngLiteral.lng;

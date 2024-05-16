@@ -426,6 +426,138 @@ test("textSearch should handle client error", (done) => {
   });
 });
 
+test("getQueryPredictions should accept locationBias as LatLng", (done) => {
+  const request = {
+    input: "cool place",
+    locationBias: new MigrationLatLng(testLat, testLng),
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toBeUndefined();
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should accept locationBias as LatLngLiteral", (done) => {
+  const request = {
+    input: "cool place",
+    locationBias: { lat: testLat, lng: testLng },
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toBeUndefined();
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should accept locationBias as LatLngBounds", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    input: "cool place",
+    locationBias: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should accept locationBias as LatLngBoundsLiteral", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    input: "cool place",
+    locationBias: { east: east, north: north, south: south, west: west },
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
 test("getQueryPredictions should ignore location if bounds was also specified", (done) => {
   const east = 0;
   const north = 1;
@@ -434,7 +566,7 @@ test("getQueryPredictions should ignore location if bounds was also specified", 
   const request = {
     input: "cool place",
     bounds: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
-    locationBias: new MigrationLatLng(4, 5),
+    location: new MigrationLatLng(4, 5),
   };
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
@@ -497,10 +629,10 @@ test("getQueryPredictions should accept bounds as a literal", (done) => {
   });
 });
 
-test("getQueryPredictions should accept location bias if there is no bounds specified", (done) => {
+test("getQueryPredictions should accept location if there is no bounds specified", (done) => {
   const request = {
     input: "cool place",
-    locationBias: new MigrationLatLng(testLat, testLng),
+    location: new MigrationLatLng(testLat, testLng),
   };
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
@@ -510,6 +642,38 @@ test("getQueryPredictions should accept location bias if there is no bounds spec
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.FilterBBox).toBeUndefined();
+
+    expect(results.length).toStrictEqual(2);
+
+    const firstResult = results[0];
+    expect(firstResult.description).toStrictEqual("cool places near austin");
+    expect(firstResult.place_id).toBeUndefined();
+
+    const secondResult = results[1];
+    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getQueryPredictions should accept language", (done) => {
+  const request = {
+    input: "cool place",
+    location: new MigrationLatLng(testLat, testLng),
+    language: "en",
+  };
+
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Language).toStrictEqual("en");
 
     expect(results.length).toStrictEqual(2);
 
@@ -542,4 +706,70 @@ test("getQueryPredictions should handle client error", (done) => {
     // Signal the unit test is complete
     done();
   });
+});
+
+test("getPlacePredictions should only return result with place_id", (done) => {
+  // The mockedClientSend returns two results: one with a place_id, and one without
+  // Since getPlacePredictions and getQueryPredictions both end up being
+  // a SearchPlaceIndexForSuggestionsCommand, we need to verify that
+  // getPlacePredictions will filter out the result without a place_id
+  const request = {
+    input: "cool place",
+    locationBias: new MigrationLatLng(testLat, testLng),
+  };
+
+  autocompleteService.getPlacePredictions(request).then((response) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toBeUndefined();
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+
+    const predictions = response.predictions;
+    expect(predictions.length).toStrictEqual(1);
+
+    const prediction = predictions[0];
+    expect(prediction.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(prediction.place_id).toStrictEqual("COOL_PLACE_1");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getPlacePredictions will also invoke the callback if specified", (done) => {
+  const request = {
+    input: "cool place",
+    locationBias: new MigrationLatLng(testLat, testLng),
+  };
+
+  autocompleteService
+    .getPlacePredictions(request, (results, status) => {
+      expect(results.length).toStrictEqual(1);
+
+      const firstResult = results[0];
+      expect(firstResult.description).toStrictEqual("123 cool place way, austin, tx");
+      expect(firstResult.place_id).toStrictEqual("COOL_PLACE_1");
+
+      expect(status).toStrictEqual(PlacesServiceStatus.OK);
+    })
+    .then((response) => {
+      expect(mockedClientSend).toHaveBeenCalledTimes(1);
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
+      const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+      expect(clientInput.FilterBBox).toBeUndefined();
+      expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+
+      const predictions = response.predictions;
+      expect(predictions.length).toStrictEqual(1);
+
+      const prediction = predictions[0];
+      expect(prediction.description).toStrictEqual("123 cool place way, austin, tx");
+      expect(prediction.place_id).toStrictEqual("COOL_PLACE_1");
+
+      // Signal the unit test is complete
+      done();
+    });
 });
