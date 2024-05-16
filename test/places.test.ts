@@ -434,7 +434,7 @@ test("getQueryPredictions should ignore location if bounds was also specified", 
   const request = {
     input: "cool place",
     bounds: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
-    location: new MigrationLatLng(4, 5),
+    locationBias: new MigrationLatLng(4, 5),
   };
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
@@ -500,7 +500,7 @@ test("getQueryPredictions should accept bounds as a literal", (done) => {
 test("getQueryPredictions should accept location bias if there is no bounds specified", (done) => {
   const request = {
     input: "cool place",
-    location: new MigrationLatLng(testLat, testLng),
+    locationBias: new MigrationLatLng(testLat, testLng),
   };
 
   autocompleteService.getQueryPredictions(request, (results, status) => {

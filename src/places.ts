@@ -228,7 +228,7 @@ class MigrationAutocompleteService {
 
   getQueryPredictions(request, callback) {
     const query = request.input;
-    const locationBias = request.location; // optional
+    const locationBias = request.locationBias; // optional
     const bounds = request.bounds; // optional
 
     const input: SearchPlaceIndexForSuggestionsRequest = {
