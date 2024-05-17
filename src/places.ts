@@ -19,6 +19,15 @@ import {
   QueryAutocompletePrediction,
 } from "./googleCommon";
 
+interface AutocompletePrediction {
+  description: string;
+  place_id: string;
+}
+
+interface AutocompleteResponse {
+  predictions: AutocompletePrediction[];
+}
+
 const convertAmazonPlaceToGoogle = (placeObject, fields, includeDetailFields) => {
   const place = placeObject.Place;
   const googlePlace = {};
@@ -228,26 +237,50 @@ class MigrationAutocompleteService {
 
   getQueryPredictions(request, callback) {
     const query = request.input;
+    const location = request.location; // optional
     const locationBias = request.locationBias; // optional
-    const bounds = request.bounds; // optional
+    const bounds = request.bounds || request.locationRestriction; // optional
+    const language = request.language; // optional
 
     const input: SearchPlaceIndexForSuggestionsRequest = {
       IndexName: this._placeIndexName,
       Text: query, // required
     };
 
-    // If bounds is specified, then location bias is ignored
-    if (bounds) {
-      const latLngBounds = new MigrationLatLngBounds(bounds);
-      const southWest = latLngBounds.getSouthWest();
-      const northEast = latLngBounds.getNorthEast();
+    // Handle location/bounds restrictions. bounds and location have been deprecated, and in some cases
+    // have actually been removed (although still mentioned in the documentation as only deprecated).
+    //   * locationBias is the top preferred field, and can be MigrationLatLng|LatLngLiteral|MigrationLatLngBounds|LatLngBoundsLiteral
+    //   * bounds / locationRestriction is the next preferred field
+    //   * location is the final field that is checked
+    let inputBounds, inputLocation;
+    if (locationBias) {
+      // MigrationLatLng|LatLngLiteral
+      if (locationBias.lat !== undefined && locationBias.lng !== undefined) {
+        inputLocation = new MigrationLatLng(locationBias);
+      } /* MigrationLatLngBounds|LatLngBoundsLiteral */ else {
+        inputBounds = new MigrationLatLngBounds(locationBias);
+      }
+    } else if (bounds) {
+      inputBounds = new MigrationLatLngBounds(bounds);
+    } else if (location) {
+      inputLocation = new MigrationLatLng(location);
+    }
+
+    // If bounds was found, then location is ignored
+    if (inputBounds) {
+      const southWest = inputBounds.getSouthWest();
+      const northEast = inputBounds.getNorthEast();
 
       input.FilterBBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
-    } else if (locationBias) {
-      const lngLat = LatLngToLngLat(locationBias);
+    } else if (inputLocation) {
+      const lngLat = LatLngToLngLat(inputLocation);
       if (lngLat) {
         input.BiasPosition = lngLat;
       }
+    }
+
+    if (language) {
+      input.Language = language;
     }
 
     const command = new SearchPlaceIndexForSuggestionsCommand(input);
@@ -279,6 +312,28 @@ class MigrationAutocompleteService {
 
         callback([], PlacesServiceStatus.UNKNOWN_ERROR);
       });
+  }
+
+  // getPlacePredictions has a similar behavior as getQueryPredictions, except it omits query predictions,
+  // so it only returns predictions that have a place_id
+  getPlacePredictions(request, callback?): Promise<AutocompleteResponse> {
+    return new Promise((resolve) => {
+      this.getQueryPredictions(request, (predictions, status) => {
+        // Filter out predictions that don't have a place_id
+        const filteredPredictions = predictions.filter((prediction) => {
+          return prediction.place_id;
+        });
+
+        // If a callback was given, invoke it before resolving the promise
+        if (callback) {
+          callback(filteredPredictions, status);
+        }
+
+        resolve({
+          predictions: filteredPredictions,
+        });
+      });
+    });
   }
 }
 
