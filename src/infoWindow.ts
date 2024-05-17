@@ -35,6 +35,9 @@ class MigrationInfoWindow {
       this.#maxWidth = options.maxWidth;
     }
 
+    // needed so that popup won't close when map is clicked to match Google (default is true)
+    maplibreOptions.closeOnClick = false;
+
     this.#popup = new Popup(maplibreOptions);
 
     // content can be string, HTMLElement, or string containing HTML

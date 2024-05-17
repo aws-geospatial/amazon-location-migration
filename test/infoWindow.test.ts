@@ -32,6 +32,7 @@ test("should set infowindow options", () => {
   });
 
   const expectedMaplibreOptions: PopupOptions = {
+    closeOnClick: false,
     maxWidth: "100px",
   };
 
