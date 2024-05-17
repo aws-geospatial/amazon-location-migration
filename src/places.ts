@@ -314,7 +314,7 @@ class MigrationAutocompleteService {
       });
   }
 
-  // getPlacePredictions has a similar behavior as getPlacePredictions, except it omits query predictions,
+  // getPlacePredictions has a similar behavior as getQueryPredictions, except it omits query predictions,
   // so it only returns predictions that have a place_id
   getPlacePredictions(request, callback?): Promise<AutocompleteResponse> {
     return new Promise((resolve) => {
