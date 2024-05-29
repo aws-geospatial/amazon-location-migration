@@ -101,6 +101,8 @@ test("should set directionsrenderer directions option", () => {
 });
 
 test("should call setDirections method on directionsrenderer", () => {
+  globalThis.structuredClone = jest.fn().mockReturnValue({});
+
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },
     zoom: 9,
@@ -159,6 +161,7 @@ test("should call setDirections method on directionsrenderer", () => {
 });
 
 test("should call setDirections method on directionsrenderer twice", () => {
+  globalThis.structuredClone = jest.fn().mockReturnValue({});
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },
     zoom: 9,
