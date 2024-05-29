@@ -83,7 +83,12 @@ test("should set infowindow content option with HTML elements", () => {
 });
 
 test("should call open method on infowindow with anchor option", () => {
+  const mockInfoWindow = {
+    remove: jest.fn(),
+    isOpen: jest.fn(),
+  };
   const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
   const testMarker = new MigrationMarker({});
 
   testInfoWindow.open({
@@ -95,11 +100,17 @@ test("should call open method on infowindow with anchor option", () => {
   expect(Marker.prototype.setPopup).toHaveBeenCalledTimes(1);
   expect(Marker.prototype.setPopup).toHaveBeenCalledWith(testInfoWindow._getPopup());
   expect(Marker.prototype.togglePopup).toHaveBeenCalledTimes(1);
-  expect(Popup.prototype.isOpen).toHaveBeenCalledTimes(1);
+  expect(mockInfoWindow.isOpen).toHaveBeenCalledTimes(1);
+  expect(mockInfoWindow.remove).toHaveBeenCalledTimes(1);
 });
 
 test("should call open method on infowindow with anchor parameter", () => {
+  const mockInfoWindow = {
+    remove: jest.fn(),
+    isOpen: jest.fn(),
+  };
   const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
   const testMarker = new MigrationMarker({});
 
   testInfoWindow.open(undefined, testMarker);
@@ -109,11 +120,19 @@ test("should call open method on infowindow with anchor parameter", () => {
   expect(Marker.prototype.setPopup).toHaveBeenCalledTimes(1);
   expect(Marker.prototype.setPopup).toHaveBeenCalledWith(testInfoWindow._getPopup());
   expect(Marker.prototype.togglePopup).toHaveBeenCalledTimes(1);
-  expect(Popup.prototype.isOpen).toHaveBeenCalledTimes(1);
+  expect(mockInfoWindow.isOpen).toHaveBeenCalledTimes(1);
+  expect(mockInfoWindow.remove).toHaveBeenCalledTimes(1);
 });
 
 test("should call open method on infowindow with lat lng set and map option", () => {
+  const mockInfoWindow = {
+    remove: jest.fn(),
+    isOpen: jest.fn(),
+    setLngLat: jest.fn(),
+    addTo: jest.fn(),
+  };
   const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
   const testMap = new MigrationMap(null, {});
 
   testInfoWindow.setPosition({ lat: testLat, lng: testLng });
@@ -123,8 +142,8 @@ test("should call open method on infowindow with lat lng set and map option", ()
 
   expect(testInfoWindow).not.toBeNull();
   expect(testMap).not.toBeNull();
-  expect(Popup.prototype.addTo).toHaveBeenCalledTimes(1);
-  expect(Popup.prototype.addTo).toHaveBeenCalledWith(testMap._getMap());
+  expect(mockInfoWindow.addTo).toHaveBeenCalledTimes(1);
+  expect(mockInfoWindow.addTo).toHaveBeenCalledWith(testMap._getMap());
 });
 
 test("should call open method on infowindow with shouldFocus option set to true", () => {
@@ -132,6 +151,7 @@ test("should call open method on infowindow with shouldFocus option set to true"
     options: {
       focusAfterOpen: null,
     },
+    remove: jest.fn(),
   };
   const testInfoWindow = new MigrationInfoWindow({});
   testInfoWindow._setPopup(mockInfoWindow);
@@ -158,6 +178,7 @@ test("should call open method on infowindow with minWidth set", () => {
     getElement: jest.fn().mockReturnValue({
       style: mockStyle,
     }),
+    remove: jest.fn(),
   };
   const testInfoWindow = new MigrationInfoWindow({
     minWidth: 50,
@@ -171,12 +192,17 @@ test("should call open method on infowindow with minWidth set", () => {
 });
 
 test("should call open method on infowindow with maxWidth set", () => {
+  const mockInfoWindow = {
+    remove: jest.fn(),
+    setMaxWidth: jest.fn(),
+  };
   const testInfoWindow = new MigrationInfoWindow({});
+  testInfoWindow._setPopup(mockInfoWindow);
   testInfoWindow._setMaxWidth(200);
 
   testInfoWindow.open({});
-  expect(Popup.prototype.setMaxWidth).toHaveBeenCalledTimes(1);
-  expect(Popup.prototype.setMaxWidth).toHaveBeenCalledWith("200px");
+  expect(mockInfoWindow.setMaxWidth).toHaveBeenCalledTimes(1);
+  expect(mockInfoWindow.setMaxWidth).toHaveBeenCalledWith("200px");
 });
 
 test("should call open method on infowindow with ariaLabel set", () => {
@@ -191,6 +217,7 @@ test("should call open method on infowindow with ariaLabel set", () => {
   };
   const mockInfoWindow = {
     getElement: jest.fn().mockReturnValue(mockAriaLabel),
+    remove: jest.fn(),
   };
   const testLabel = "label";
   const testInfoWindow = new MigrationInfoWindow({
