@@ -232,14 +232,3 @@ test("should call setDirections method on directionsrenderer twice", () => {
   expect(Marker).toHaveBeenCalledTimes(4);
   expect(testDirectionsRenderer._getMarkers().length).toBe(2);
 });
-
-test("should create a deep copy of an object", () => {
-  const obj = { a: 1, b: { c: 2 }, d: [3, 4] };
-  const testDirectionsRenderer = new MigrationDirectionsRenderer({});
-  const copiedObj = testDirectionsRenderer._deepCopyObject(obj);
-
-  expect(copiedObj).not.toBe(obj);
-  expect(copiedObj.b).not.toBe(obj.b);
-  expect(copiedObj.d).not.toBe(obj.d);
-  expect(copiedObj).toEqual(obj);
-});

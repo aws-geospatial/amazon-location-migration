@@ -225,13 +225,13 @@ class MigrationDirectionsRenderer {
         const startLocation = leg.start_location;
         const endLocation = leg.end_location;
 
-        const startMarkerOptions = this.#markerOptions === undefined ? {} : this._deepCopyObject(this.#markerOptions);
+        const startMarkerOptions = this.#markerOptions === undefined ? {} : structuredClone(this.#markerOptions);
         startMarkerOptions.position = startLocation;
         startMarkerOptions.map = this.#map;
         const startMarker = new MigrationMarker(startMarkerOptions);
         this.#markers.push(startMarker);
 
-        const endMarkerOptions = this.#markerOptions === undefined ? {} : this._deepCopyObject(this.#markerOptions);
+        const endMarkerOptions = this.#markerOptions === undefined ? {} : structuredClone(this.#markerOptions);
         endMarkerOptions.position = endLocation;
         endMarkerOptions.map = this.#map;
         const endMarker = new MigrationMarker(endMarkerOptions);
@@ -240,27 +240,6 @@ class MigrationDirectionsRenderer {
 
       // TODO: Add default info windows once location information is passed into route result
     }
-  }
-
-  _deepCopyObject(obj) {
-    if (obj === null || typeof obj !== "object" || Object.prototype.toString.call(obj) === "[object Date]") {
-      return obj;
-    }
-
-    if (Array.isArray(obj)) {
-      return obj.map(this._deepCopyObject) as any;
-    }
-
-    const seen = new WeakMap();
-    return Object.fromEntries(
-      Object.entries(obj).map(([key, value]) => {
-        if (typeof value === "object" && value !== null) {
-          seen.set(value, value);
-          return [key, this._deepCopyObject(value)];
-        }
-        return [key, value];
-      }),
-    );
   }
 
   _getMarkers() {
