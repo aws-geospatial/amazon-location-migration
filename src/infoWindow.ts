@@ -110,6 +110,9 @@ class MigrationInfoWindow {
   // - Marker popup/infowindow -> Marker.setPopup then Marker.togglePopup (to open Popup)
   // - LatLng popup/infowindow -> Popup.setLngLat (in options when creating popup) then Popup.addTo
   open(options?, anchor?) {
+    // close popup if it is already open (to match Google)
+    this.close();
+
     if (options && "shouldFocus" in options) {
       this.#popup.options.focusAfterOpen = options.shouldFocus;
     }

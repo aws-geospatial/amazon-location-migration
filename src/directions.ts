@@ -118,15 +118,43 @@ class MigrationDirectionsService {
 }
 
 class MigrationDirectionsRenderer {
-  _markers: MigrationMarker[];
-  _map: MigrationMap;
+  #markers: MigrationMarker[];
+  #map: MigrationMap;
+  #markerOptions;
+  #preserveViewport = false;
+  #suppressMarkers = false;
+  #suppressPolylines = false;
 
-  constructor() {
-    this._markers = [];
+  constructor(options?) {
+    this.#markers = [];
+
+    if (options !== undefined && "map" in options) {
+      this.setMap(options.map);
+    }
+
+    if (options !== undefined && "markerOptions" in options) {
+      this.#markerOptions = options.markerOptions;
+    }
+
+    if (options !== undefined && "preserveViewport" in options) {
+      this.#preserveViewport = options.preserveViewport;
+    }
+
+    if (options !== undefined && "directions" in options) {
+      this.setDirections(options.directions);
+    }
+
+    if (options !== undefined && "suppressMarkers" in options) {
+      this.#suppressMarkers = options.suppressMarkers;
+    }
+
+    if (options !== undefined && "suppressPolylines" in options) {
+      this.#suppressPolylines = options.suppressPolylines;
+    }
   }
 
   setMap(map) {
-    this._map = map;
+    this.#map = map;
   }
 
   setDirections(directions) {
@@ -135,23 +163,25 @@ class MigrationDirectionsRenderer {
       return;
     }
 
-    const maplibreMap = this._map._getMap();
+    const maplibreMap = this.#map._getMap();
 
     // First, remove any pre-existing drawn route and its markers
-    if (this._markers.length) {
+    if (this.#markers.length) {
       maplibreMap.removeLayer("route");
       maplibreMap.removeSource("route");
 
-      this._markers.forEach(function (marker) {
+      this.#markers.forEach(function (marker) {
         marker.remove();
       });
-      this._markers = [];
+      this.#markers = [];
     }
 
     const route = directions.routes[0];
 
-    // Adjust the map to fit to the bounds for this route
-    this._map.fitBounds(route.bounds);
+    // Adjust the map to fit to the bounds for this route if preserveViewport option is not set to true
+    if (this.#preserveViewport === false) {
+      this.#map.fitBounds(route.bounds);
+    }
 
     for (let i = 0; i < route.legs.length; i++) {
       const leg = route.legs[0];
@@ -162,47 +192,78 @@ class MigrationDirectionsRenderer {
       const geometry = leg.geometry;
 
       // TODO: Detect geometry type instead of just doing LineString
-      maplibreMap.addSource("route", {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "LineString",
-            coordinates: geometry.LineString,
+      if (this.#suppressPolylines === false) {
+        maplibreMap.addSource("route", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: geometry.LineString,
+            },
           },
-        },
-      });
-      maplibreMap.addLayer({
-        id: "route",
-        type: "line",
-        source: "route",
-        layout: {
-          "line-join": "round",
-          "line-cap": "round",
-        },
-        paint: {
-          "line-color": "#73B9FF",
-          "line-width": 8,
-          "line-opacity": 0.5,
-        },
-      });
+        });
+        maplibreMap.addLayer({
+          id: "route",
+          type: "line",
+          source: "route",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round",
+          },
+          paint: {
+            "line-color": "#73B9FF",
+            "line-width": 8,
+            "line-opacity": 0.5,
+          },
+        });
+      }
 
       // Add markers for the start/end locations
-      const startLocation = leg.start_location;
-      const endLocation = leg.end_location;
-      const startMarker = new MigrationMarker({
-        position: startLocation,
-        map: this._map,
-      });
-      this._markers.push(startMarker);
+      if (this.#suppressMarkers === false) {
+        const startLocation = leg.start_location;
+        const endLocation = leg.end_location;
 
-      const endMarker = new MigrationMarker({
-        position: endLocation,
-        map: this._map,
-      });
-      this._markers.push(endMarker);
+        const startMarkerOptions = this.#markerOptions === undefined ? {} : structuredClone(this.#markerOptions);
+        startMarkerOptions.position = startLocation;
+        startMarkerOptions.map = this.#map;
+        const startMarker = new MigrationMarker(startMarkerOptions);
+        this.#markers.push(startMarker);
+
+        const endMarkerOptions = this.#markerOptions === undefined ? {} : structuredClone(this.#markerOptions);
+        endMarkerOptions.position = endLocation;
+        endMarkerOptions.map = this.#map;
+        const endMarker = new MigrationMarker(endMarkerOptions);
+        this.#markers.push(endMarker);
+      }
+
+      // TODO: Add default info windows once location information is passed into route result
     }
+  }
+
+  _getMarkers() {
+    return this.#markers;
+  }
+
+  _getMap() {
+    return this.#map;
+  }
+
+  _getMarkerOptions() {
+    return this.#markerOptions;
+  }
+
+  _getPreserveViewport() {
+    return this.#preserveViewport;
+  }
+
+  _getSuppressMarkers() {
+    return this.#suppressMarkers;
+  }
+
+  _getSuppressPolylines() {
+    return this.#suppressPolylines;
   }
 }
 
