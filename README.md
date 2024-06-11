@@ -1,5 +1,7 @@
 # Amazon Location Migration Adapter
 
+[![Tests](https://github.com/aws-geospatial/amazon-location-migration-adapter/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration-adapter/actions/workflows/build.yml)
+
 TODO: Fill this README out!
 
 ## Developing
