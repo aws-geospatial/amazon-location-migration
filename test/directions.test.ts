@@ -235,3 +235,196 @@ test("should call setDirections method on directionsrenderer twice", () => {
   expect(Marker).toHaveBeenCalledTimes(4);
   expect(testDirectionsRenderer._getMarkers().length).toBe(2);
 });
+
+test("should call setDirections method on directionsrenderer with all polylineOptions set", () => {
+  globalThis.structuredClone = jest.fn().mockReturnValue({});
+
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+    markerOptions: {},
+    polylineOptions: {
+      strokeColor: "Blue",
+      strokeWeight: 10,
+      strokeOpacity: 0.1,
+      visible: false,
+    },
+  });
+
+  testDirectionsRenderer.setDirections({
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
+          },
+        ],
+      },
+    ],
+  });
+
+  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+    type: "geojson",
+    data: {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "LineString",
+        coordinates: 0,
+      },
+    },
+  });
+  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+    id: "route",
+    type: "line",
+    source: "route",
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+    },
+    paint: {
+      "line-color": "Blue",
+      "line-width": 10,
+      "line-opacity": 0.1,
+      visibility: "none",
+    },
+  });
+  expect(Marker).toHaveBeenCalledTimes(2);
+  expect(testDirectionsRenderer._getMarkers().length).toBe(2);
+});
+
+test("should call setDirections method on directionsrenderer with polylineOptions strokeColor set", () => {
+  globalThis.structuredClone = jest.fn().mockReturnValue({});
+
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+    markerOptions: {},
+    polylineOptions: {
+      strokeColor: "Red",
+    },
+  });
+
+  testDirectionsRenderer.setDirections({
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
+          },
+        ],
+      },
+    ],
+  });
+
+  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+    type: "geojson",
+    data: {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "LineString",
+        coordinates: 0,
+      },
+    },
+  });
+  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+    id: "route",
+    type: "line",
+    source: "route",
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+    },
+    paint: {
+      "line-color": "Red",
+      "line-width": 3,
+      "line-opacity": 1,
+    },
+  });
+  expect(Marker).toHaveBeenCalledTimes(2);
+  expect(testDirectionsRenderer._getMarkers().length).toBe(2);
+});
+
+test("should call setDirections method on directionsrenderer with polylineOptions strokeWeight set", () => {
+  globalThis.structuredClone = jest.fn().mockReturnValue({});
+
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+    markerOptions: {},
+    polylineOptions: {
+      strokeWeight: 1,
+    },
+  });
+
+  testDirectionsRenderer.setDirections({
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
+          },
+        ],
+      },
+    ],
+  });
+
+  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+    type: "geojson",
+    data: {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "LineString",
+        coordinates: 0,
+      },
+    },
+  });
+  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
+  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+    id: "route",
+    type: "line",
+    source: "route",
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+    },
+    paint: {
+      "line-color": "Black",
+      "line-width": 1,
+      "line-opacity": 1,
+    },
+  });
+  expect(Marker).toHaveBeenCalledTimes(2);
+  expect(testDirectionsRenderer._getMarkers().length).toBe(2);
+});

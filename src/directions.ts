@@ -121,6 +121,7 @@ class MigrationDirectionsRenderer {
   #markers: MigrationMarker[];
   #map: MigrationMap;
   #markerOptions;
+  #polylineOptions;
   #preserveViewport = false;
   #suppressMarkers = false;
   #suppressPolylines = false;
@@ -150,6 +151,10 @@ class MigrationDirectionsRenderer {
 
     if (options !== undefined && "suppressPolylines" in options) {
       this.#suppressPolylines = options.suppressPolylines;
+    }
+
+    if (options !== undefined && "polylineOptions" in options) {
+      this.#polylineOptions = options.polylineOptions;
     }
   }
 
@@ -204,6 +209,22 @@ class MigrationDirectionsRenderer {
             },
           },
         });
+        // 8 weight, 0.5 opacity, "#73B9FF" color for default, 3 weight, 1 opacity, "Black" color used when one property is set
+        const paintOptions = {};
+        if (this.#polylineOptions) {
+          paintOptions["line-color"] = this.#polylineOptions.strokeColor ? this.#polylineOptions.strokeColor : "Black";
+          paintOptions["line-width"] = this.#polylineOptions.strokeWeight ? this.#polylineOptions.strokeWeight : 3;
+          paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
+          if (this.#polylineOptions.visible == false) {
+            paintOptions["visibility"] = "none";
+          }
+        } else {
+          // default line
+          paintOptions["line-color"] = "#73B9FF";
+          paintOptions["line-width"] = 8;
+          paintOptions["line-opacity"] = 0.5;
+        }
+
         maplibreMap.addLayer({
           id: "route",
           type: "line",
@@ -212,11 +233,7 @@ class MigrationDirectionsRenderer {
             "line-join": "round",
             "line-cap": "round",
           },
-          paint: {
-            "line-color": "#73B9FF",
-            "line-width": 8,
-            "line-opacity": 0.5,
-          },
+          paint: paintOptions,
         });
       }
 
