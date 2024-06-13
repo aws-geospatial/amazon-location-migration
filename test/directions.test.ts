@@ -36,7 +36,7 @@ test("should set directionsrenderer options", () => {
 
   expect(testDirectionsRenderer).not.toBeNull();
   expect(testDirectionsRenderer._getMarkers()).toStrictEqual([]);
-  expect(testDirectionsRenderer._getMap()).toBe(testMap);
+  expect(testDirectionsRenderer.getMap()).toBe(testMap);
   expect(testDirectionsRenderer._getMarkerOptions()).toBe(testMarkerOptions);
   expect(testDirectionsRenderer._getPreserveViewport()).toBe(true);
   expect(testDirectionsRenderer._getSuppressMarkers()).toBe(true);
@@ -89,6 +89,7 @@ test("should set directionsrenderer directions option", () => {
     layout: {
       "line-join": "round",
       "line-cap": "round",
+      visibility: "visible",
     },
     paint: {
       "line-color": "#73B9FF",
@@ -149,6 +150,7 @@ test("should call setDirections method on directionsrenderer", () => {
     layout: {
       "line-join": "round",
       "line-cap": "round",
+      visibility: "visible",
     },
     paint: {
       "line-color": "#73B9FF",
@@ -225,6 +227,7 @@ test("should call setDirections method on directionsrenderer twice", () => {
     layout: {
       "line-join": "round",
       "line-cap": "round",
+      visibility: "visible",
     },
     paint: {
       "line-color": "#73B9FF",
@@ -291,12 +294,12 @@ test("should call setDirections method on directionsrenderer with all polylineOp
     layout: {
       "line-join": "round",
       "line-cap": "round",
+      visibility: "none",
     },
     paint: {
       "line-color": "Blue",
       "line-width": 10,
       "line-opacity": 0.1,
-      visibility: "none",
     },
   });
   expect(Marker).toHaveBeenCalledTimes(2);
@@ -355,6 +358,7 @@ test("should call setDirections method on directionsrenderer with polylineOption
     layout: {
       "line-join": "round",
       "line-cap": "round",
+      visibility: "visible",
     },
     paint: {
       "line-color": "Red",
@@ -418,6 +422,7 @@ test("should call setDirections method on directionsrenderer with polylineOption
     layout: {
       "line-join": "round",
       "line-cap": "round",
+      visibility: "visible",
     },
     paint: {
       "line-color": "Black",
@@ -427,4 +432,38 @@ test("should call setDirections method on directionsrenderer with polylineOption
   });
   expect(Marker).toHaveBeenCalledTimes(2);
   expect(testDirectionsRenderer._getMarkers().length).toBe(2);
+});
+
+test("should call getDirections method on directionsrenderer", () => {
+  globalThis.structuredClone = jest.fn().mockReturnValue({});
+
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+  });
+  const directions = {
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
+          },
+        ],
+      },
+    ],
+  };
+
+  testDirectionsRenderer.setDirections(directions);
+
+  const result = testDirectionsRenderer.getDirections();
+
+  expect(result).toBe(directions);
 });
