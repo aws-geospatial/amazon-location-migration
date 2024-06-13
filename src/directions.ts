@@ -126,11 +126,18 @@ class MigrationDirectionsRenderer {
   #preserveViewport = false;
   #suppressMarkers = false;
   #suppressPolylines = false;
+  #directionsChangedHandler;
 
   constructor(options?) {
     this.#markers = [];
 
     this.setOptions(options);
+  }
+
+  addListener(eventName, handler) {
+    if (eventName == "directions_changed") {
+      this.#directionsChangedHandler = handler;
+    }
   }
 
   getDirections() {
@@ -236,6 +243,10 @@ class MigrationDirectionsRenderer {
         endMarkerOptions.map = this.#map;
         const endMarker = new MigrationMarker(endMarkerOptions);
         this.#markers.push(endMarker);
+      }
+
+      if (typeof this.#directionsChangedHandler === "function") {
+        this.#directionsChangedHandler();
       }
 
       // TODO: Add default info windows once location information is passed into route result
