@@ -118,6 +118,7 @@ class MigrationDirectionsService {
 }
 
 class MigrationDirectionsRenderer {
+  #directions;
   #markers: MigrationMarker[];
   #map: MigrationMap;
   #markerOptions;
@@ -129,33 +130,15 @@ class MigrationDirectionsRenderer {
   constructor(options?) {
     this.#markers = [];
 
-    if (options !== undefined && "map" in options) {
-      this.setMap(options.map);
-    }
+    this.setOptions(options);
+  }
 
-    if (options !== undefined && "markerOptions" in options) {
-      this.#markerOptions = options.markerOptions;
-    }
+  getDirections() {
+    return this.#directions;
+  }
 
-    if (options !== undefined && "preserveViewport" in options) {
-      this.#preserveViewport = options.preserveViewport;
-    }
-
-    if (options !== undefined && "directions" in options) {
-      this.setDirections(options.directions);
-    }
-
-    if (options !== undefined && "suppressMarkers" in options) {
-      this.#suppressMarkers = options.suppressMarkers;
-    }
-
-    if (options !== undefined && "suppressPolylines" in options) {
-      this.#suppressPolylines = options.suppressPolylines;
-    }
-
-    if (options !== undefined && "polylineOptions" in options) {
-      this.#polylineOptions = options.polylineOptions;
-    }
+  getMap() {
+    return this.#map;
   }
 
   setMap(map) {
@@ -167,6 +150,8 @@ class MigrationDirectionsRenderer {
     if (directions.routes.length !== 1) {
       return;
     }
+
+    this.#directions = directions;
 
     const maplibreMap = this.#map._getMap();
 
@@ -215,9 +200,6 @@ class MigrationDirectionsRenderer {
           paintOptions["line-color"] = this.#polylineOptions.strokeColor ? this.#polylineOptions.strokeColor : "Black";
           paintOptions["line-width"] = this.#polylineOptions.strokeWeight ? this.#polylineOptions.strokeWeight : 3;
           paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
-          if (this.#polylineOptions.visible == false) {
-            paintOptions["visibility"] = "none";
-          }
         } else {
           // default line
           paintOptions["line-color"] = "#73B9FF";
@@ -232,6 +214,7 @@ class MigrationDirectionsRenderer {
           layout: {
             "line-join": "round",
             "line-cap": "round",
+            visibility: this.#polylineOptions && this.#polylineOptions.visible == false ? "none" : "visible",
           },
           paint: paintOptions,
         });
@@ -259,12 +242,38 @@ class MigrationDirectionsRenderer {
     }
   }
 
-  _getMarkers() {
-    return this.#markers;
+  setOptions(options?) {
+    if (options !== undefined && "map" in options) {
+      this.setMap(options.map);
+    }
+
+    if (options !== undefined && "markerOptions" in options) {
+      this.#markerOptions = options.markerOptions;
+    }
+
+    if (options !== undefined && "preserveViewport" in options) {
+      this.#preserveViewport = options.preserveViewport;
+    }
+
+    if (options !== undefined && "directions" in options) {
+      this.setDirections(options.directions);
+    }
+
+    if (options !== undefined && "suppressMarkers" in options) {
+      this.#suppressMarkers = options.suppressMarkers;
+    }
+
+    if (options !== undefined && "suppressPolylines" in options) {
+      this.#suppressPolylines = options.suppressPolylines;
+    }
+
+    if (options !== undefined && "polylineOptions" in options) {
+      this.#polylineOptions = options.polylineOptions;
+    }
   }
 
-  _getMap() {
-    return this.#map;
+  _getMarkers() {
+    return this.#markers;
   }
 
   _getMarkerOptions() {
