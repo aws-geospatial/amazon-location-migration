@@ -177,7 +177,8 @@ class MigrationDirectionsRenderer {
 
     // Adjust the map to fit to the bounds for this route if preserveViewport option is not set to true
     if (this.#preserveViewport === false) {
-      this.#map.fitBounds(route.bounds, 100);
+      const boundsPaddingInPixels = 100;
+      this.#map.fitBounds(route.bounds, boundsPaddingInPixels);
     }
 
     for (let i = 0; i < route.legs.length; i++) {
