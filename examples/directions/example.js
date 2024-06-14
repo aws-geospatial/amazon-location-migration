@@ -14,6 +14,14 @@ function initMap() {
 
   const directionsService = new google.maps.DirectionsService();
   const directionsRenderer = new google.maps.DirectionsRenderer();
+
+  directionsRenderer.addListener("directions_changed", () => {
+    const randomPolylineOptions = generateRandomPolylineOptions();
+    directionsRenderer.setOptions({
+      polylineOptions: randomPolylineOptions,
+    });
+  });
+
   const map = new google.maps.Map(document.getElementById("map"), {
     zoom: 7,
     center: austinCoords,
@@ -44,4 +52,31 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
       directionsRenderer.setDirections(response);
     })
     .catch((e) => window.alert("Directions request failed due to " + e));
+}
+
+function generateRandomPolylineOptions() {
+  return {
+    strokeColor: generateRandomHexColor(),
+    strokeWeight: generateRandomInt(),
+    strokeOpacity: generateRandomDouble(),
+  };
+}
+
+function generateRandomHexColor() {
+  const hexValues = "0123456789ABCDEF";
+  let hexColor = "#";
+  for (let i = 0; i < 6; i++) {
+    hexColor += hexValues[Math.floor(Math.random() * 16)];
+  }
+  return hexColor;
+}
+
+function generateRandomDouble() {
+  const min = 0.5;
+  const max = 1.0;
+  return Math.random() * (max - min) + min;
+}
+
+function generateRandomInt() {
+  return Math.floor(Math.random() * 10) + 1;
 }
