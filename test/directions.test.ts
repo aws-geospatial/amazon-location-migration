@@ -163,7 +163,6 @@ test("should call setDirections method on directionsrenderer", () => {
 });
 
 test("should call setDirections method on directionsrenderer twice", () => {
-  globalThis.structuredClone = jest.fn().mockReturnValue({});
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },
     zoom: 9,
@@ -240,8 +239,6 @@ test("should call setDirections method on directionsrenderer twice", () => {
 });
 
 test("should call setDirections method on directionsrenderer with all polylineOptions set", () => {
-  globalThis.structuredClone = jest.fn().mockReturnValue({});
-
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },
     zoom: 9,
@@ -307,8 +304,6 @@ test("should call setDirections method on directionsrenderer with all polylineOp
 });
 
 test("should call setDirections method on directionsrenderer with polylineOptions strokeColor set", () => {
-  globalThis.structuredClone = jest.fn().mockReturnValue({});
-
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },
     zoom: 9,
@@ -371,8 +366,6 @@ test("should call setDirections method on directionsrenderer with polylineOption
 });
 
 test("should call setDirections method on directionsrenderer with polylineOptions strokeWeight set", () => {
-  globalThis.structuredClone = jest.fn().mockReturnValue({});
-
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },
     zoom: 9,
@@ -435,8 +428,6 @@ test("should call setDirections method on directionsrenderer with polylineOption
 });
 
 test("should call getDirections method on directionsrenderer", () => {
-  globalThis.structuredClone = jest.fn().mockReturnValue({});
-
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },
     zoom: 9,
@@ -466,4 +457,35 @@ test("should call getDirections method on directionsrenderer", () => {
   const result = testDirectionsRenderer.getDirections();
 
   expect(result).toBe(directions);
+});
+
+test("should call addEventListener method on directionsrenderer", () => {
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+  });
+  const handlerSpy = jest.fn();
+  testDirectionsRenderer.addListener("directions_changed", handlerSpy);
+  const directions = {
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
+          },
+        ],
+      },
+    ],
+  };
+
+  testDirectionsRenderer.setDirections(directions);
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
