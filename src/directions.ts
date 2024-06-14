@@ -177,7 +177,7 @@ class MigrationDirectionsRenderer {
 
     // Adjust the map to fit to the bounds for this route if preserveViewport option is not set to true
     if (this.#preserveViewport === false) {
-      this.#map.fitBounds(route.bounds);
+      this.#map.fitBounds(route.bounds, 100);
     }
 
     for (let i = 0; i < route.legs.length; i++) {
@@ -232,13 +232,15 @@ class MigrationDirectionsRenderer {
         const startLocation = leg.start_location;
         const endLocation = leg.end_location;
 
-        const startMarkerOptions = this.#markerOptions === undefined ? {} : structuredClone(this.#markerOptions);
+        const startMarkerOptions =
+          this.#markerOptions === undefined ? { label: "A" } : structuredClone(this.#markerOptions);
         startMarkerOptions.position = startLocation;
         startMarkerOptions.map = this.#map;
         const startMarker = new MigrationMarker(startMarkerOptions);
         this.#markers.push(startMarker);
 
-        const endMarkerOptions = this.#markerOptions === undefined ? {} : structuredClone(this.#markerOptions);
+        const endMarkerOptions =
+          this.#markerOptions === undefined ? { label: "B" } : structuredClone(this.#markerOptions);
         endMarkerOptions.position = endLocation;
         endMarkerOptions.map = this.#map;
         const endMarker = new MigrationMarker(endMarkerOptions);

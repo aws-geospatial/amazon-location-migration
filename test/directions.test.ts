@@ -4,12 +4,44 @@
 import { MigrationMap } from "../src/maps";
 import { MigrationDirectionsRenderer } from "../src/directions";
 
+const mockAddControl = jest.fn();
+const mockFitBounds = jest.fn();
+const mockAddSource = jest.fn();
+const mockRemoveSource = jest.fn();
+const mockAddLayer = jest.fn();
+const mockRemoveLayer = jest.fn();
+
+const mockSetLngLat = jest.fn();
+const mockAddTo = jest.fn();
+const mockRemove = jest.fn();
+
+jest.mock("maplibre-gl", () => ({
+  ...jest.requireActual("maplibre-gl"),
+  Marker: jest.fn().mockImplementation(() => {
+    return {
+      _element: document.createElement("div"),
+      setLngLat: mockSetLngLat,
+      addTo: mockAddTo,
+      remove: mockRemove,
+    };
+  }),
+  Map: jest.fn().mockImplementation(() => {
+    return {
+      addControl: mockAddControl,
+      fitBounds: mockFitBounds,
+      addSource: mockAddSource,
+      removeSource: mockRemoveSource,
+      addLayer: mockAddLayer,
+      removeLayer: mockRemoveLayer,
+    };
+  }),
+}));
+
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
 // the values we pass to our google migration classes get transformed
 // correctly and our called
-jest.mock("maplibre-gl");
-import { Map, Marker } from "maplibre-gl";
+import { Marker } from "maplibre-gl";
 
 const testLat = 30.268193; // Austin, TX :)
 const testLng = -97.7457518;
@@ -69,8 +101,8 @@ test("should set directionsrenderer directions option", () => {
   });
 
   expect(testDirectionsRenderer).not.toBeNull();
-  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddSource).toHaveBeenCalledWith("route", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -81,8 +113,8 @@ test("should set directionsrenderer directions option", () => {
       },
     },
   });
-  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+  expect(mockAddLayer).toHaveBeenCalledTimes(1);
+  expect(mockAddLayer).toHaveBeenCalledWith({
     id: "route",
     type: "line",
     source: "route",
@@ -130,8 +162,8 @@ test("should call setDirections method on directionsrenderer", () => {
     ],
   });
 
-  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddSource).toHaveBeenCalledWith("route", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -142,8 +174,8 @@ test("should call setDirections method on directionsrenderer", () => {
       },
     },
   });
-  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+  expect(mockAddLayer).toHaveBeenCalledTimes(1);
+  expect(mockAddLayer).toHaveBeenCalledWith({
     id: "route",
     type: "line",
     source: "route",
@@ -206,8 +238,8 @@ test("should call setDirections method on directionsrenderer twice", () => {
     ],
   });
 
-  expect(Map.prototype.addSource).toHaveBeenCalledTimes(2);
-  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledTimes(2);
+  expect(mockAddSource).toHaveBeenCalledWith("route", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -218,8 +250,8 @@ test("should call setDirections method on directionsrenderer twice", () => {
       },
     },
   });
-  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(2);
-  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+  expect(mockAddLayer).toHaveBeenCalledTimes(2);
+  expect(mockAddLayer).toHaveBeenCalledWith({
     id: "route",
     type: "line",
     source: "route",
@@ -271,8 +303,8 @@ test("should call setDirections method on directionsrenderer with all polylineOp
     ],
   });
 
-  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddSource).toHaveBeenCalledWith("route", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -283,8 +315,8 @@ test("should call setDirections method on directionsrenderer with all polylineOp
       },
     },
   });
-  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+  expect(mockAddLayer).toHaveBeenCalledTimes(1);
+  expect(mockAddLayer).toHaveBeenCalledWith({
     id: "route",
     type: "line",
     source: "route",
@@ -333,8 +365,8 @@ test("should call setDirections method on directionsrenderer with polylineOption
     ],
   });
 
-  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddSource).toHaveBeenCalledWith("route", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -345,8 +377,8 @@ test("should call setDirections method on directionsrenderer with polylineOption
       },
     },
   });
-  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+  expect(mockAddLayer).toHaveBeenCalledTimes(1);
+  expect(mockAddLayer).toHaveBeenCalledWith({
     id: "route",
     type: "line",
     source: "route",
@@ -395,8 +427,8 @@ test("should call setDirections method on directionsrenderer with polylineOption
     ],
   });
 
-  expect(Map.prototype.addSource).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddSource).toHaveBeenCalledWith("route", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -407,8 +439,8 @@ test("should call setDirections method on directionsrenderer with polylineOption
       },
     },
   });
-  expect(Map.prototype.addLayer).toHaveBeenCalledTimes(1);
-  expect(Map.prototype.addLayer).toHaveBeenCalledWith({
+  expect(mockAddLayer).toHaveBeenCalledTimes(1);
+  expect(mockAddLayer).toHaveBeenCalledWith({
     id: "route",
     type: "line",
     source: "route",
