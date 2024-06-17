@@ -15,15 +15,23 @@ import {
 } from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
-import { MigrationAutocompleteService, MigrationPlacesService } from "./places";
+import { MigrationAutocompleteService, MigrationPlacesService, MigrationSearchBox } from "./places";
 import { MigrationInfoWindow } from "./infoWindow";
 
-// Dynamically load the MapLibre stylesheet so that our migration adapter is the only thing our users need to import
+// Dynamically load the MapLibre and MapLibre Geocoder stylesheets so that our migration adapter is the only thing our users need to import
 // Without this, many MapLibre rendering features won't work (e.g. markers and info windows won't be visible)
-const style = document.createElement("link");
-style.setAttribute("rel", "stylesheet");
-style.setAttribute("href", "https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css");
-document.head.appendChild(style);
+// Also the MapLibre Geocoder input field won't function properly
+const maplibreStyle = document.createElement("link");
+maplibreStyle.setAttribute("rel", "stylesheet");
+maplibreStyle.setAttribute("href", "https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css");
+document.head.appendChild(maplibreStyle);
+const maplibreGeocoderStyle = document.createElement("link");
+maplibreGeocoderStyle.setAttribute("rel", "stylesheet");
+maplibreGeocoderStyle.setAttribute(
+  "href",
+  "https://www.unpkg.com/@aws/amazon-location-for-maplibre-gl-geocoder@1.x/dist/amazon-location-for-mlg-styles.css",
+);
+document.head.appendChild(maplibreGeocoderStyle);
 
 // Parse URL params from the query string this script was imported with so we can retrieve
 // params (e.g. API key, place index, etc...)
@@ -73,6 +81,8 @@ const migrationInit = async function () {
   MigrationAutocompleteService.prototype._placeIndexName = placeIndexName;
   MigrationPlacesService.prototype._client = client;
   MigrationPlacesService.prototype._placeIndexName = placeIndexName;
+  MigrationSearchBox.prototype._client = client;
+  MigrationSearchBox.prototype._placeIndexName = placeIndexName;
   MigrationDirectionsService.prototype._client = client;
   MigrationDirectionsService.prototype._routeCalculatorName = routeCalculatorName;
 
@@ -107,6 +117,7 @@ const migrationInit = async function () {
         AutocompleteService: MigrationAutocompleteService,
         PlacesService: MigrationPlacesService,
         PlacesServiceStatus: PlacesServiceStatus,
+        SearchBox: MigrationSearchBox,
       },
 
       // Handle dynamic imports, e.g. const { Map } = await google.maps.importLibrary("maps");
@@ -133,6 +144,7 @@ const migrationInit = async function () {
                 AutocompleteService: MigrationAutocompleteService,
                 PlacesService: MigrationPlacesService,
                 PlacesServiceStatus: PlacesServiceStatus,
+                SearchBox: MigrationSearchBox,
               });
               break;
 

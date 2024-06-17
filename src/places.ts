@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  buildAmazonLocationMaplibreGeocoder,
+  PlacesGeocoderOptions,
+} from "@aws/amazon-location-for-maplibre-gl-geocoder";
+
+import {
   GetPlaceCommand,
   GetPlaceRequest,
   LocationClient,
@@ -337,4 +342,95 @@ class MigrationAutocompleteService {
   }
 }
 
-export { MigrationAutocompleteService, MigrationPlacesService };
+class MigrationSearchBox {
+  _client: LocationClient; // This will be populated by the top level module that creates our location client
+  _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
+  #maplibreGeocoder;
+  #bounds: MigrationLatLngBounds | undefined;
+  #places;
+
+  constructor(inputField: HTMLInputElement, opts?) {
+    const maplibreGeocoderOptions: PlacesGeocoderOptions = {
+      enableAll: true,
+    };
+
+    if (inputField.placeholder) {
+      maplibreGeocoderOptions.placeholder = inputField.placeholder;
+    }
+
+    this.#maplibreGeocoder = buildAmazonLocationMaplibreGeocoder(
+      this._client,
+      this._placeIndexName,
+      maplibreGeocoderOptions,
+    );
+
+    if (opts?.bounds) {
+      this.setBounds(opts.bounds);
+    }
+
+    this.#maplibreGeocoder.getPlacesGeocoder().addTo(inputField.parentElement);
+
+    inputField.remove();
+  }
+
+  getBounds() {
+    return this.#bounds;
+  }
+
+  setBounds(bounds) {
+    this.#bounds = new MigrationLatLngBounds(bounds);
+
+    // TODO: Google's setBounds is used to bias, but the geocoder's bounds is a firm restriction, so
+    // for now we use the center of the input bounds to bias
+    const center = this.#bounds.getCenter();
+    this.#maplibreGeocoder.setBiasPosition({
+      latitude: center.lat(),
+      longitude: center.lng(),
+    });
+  }
+
+  getPlaces() {
+    return this.#places;
+  }
+
+  addListener(eventName, handler) {
+    if (eventName == "places_changed") {
+      // This event is triggered if the user selects either a place or query suggestion
+      // from the retrieved suggestions
+      this.#maplibreGeocoder.getPlacesGeocoder().on("results", (results) => {
+        if (results.place || results.features?.length) {
+          if (results.place) {
+            this.#places = [convertAmazonPlaceToGoogle(results.place.properties, ["ALL"], true)];
+          } else {
+            this.#places = results.features.map((result) => {
+              return convertAmazonPlaceToGoogle(result.properties, ["ALL"], true);
+            });
+          }
+
+          // When the user picks a prediction, the geocoder displays the updated results
+          // by default (e.g. drops down the single chosen prediction, or a list of the results
+          // for the query string). Google's widget does not do this, so in order to force the
+          // results to collapse, we need to focus and then unfocus the input element.
+          const inputElement = this.#maplibreGeocoder.getPlacesGeocoder()._inputEl as HTMLInputElement;
+          inputElement.focus();
+          inputElement.blur();
+
+          handler();
+        }
+      });
+
+      // This event is triggered if the user selects a place from a list of query suggestions
+      this.#maplibreGeocoder.getPlacesGeocoder().on("result", (result) => {
+        this.#places = [convertAmazonPlaceToGoogle(result.result.properties, ["ALL"], true)];
+
+        handler();
+      });
+    }
+  }
+
+  _getMaplibreGeocoder() {
+    return this.#maplibreGeocoder;
+  }
+}
+
+export { MigrationAutocompleteService, MigrationPlacesService, MigrationSearchBox };

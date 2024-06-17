@@ -54,6 +54,7 @@ test("importing the adapter should populate google.maps namespace for direct loa
   expect(google.maps.places).toHaveProperty("AutocompleteService");
   expect(google.maps.places).toHaveProperty("PlacesService");
   expect(google.maps.places).toHaveProperty("PlacesServiceStatus");
+  expect(google.maps.places).toHaveProperty("SearchBox");
 
   // Verify our mock callback has been invoked after loading the adapter
   expect(mockMigrationCallback).toHaveBeenCalledTimes(1);
@@ -84,11 +85,14 @@ test("can dynamically import places classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { AutocompleteService, PlacesService, PlacesServiceStatus } = await google.maps.importLibrary("places");
+  const { AutocompleteService, PlacesService, PlacesServiceStatus, SearchBox } = await google.maps.importLibrary(
+    "places",
+  );
 
   expect(AutocompleteService).toBeDefined();
   expect(PlacesService).toBeDefined();
   expect(PlacesServiceStatus).toBeDefined();
+  expect(SearchBox).toBeDefined();
 });
 
 test("can dynamically import routes classes", async () => {

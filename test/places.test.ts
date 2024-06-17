@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { MigrationAutocompleteService, MigrationPlacesService } from "../src/places";
+import { MigrationAutocompleteService, MigrationPlacesService, MigrationSearchBox } from "../src/places";
 import { MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
 
 // Spy on console.error so we can verify it gets called in error cases
@@ -99,9 +99,13 @@ const autocompleteService = new MigrationAutocompleteService();
 autocompleteService._client = new LocationClient();
 const placesService = new MigrationPlacesService();
 placesService._client = new LocationClient();
+MigrationSearchBox.prototype._client = new LocationClient();
 
 afterEach(() => {
   jest.clearAllMocks();
+
+  // Clear out the DOM of the body, since we add elements to it
+  document.body.innerHTML = "";
 });
 
 test("findPlaceFromQuery should only return the requested fields", (done) => {
@@ -772,4 +776,165 @@ test("getPlacePredictions will also invoke the callback if specified", (done) =>
       // Signal the unit test is complete
       done();
     });
+});
+
+test("SearchBox should have no places before a search is done", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const searchBox = new MigrationSearchBox(inputElement);
+
+  expect(searchBox.getPlaces()).toBeUndefined();
+});
+
+test("SearchBox created input element will carry-over placeholder if one was set", () => {
+  const inputElement = document.createElement("input");
+  inputElement.placeholder = "Test placeholder";
+  document.body.appendChild(inputElement);
+
+  const searchBox = new MigrationSearchBox(inputElement);
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+
+  expect(geocoder._inputEl.placeholder).toStrictEqual("Test placeholder");
+});
+
+test("SearchBox should be able to set and get the bounds option", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const bounds = new MigrationLatLngBounds({ east: 0, north: 1, south: 2, west: 3 });
+  const searchBox = new MigrationSearchBox(inputElement, {
+    bounds: bounds,
+  });
+
+  const otherBounds = searchBox.getBounds();
+
+  expect(bounds.equals(otherBounds)).toStrictEqual(true);
+});
+
+test("SearchBox should return first suggestion result when pressing Enter", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const searchBox = new MigrationSearchBox(inputElement, {
+    bounds: { east: 0, north: 1, south: 2, west: 3 },
+  });
+
+  searchBox.addListener("places_changed", () => {
+    const places = searchBox.getPlaces();
+
+    expect(places.length).toStrictEqual(1);
+    expect(mockedClientSend).toHaveBeenCalledTimes(2);
+
+    const place = places[0];
+
+    expect(place.formatted_address).toStrictEqual(testPlaceLabel);
+    expect(place.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+
+    done();
+  });
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder.setInput("austin");
+
+  const event = new KeyboardEvent("keydown", {
+    key: "Enter",
+    code: "Enter",
+    which: 13,
+    keyCode: 13,
+  });
+  geocoder._inputEl.dispatchEvent(event);
+});
+
+test("SearchBox should handle single place result when clicked on", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const searchBox = new MigrationSearchBox(inputElement, {
+    bounds: { east: 0, north: 1, south: 2, west: 3 },
+  });
+
+  searchBox.addListener("places_changed", () => {
+    const places = searchBox.getPlaces();
+
+    expect(places.length).toStrictEqual(1);
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+
+    const place = places[0];
+
+    expect(place.formatted_address).toStrictEqual("1337 Cool Place Road, Austin, TX, USA");
+    expect(place.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+
+    done();
+  });
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder.setInput("austin");
+
+  // We have to emulate the user clicking on a single result by triggering
+  // the geocoder's event emitter directly
+  geocoder._eventEmitter.emit("results", {
+    place: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+      },
+    },
+  });
+});
+
+test("SearchBox should user selecting an item from the list after choosing a query string", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const searchBox = new MigrationSearchBox(inputElement, {
+    bounds: { east: 0, north: 1, south: 2, west: 3 },
+  });
+
+  searchBox.addListener("places_changed", () => {
+    const places = searchBox.getPlaces();
+
+    expect(places.length).toStrictEqual(1);
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+
+    const place = places[0];
+
+    expect(place.formatted_address).toStrictEqual("1337 Cool Place Road, Austin, TX, USA");
+    expect(place.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+
+    done();
+  });
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder.setInput("austin");
+
+  // We have to emulate the user clicking on an item from the list
+  // after choosing a query string by triggering
+  // the geocoder's event emitter directly
+  geocoder._eventEmitter.emit("result", {
+    result: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+      },
+    },
+  });
 });
