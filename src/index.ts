@@ -15,7 +15,12 @@ import {
 } from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
-import { MigrationAutocompleteService, MigrationPlacesService, MigrationSearchBox } from "./places";
+import {
+  MigrationAutocomplete,
+  MigrationAutocompleteService,
+  MigrationPlacesService,
+  MigrationSearchBox,
+} from "./places";
 import { MigrationInfoWindow } from "./infoWindow";
 
 // Dynamically load the MapLibre and MapLibre Geocoder stylesheets so that our migration adapter is the only thing our users need to import
@@ -77,6 +82,8 @@ const migrationInit = async function () {
 
   // Pass our location client, and optionally place index and route calculator names
   // to our migration services
+  MigrationAutocomplete.prototype._client = client;
+  MigrationAutocomplete.prototype._placeIndexName = placeIndexName;
   MigrationAutocompleteService.prototype._client = client;
   MigrationAutocompleteService.prototype._placeIndexName = placeIndexName;
   MigrationPlacesService.prototype._client = client;
@@ -114,6 +121,7 @@ const migrationInit = async function () {
       TravelMode: TravelMode,
 
       places: {
+        Autocomplete: MigrationAutocomplete,
         AutocompleteService: MigrationAutocompleteService,
         PlacesService: MigrationPlacesService,
         PlacesServiceStatus: PlacesServiceStatus,
@@ -141,6 +149,7 @@ const migrationInit = async function () {
 
             case "places":
               resolve({
+                Autocomplete: MigrationAutocomplete,
                 AutocompleteService: MigrationAutocompleteService,
                 PlacesService: MigrationPlacesService,
                 PlacesServiceStatus: PlacesServiceStatus,

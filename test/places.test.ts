@@ -1,7 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { MigrationAutocompleteService, MigrationPlacesService, MigrationSearchBox } from "../src/places";
+import {
+  MigrationAutocomplete,
+  MigrationAutocompleteService,
+  MigrationPlacesService,
+  MigrationSearchBox,
+} from "../src/places";
 import { MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
 
 // Spy on console.error so we can verify it gets called in error cases
@@ -799,6 +804,18 @@ test("SearchBox created input element will carry-over placeholder if one was set
   expect(geocoder._inputEl.placeholder).toStrictEqual("Test placeholder");
 });
 
+test("SearchBox created container should transfer className if specified", () => {
+  const inputElement = document.createElement("input");
+  inputElement.className = "this-is-a-test";
+  document.body.appendChild(inputElement);
+
+  const searchBox = new MigrationSearchBox(inputElement);
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+
+  expect(geocoder.container.className).toContain("this-is-a-test");
+});
+
 test("SearchBox should be able to set and get the bounds option", () => {
   const inputElement = document.createElement("input");
   document.body.appendChild(inputElement);
@@ -892,7 +909,7 @@ test("SearchBox should handle single place result when clicked on", (done) => {
   });
 });
 
-test("SearchBox should user selecting an item from the list after choosing a query string", (done) => {
+test("SearchBox should handle user selecting an item from the list after choosing a query string", (done) => {
   const inputElement = document.createElement("input");
   document.body.appendChild(inputElement);
   const searchBox = new MigrationSearchBox(inputElement, {
@@ -918,6 +935,248 @@ test("SearchBox should user selecting an item from the list after choosing a que
 
   // We have to emulate the user clicking on an item from the list
   // after choosing a query string by triggering
+  // the geocoder's event emitter directly
+  geocoder._eventEmitter.emit("result", {
+    result: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+      },
+    },
+  });
+});
+
+test("Autocomplete should have no places before a search is done", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  expect(autoComplete.getPlace()).toBeUndefined();
+});
+
+test("Autocomplete created input element will carry-over placeholder if one was set", () => {
+  const inputElement = document.createElement("input");
+  inputElement.placeholder = "Test placeholder";
+  document.body.appendChild(inputElement);
+
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+
+  expect(geocoder._inputEl.placeholder).toStrictEqual("Test placeholder");
+});
+
+test("Autocomplete created container should transfer className if specified", () => {
+  const inputElement = document.createElement("input");
+  inputElement.className = "this-is-a-test";
+  document.body.appendChild(inputElement);
+
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+
+  expect(geocoder.container.className).toContain("this-is-a-test");
+});
+
+test("Autocomplete should be able to set and get the bounds option", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const bounds = new MigrationLatLngBounds({ east: 0, north: 1, south: 2, west: 3 });
+  const autoComplete = new MigrationAutocomplete(inputElement, {
+    bounds: bounds,
+  });
+
+  const otherBounds = autoComplete.getBounds();
+
+  expect(bounds.equals(otherBounds)).toStrictEqual(true);
+});
+
+test("Autocomplete should be able to set bounds through initial options", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const bounds = new MigrationLatLngBounds({ east: 0, north: 1, south: 2, west: 3 });
+  const autoComplete = new MigrationAutocomplete(inputElement, {
+    bounds: bounds,
+    strictBounds: true,
+  });
+
+  const otherBounds = autoComplete.getBounds();
+
+  expect(bounds.equals(otherBounds)).toStrictEqual(true);
+});
+
+test("Autocomplete should use strict bounds when specified", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const bounds = new MigrationLatLngBounds({ east: east, north: north, south: south, west: west });
+  const autoComplete = new MigrationAutocomplete(inputElement, {
+    bounds: bounds,
+    strictBounds: true,
+  });
+
+  const geocoder = autoComplete._getMaplibreGeocoder();
+  const boundingBox = geocoder.getBoundingBox();
+
+  expect(boundingBox.longitudeSW).toStrictEqual(west);
+  expect(boundingBox.latitudeSW).toStrictEqual(south);
+  expect(boundingBox.longitudeNE).toStrictEqual(east);
+  expect(boundingBox.latitudeNE).toStrictEqual(north);
+});
+
+test("Autocomplete should be able to set and get the fields option", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  // The fields value should be undefined by default
+  expect(autoComplete.getFields()).toBeUndefined();
+
+  autoComplete.setFields(["name", "place_id"]);
+
+  const fields = autoComplete.getFields();
+  expect(fields).toStrictEqual(["name", "place_id"]);
+});
+
+test("Autocomplete should be able to set fields through initial options", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const autoComplete = new MigrationAutocomplete(inputElement, {
+    fields: ["name", "formatted_address"],
+  });
+
+  const fields = autoComplete.getFields();
+  expect(fields).toStrictEqual(["name", "formatted_address"]);
+});
+
+test("Autocomplete should handle single place result when clicked on", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  autoComplete.addListener("place_changed", () => {
+    const place = autoComplete.getPlace();
+
+    expect(place).toBeDefined();
+    expect(place.formatted_address).toStrictEqual("1337 Cool Place Road, Austin, TX, USA");
+    expect(place.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+
+    done();
+  });
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder.setInput("austin");
+
+  // We have to emulate the user clicking on a single result by triggering
+  // the geocoder's event emitter directly
+  geocoder._eventEmitter.emit("results", {
+    place: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+      },
+    },
+  });
+});
+
+test("Autocomplete should only reply with all fields if none are specified for single result", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  autoComplete.addListener("place_changed", () => {
+    const place = autoComplete.getPlace();
+
+    expect(place).toBeDefined();
+    expect(place.formatted_address).toBeDefined();
+    expect(place.geometry).toBeDefined();
+    expect(place.reference).toBeDefined();
+    expect(place.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(place.name).toStrictEqual("1337 Cool Place Road");
+
+    done();
+  });
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder.setInput("austin");
+
+  // We have to emulate the user clicking on a single result by triggering
+  // the geocoder's event emitter directly
+  geocoder._eventEmitter.emit("result", {
+    result: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+      },
+    },
+  });
+});
+
+test("Autocomplete should only reply with the fields that are specified", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const autoComplete = new MigrationAutocomplete(inputElement, {
+    fields: ["name", "place_id"],
+  });
+
+  autoComplete.addListener("place_changed", () => {
+    const place = autoComplete.getPlace();
+
+    expect(place).toBeDefined();
+    expect(place.formatted_address).toBeUndefined();
+    expect(place.geometry).toBeUndefined();
+    expect(place.reference).toBeUndefined();
+    expect(place.utc_offset).toBeUndefined();
+    expect(place.vicinity).toBeUndefined();
+    expect(place.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(place.name).toStrictEqual("1337 Cool Place Road");
+
+    done();
+  });
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder.setInput("austin");
+
+  // We have to emulate the user clicking on a single result by triggering
   // the geocoder's event emitter directly
   geocoder._eventEmitter.emit("result", {
     result: {
