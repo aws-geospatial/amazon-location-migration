@@ -88,14 +88,14 @@ class MigrationMap {
         handler: wrappedHandler,
       };
     } else if (GoogleMapEvent.includes(eventName)) {
-      const wrappedHandler = () => {
-        handler();
-      };
-      this.#map[listenerType](GoogleToMaplibreEvent[eventName], wrappedHandler);
+      // const wrappedHandler = () => {
+      //   handler();
+      // };
+      this.#map[listenerType](GoogleToMaplibreEvent[eventName], handler);
       return {
         instance: this,
         eventName: eventName,
-        handler: wrappedHandler,
+        handler: handler,
       };
     }
   }
