@@ -152,15 +152,3 @@ function removeListener(listener) {
 }
 
 export { addListener, addListenerOnce, removeListener };
-
-// TODO:
-// - write removeListener method
-// - refactor addListener methods for maps, markers, infowindow, directionsRenderer to return object
-// - refactor addListenerOnce method to return object
-// - test removeListner for maps, markers, infowindow
-// - write testcases
-
-// - add to core dynamic import
-
-// - add multi listeners to directionsRenderer
-// - add event handling for directions, autocomplete widget,
