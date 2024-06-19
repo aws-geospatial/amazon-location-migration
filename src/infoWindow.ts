@@ -65,9 +65,6 @@ class MigrationInfoWindow {
     if (GoogleInfoWindowEvent.includes(eventName)) {
       // if close then use 'on' method on popup instance
       if (eventName === MigrationEvent.close) {
-        // const wrappedHandler = () => {
-        //   handler();
-        // };
         this.#popup[listenerType](GoogleToMaplibreEvent[eventName], handler);
         return {
           instance: this,

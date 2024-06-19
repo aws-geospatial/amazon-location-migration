@@ -88,9 +88,6 @@ class MigrationMap {
         handler: wrappedHandler,
       };
     } else if (GoogleMapEvent.includes(eventName)) {
-      // const wrappedHandler = () => {
-      //   handler();
-      // };
       this.#map[listenerType](GoogleToMaplibreEvent[eventName], handler);
       return {
         instance: this,
