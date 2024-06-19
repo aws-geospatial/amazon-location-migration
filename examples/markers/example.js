@@ -62,7 +62,8 @@ function initMap() {
     fillOpacity: 0.6,
     strokeWeight: 2,
     strokeColor: "green",
-    rotation: 0,
+    rotation: 45,
+    scale: 1.337,
   };
   new google.maps.Marker({
     position: { lat: 30.25, lng: -97.85 },
