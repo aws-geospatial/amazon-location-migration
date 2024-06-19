@@ -119,7 +119,8 @@ test("should set marker with symbol object", () => {
     fillOpacity: 0.6,
     strokeWeight: 2,
     strokeColor: "green",
-    rotation: 0,
+    rotation: 45,
+    scale: 2,
   };
   new MigrationMarker({
     icon: svgMarker,
@@ -134,7 +135,36 @@ test("should set marker with symbol object", () => {
   path.setAttribute("fill-opacity", "0.6");
   path.setAttribute("stroke", "green");
   path.setAttribute("stroke-width", "2");
-  path.setAttribute("stroke-opacity", "undefined");
+  path.setAttribute("stroke-opacity", "1");
+  svg.appendChild(path);
+  svg.setAttribute("transform", "rotate(45) scale(2)");
+  imageContainer.appendChild(svg);
+  const expectedMaplibreOptions: MarkerOptions = {
+    element: imageContainer,
+  };
+
+  expect(Marker).toHaveBeenCalledTimes(1);
+  expect(Marker).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set marker with symbol with default attributes", () => {
+  const svgMarker = {
+    path: "M 0 25 L 25 25 L 12.5 0 Z",
+  };
+  new MigrationMarker({
+    icon: svgMarker,
+  });
+
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M 0 25 L 25 25 L 12.5 0 Z");
+  path.setAttribute("fill", "black");
+  path.setAttribute("fill-opacity", "0");
+  path.setAttribute("stroke", "black");
+  path.setAttribute("stroke-width", "1");
+  path.setAttribute("stroke-opacity", "1");
   svg.appendChild(path);
   imageContainer.appendChild(svg);
   const expectedMaplibreOptions: MarkerOptions = {

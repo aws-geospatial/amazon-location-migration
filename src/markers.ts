@@ -35,7 +35,7 @@ class MigrationMarker {
     // handles:
     // - url parameter
     // - simple icon interface parameter (no customizability),
-    // - svg parameter (Symbol) excluding anchor, rotation, and scale customizability properties
+    // - svg parameter (Symbol) excluding anchor
     if (options.icon) {
       if (typeof options.icon === "object") {
         if ("url" in options.icon) {
@@ -48,15 +48,39 @@ class MigrationMarker {
         } else if ("path" in options.icon) {
           const imgContainer = document.createElement("div");
           imgContainer.classList.add("non-default-legacy-marker");
+
+          // Container svg element
           const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+          // Child element to store the path, which is required a required option
           const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
           path.setAttribute("d", options.icon.path);
-          path.setAttribute("fill", options.icon.fillColor);
-          path.setAttribute("fill-opacity", options.icon.fillOpacity);
-          path.setAttribute("stroke", options.icon.strokeColor);
-          path.setAttribute("stroke-width", options.icon.strokeWeight);
-          path.setAttribute("stroke-opacity", options.icon.strokeOpacity);
+
+          // Set optional attributes for the path
+          // Default values from https://developers.google.com/maps/documentation/javascript/symbols#properties
+          const scale = options.icon.scale || 1.0;
+          path.setAttribute("fill", options.icon.fillColor || "black");
+          path.setAttribute("fill-opacity", options.icon.fillOpacity || 0.0);
+          path.setAttribute("stroke", options.icon.strokeColor || "black");
+          path.setAttribute("stroke-width", options.icon.strokeWeight || scale);
+          path.setAttribute("stroke-opacity", options.icon.strokeOpacity || 1.0);
+
           svg.appendChild(path);
+
+          // Collect the rotation and scale options (if specified) into single transform line
+          let transform = "";
+          if (options.icon.rotation) {
+            transform = `rotate(${options.icon.rotation})`;
+          }
+          if (scale !== 1.0) {
+            transform += ` scale(${scale})`;
+          }
+
+          // Set the transform attribute, if any overrides were specified
+          if (transform) {
+            svg.setAttribute("transform", transform);
+          }
+
           imgContainer.appendChild(svg);
           maplibreOptions.element = imgContainer;
           svg.addEventListener("load", () => {
