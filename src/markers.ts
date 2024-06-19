@@ -5,6 +5,7 @@ import { Marker, MarkerOptions } from "maplibre-gl";
 import {
   GoogleMarkerMouseDOMEvent,
   GoogleMarkerMouseEvent,
+  GoogleToMaplibreEvent,
   LatLngToLngLat,
   MigrationEvent,
   MigrationLatLng,
@@ -173,9 +174,9 @@ class MigrationMarker {
   // handles two types of events:
   // handles events that MapLibre markers does not support, adds event listener to marker DOM element instead - click, dblclick, contextmenu
   // handles events that MapLibre markers inherently supports, uses 'on' method - drag, dragstart, dragend
-  addListener(eventName, handler) {
+  addListener(eventName, handler, listenerType = "on"): any {
     if (GoogleMarkerMouseDOMEvent.includes(eventName)) {
-      this.#marker.getElement().addEventListener(eventName, (mapLibreMouseEvent) => {
+      const wrappedHandler = (mapLibreMouseEvent) => {
         // needed for 'click' so that map does not also register a click when clicking marker if map has a click event listener
         // needed for 'dblclick' so that map does not auto zoom when marker is double clicked
         if (eventName === MigrationEvent.click || eventName === MigrationEvent.dblclick) {
@@ -186,15 +187,30 @@ class MigrationMarker {
           latLng: this.getPosition(),
         };
         handler(googleMapMouseEvent);
-      });
+        if (listenerType == "once") {
+          this.#marker.getElement().removeEventListener(GoogleToMaplibreEvent[eventName], wrappedHandler);
+        }
+      };
+      this.#marker.getElement().addEventListener(GoogleToMaplibreEvent[eventName], wrappedHandler);
+      return {
+        instance: this,
+        eventName: eventName,
+        handler: wrappedHandler,
+      };
     } else if (GoogleMarkerMouseEvent.includes(eventName)) {
-      this.#marker.on(eventName, (mapLibreMouseEvent) => {
+      const wrappedHandler = (mapLibreMouseEvent) => {
         const googleMapMouseEvent = {
           domEvent: mapLibreMouseEvent,
           latLng: this.getPosition(),
         };
         handler(googleMapMouseEvent);
-      });
+      };
+      this.#marker[listenerType](eventName, wrappedHandler);
+      return {
+        instance: this,
+        eventName: eventName,
+        handler: wrappedHandler,
+      };
     }
   }
 

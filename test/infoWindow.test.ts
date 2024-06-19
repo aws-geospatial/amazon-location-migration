@@ -86,6 +86,12 @@ test("should call open method on infowindow with anchor option", () => {
   const mockInfoWindow = {
     remove: jest.fn(),
     isOpen: jest.fn(),
+    once: jest.fn(),
+    getElement: jest.fn().mockReturnValue({
+      querySelector: jest.fn().mockReturnValue({
+        addEventListener: jest.fn(),
+      }),
+    }),
   };
   const testInfoWindow = new MigrationInfoWindow({});
   testInfoWindow._setPopup(mockInfoWindow);
@@ -108,6 +114,12 @@ test("should call open method on infowindow with anchor parameter", () => {
   const mockInfoWindow = {
     remove: jest.fn(),
     isOpen: jest.fn(),
+    once: jest.fn(),
+    getElement: jest.fn().mockReturnValue({
+      querySelector: jest.fn().mockReturnValue({
+        addEventListener: jest.fn(),
+      }),
+    }),
   };
   const testInfoWindow = new MigrationInfoWindow({});
   testInfoWindow._setPopup(mockInfoWindow);

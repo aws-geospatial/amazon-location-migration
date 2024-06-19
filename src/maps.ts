@@ -72,19 +72,28 @@ class MigrationMap {
     }
   }
 
-  addListener(eventName, handler) {
+  addListener(eventName, handler, listenerType = "on"): any {
     if (GoogleMapMouseEvent.includes(eventName)) {
-      this.#map.on(GoogleToMaplibreEvent[eventName], (mapLibreMapMouseEvent) => {
+      const wrappedHandler = (mapLibreMapMouseEvent) => {
         const googleMapMouseEvent = {
           domEvent: mapLibreMapMouseEvent.originalEvent,
           latLng: new MigrationLatLng(mapLibreMapMouseEvent.lngLat.lat, mapLibreMapMouseEvent.lngLat.lng),
         };
         handler(googleMapMouseEvent);
-      });
+      };
+      this.#map[listenerType](GoogleToMaplibreEvent[eventName], wrappedHandler);
+      return {
+        instance: this,
+        eventName: eventName,
+        handler: wrappedHandler,
+      };
     } else if (GoogleMapEvent.includes(eventName)) {
-      this.#map.on(GoogleToMaplibreEvent[eventName], () => {
-        handler();
-      });
+      this.#map[listenerType](GoogleToMaplibreEvent[eventName], handler);
+      return {
+        instance: this,
+        eventName: eventName,
+        handler: handler,
+      };
     }
   }
 
