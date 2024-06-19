@@ -9,6 +9,7 @@ import {
   MigrationEvent,
   MigrationLatLng,
 } from "./googleCommon";
+import { addListenerOnce } from "./events";
 
 const focusQuerySelector = [
   "a[href]",
@@ -60,19 +61,31 @@ class MigrationInfoWindow {
     }
   }
 
-  addListener(eventName, handler) {
+  addListener(eventName, handler): any {
     if (GoogleInfoWindowEvent.includes(eventName)) {
       // if close then use 'on' method on popup instance
       if (eventName === MigrationEvent.close) {
-        this.#popup.on(GoogleToMaplibreEvent[eventName], () => {
+        const wrappedHandler = () => {
           handler();
-        });
+        };
+        this.#popup.on(GoogleToMaplibreEvent[eventName], wrappedHandler);
+        return {
+          instance: this,
+          eventName: eventName,
+          handler: wrappedHandler,
+        };
       } else if (eventName === MigrationEvent.closeclick) {
         // if closeclick then use 'addEventListener' method on button element
         const closeButton = this.#popup.getElement().querySelector("button.maplibregl-popup-close-button");
-        closeButton.addEventListener(GoogleToMaplibreEvent[eventName], () => {
+        const wrappedHandler = () => {
           handler();
-        });
+        };
+        closeButton.addEventListener(GoogleToMaplibreEvent[eventName], wrappedHandler);
+        return {
+          instance: this,
+          eventName: eventName,
+          handler: wrappedHandler,
+        };
       }
     }
   }
@@ -124,6 +137,15 @@ class MigrationInfoWindow {
       if (!this.#popup.isOpen()) {
         marker.togglePopup();
       }
+      // Needed so that popup is not associated with marker when popup is closed
+      // (otherwise Maplibre default behavior will allow users to click the marker and open the popup again
+      // which does not match Google's behavior)
+      addListenerOnce(this, "close", () => {
+        marker.setPopup(null);
+      });
+      addListenerOnce(this, "closeclick", () => {
+        marker.setPopup(null);
+      });
     } else if (options.map) {
       // LatLng specific info window
       this.#popup.addTo(options.map._getMap());

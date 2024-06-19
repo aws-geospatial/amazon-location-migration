@@ -22,6 +22,7 @@ import {
   MigrationSearchBox,
 } from "./places";
 import { MigrationInfoWindow } from "./infoWindow";
+import { addListener, addListenerOnce, removeListener } from "./events";
 
 // Dynamically load the MapLibre and MapLibre Geocoder stylesheets so that our migration adapter is the only thing our users need to import
 // Without this, many MapLibre rendering features won't work (e.g. markers and info windows won't be visible)
@@ -128,6 +129,12 @@ const migrationInit = async function () {
         SearchBox: MigrationSearchBox,
       },
 
+      event: {
+        addListener: addListener,
+        addListenerOnce: addListenerOnce,
+        removeListener: removeListener,
+      },
+
       // Handle dynamic imports, e.g. const { Map } = await google.maps.importLibrary("maps");
       importLibrary: (library) => {
         return new Promise((resolve) => {
@@ -137,6 +144,9 @@ const migrationInit = async function () {
                 ControlPosition: MigrationControlPosition,
                 LatLng: MigrationLatLng,
                 LatLngBounds: MigrationLatLngBounds,
+                addListener: addListener,
+                addListenerOnce: addListenerOnce,
+                removeListener: removeListener,
               });
               break;
 
