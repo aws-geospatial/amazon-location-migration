@@ -13,8 +13,6 @@ import { addListener, addListenerOnce, removeListener } from "../src/events";
 // correctly and our called
 jest.mock("maplibre-gl");
 
-// jest.spyOn(console, "error").mockImplementation(() => {});
-
 afterEach(() => {
   jest.clearAllMocks();
 });
