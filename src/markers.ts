@@ -5,6 +5,7 @@ import { Marker, MarkerOptions } from "maplibre-gl";
 import {
   GoogleMarkerMouseDOMEvent,
   GoogleMarkerMouseEvent,
+  GoogleToMaplibreEvent,
   LatLngToLngLat,
   MigrationEvent,
   MigrationLatLng,
@@ -173,7 +174,7 @@ class MigrationMarker {
   // handles two types of events:
   // handles events that MapLibre markers does not support, adds event listener to marker DOM element instead - click, dblclick, contextmenu
   // handles events that MapLibre markers inherently supports, uses 'on' method - drag, dragstart, dragend
-  addListener(eventName, handler): any {
+  addListener(eventName, handler, listenerType = "on"): any {
     if (GoogleMarkerMouseDOMEvent.includes(eventName)) {
       const wrappedHandler = (mapLibreMouseEvent) => {
         // needed for 'click' so that map does not also register a click when clicking marker if map has a click event listener
@@ -186,8 +187,11 @@ class MigrationMarker {
           latLng: this.getPosition(),
         };
         handler(googleMapMouseEvent);
+        if (listenerType == "once") {
+          this.#marker.getElement().removeEventListener(GoogleToMaplibreEvent[eventName], wrappedHandler);
+        }
       };
-      this.#marker.getElement().addEventListener(eventName, wrappedHandler);
+      this.#marker.getElement().addEventListener(GoogleToMaplibreEvent[eventName], wrappedHandler);
       return {
         instance: this,
         eventName: eventName,
@@ -201,7 +205,7 @@ class MigrationMarker {
         };
         handler(googleMapMouseEvent);
       };
-      this.#marker.on(eventName, wrappedHandler);
+      this.#marker[listenerType](eventName, wrappedHandler);
       return {
         instance: this,
         eventName: eventName,

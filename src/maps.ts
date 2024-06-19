@@ -72,7 +72,7 @@ class MigrationMap {
     }
   }
 
-  addListener(eventName, handler): any {
+  addListener(eventName, handler, listenerType = "on"): any {
     if (GoogleMapMouseEvent.includes(eventName)) {
       const wrappedHandler = (mapLibreMapMouseEvent) => {
         const googleMapMouseEvent = {
@@ -81,7 +81,7 @@ class MigrationMap {
         };
         handler(googleMapMouseEvent);
       };
-      this.#map.on(GoogleToMaplibreEvent[eventName], wrappedHandler);
+      this.#map[listenerType](GoogleToMaplibreEvent[eventName], wrappedHandler);
       return {
         instance: this,
         eventName: eventName,
@@ -91,7 +91,7 @@ class MigrationMap {
       const wrappedHandler = () => {
         handler();
       };
-      this.#map.on(GoogleToMaplibreEvent[eventName], wrappedHandler);
+      this.#map[listenerType](GoogleToMaplibreEvent[eventName], wrappedHandler);
       return {
         instance: this,
         eventName: eventName,

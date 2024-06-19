@@ -61,14 +61,14 @@ class MigrationInfoWindow {
     }
   }
 
-  addListener(eventName, handler): any {
+  addListener(eventName, handler, listenerType = "on"): any {
     if (GoogleInfoWindowEvent.includes(eventName)) {
       // if close then use 'on' method on popup instance
       if (eventName === MigrationEvent.close) {
         const wrappedHandler = () => {
           handler();
         };
-        this.#popup.on(GoogleToMaplibreEvent[eventName], wrappedHandler);
+        this.#popup[listenerType](GoogleToMaplibreEvent[eventName], wrappedHandler);
         return {
           instance: this,
           eventName: eventName,
@@ -79,6 +79,9 @@ class MigrationInfoWindow {
         const closeButton = this.#popup.getElement().querySelector("button.maplibregl-popup-close-button");
         const wrappedHandler = () => {
           handler();
+          if (listenerType == "once") {
+            closeButton.removeEventListener(GoogleToMaplibreEvent[eventName], wrappedHandler);
+          }
         };
         closeButton.addEventListener(GoogleToMaplibreEvent[eventName], wrappedHandler);
         return {
