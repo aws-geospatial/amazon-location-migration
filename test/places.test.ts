@@ -804,6 +804,18 @@ test("SearchBox created input element will carry-over placeholder if one was set
   expect(geocoder._inputEl.placeholder).toStrictEqual("Test placeholder");
 });
 
+test("SearchBox created input element will carry-over id if one was set", () => {
+  const inputElement = document.createElement("input");
+  inputElement.id = "test-id";
+  document.body.appendChild(inputElement);
+
+  const searchBox = new MigrationSearchBox(inputElement);
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+
+  expect(geocoder._inputEl.id).toStrictEqual("test-id");
+});
+
 test("SearchBox created container should transfer className if specified", () => {
   const inputElement = document.createElement("input");
   inputElement.className = "this-is-a-test";
@@ -975,6 +987,18 @@ test("Autocomplete created input element will carry-over placeholder if one was 
   const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
 
   expect(geocoder._inputEl.placeholder).toStrictEqual("Test placeholder");
+});
+
+test("Autocomplete created input element will carry-over id if one was set", () => {
+  const inputElement = document.createElement("input");
+  inputElement.id = "test-id";
+  document.body.appendChild(inputElement);
+
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+
+  expect(geocoder._inputEl.id).toStrictEqual("test-id");
 });
 
 test("Autocomplete created container should transfer className if specified", () => {

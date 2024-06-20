@@ -3,12 +3,12 @@
 
 import { LngLatBounds } from "maplibre-gl";
 
-interface LatLngLiteral {
+export interface LatLngLiteral {
   lat: number;
   lng: number;
 }
 
-type LatLngLike = LatLngLiteral | MigrationLatLng;
+export type LatLngLike = LatLngLiteral | MigrationLatLng;
 
 interface LatLngBoundsLiteral {
   east: number;
@@ -273,24 +273,24 @@ export const PlacesServiceStatus = {
   NOT_FOUND: "NOT_FOUND",
 };
 
-export const TravelMode = {
-  DRIVING: "DRIVING",
-  WALKING: "WALKING",
-  BICYCLING: "BICYCLING",
-  TRANSIT: "TRANSIT",
-  TWO_WHEELER: "TWO_WHEELER",
-};
+export enum TravelMode {
+  DRIVING = "DRIVING",
+  WALKING = "WALKING",
+  BICYCLING = "BICYCLING",
+  TRANSIT = "TRANSIT",
+  TWO_WHEELER = "TWO_WHEELER",
+}
 
-export const DirectionsStatus = {
-  OK: "OK",
-  UNKNOWN_ERROR: "UNKNOWN_ERROR",
-  OVER_QUERY_LIMIT: "OVER_QUERY_LIMIT",
-  REQUEST_DENIED: "REQUEST_DENIED",
-  INVALID_REQUEST: "INVALID_REQUEST",
-  ZERO_RESULTS: "ZERO_RESULTS",
-  MAX_WAYPOINTS_EXCEEDED: "MAX_WAYPOINTS_EXCEEDED",
-  NOT_FOUND: "NOT_FOUND",
-};
+export enum DirectionsStatus {
+  OK = "OK",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
+  OVER_QUERY_LIMIT = "OVER_QUERY_LIMIT",
+  REQUEST_DENIED = "REQUEST_DENIED",
+  INVALID_REQUEST = "INVALID_REQUEST",
+  ZERO_RESULTS = "ZERO_RESULTS",
+  MAX_WAYPOINTS_EXCEEDED = "MAX_WAYPOINTS_EXCEEDED",
+  NOT_FOUND = "NOT_FOUND",
+}
 
 // Migration version of google.maps.ControlPosition
 // This is only used in adapter standalone mode and in unit tests
