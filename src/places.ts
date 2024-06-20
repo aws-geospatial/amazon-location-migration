@@ -376,6 +376,10 @@ class MigrationAutocomplete {
       geocoder.container.className = `${inputField.className} ${geocoder.container.className}`;
     }
 
+    if (inputField.id) {
+      geocoder._inputEl.id = inputField.id;
+    }
+
     inputField.remove();
 
     if (opts) {
@@ -511,6 +515,10 @@ class MigrationSearchBox {
 
     if (inputField.className) {
       geocoder.container.className = `${inputField.className} ${geocoder.container.className}`;
+    }
+
+    if (inputField.id) {
+      geocoder._inputEl.id = inputField.id;
     }
 
     inputField.remove();

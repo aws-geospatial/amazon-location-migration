@@ -3,10 +3,109 @@
 
 import { CalculateRouteCommand, CalculateRouteRequest, LocationClient } from "@aws-sdk/client-location";
 
-import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "./googleCommon";
+import {
+  DirectionsStatus,
+  LatLngLiteral,
+  MigrationLatLng,
+  MigrationLatLngBounds,
+  PlacesServiceStatus,
+  TravelMode,
+} from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationPlacesService } from "./places";
+
+interface ParseOrFindLocationResponse {
+  locationLatLng: MigrationLatLng;
+  position: [number, number];
+}
+
+interface Distance {
+  text: string;
+  value: number;
+}
+
+interface Duration {
+  text: string;
+  value: number;
+}
+
+interface DrivingOptions {
+  departureTime: Date;
+}
+
+interface DirectionsGeocodedWaypoint {
+  partial_match?: boolean;
+  place_id?: string;
+  types?: string[];
+}
+
+interface Place {
+  location?: MigrationLatLng | null | LatLngLiteral;
+  placeId?: string;
+  query?: string;
+}
+
+interface DirectionsStep {
+  distance?: Distance;
+  duration?: Duration;
+  encoded_lat_lngs?: string;
+  end_location: MigrationLatLng;
+  instructions?: string;
+  maneuver?: string;
+  path?: MigrationLatLng[];
+  start_location: MigrationLatLng;
+  steps?: DirectionsStep[];
+  travel_mode: TravelMode;
+}
+
+interface DirectionsLeg {
+  distance?: Distance;
+  duration?: Duration;
+  end_address: string;
+  end_location: MigrationLatLng;
+  start_address: string;
+  start_location: MigrationLatLng;
+  steps: DirectionsStep[];
+}
+
+interface DirectionsRoute {
+  bounds: MigrationLatLngBounds;
+  legs: DirectionsLeg[];
+}
+
+enum UnitSystem {
+  IMPERIAL = 0.0,
+  METRIC = 1.0,
+}
+
+interface DirectionsWaypoint {
+  location?: string | MigrationLatLng | LatLngLiteral | Place;
+  stopover?: boolean;
+}
+
+interface DirectionsRequest {
+  avoidFerries?: boolean;
+  avoidHighways?: boolean;
+  avoidTolls?: boolean;
+  destination: string | MigrationLatLng | Place | LatLngLiteral;
+  drivingOptions?: DrivingOptions;
+  language?: string | null;
+  optimizeWaypoints?: boolean;
+  origin: string | MigrationLatLng | Place | LatLngLiteral;
+  provideRouteAlternatives?: boolean;
+  region?: string | null;
+  travelMode: TravelMode;
+  unitSystem?: UnitSystem;
+  waypoints?: DirectionsWaypoint[];
+}
+
+interface DirectionsResult {
+  geocoded_waypoints?: DirectionsGeocodedWaypoint[];
+  request: DirectionsRequest;
+  routes: DirectionsRoute[];
+  status: DirectionsStatus;
+}
 
 class MigrationDirectionsService {
   // This will be populated by the top level module
@@ -22,87 +121,86 @@ class MigrationDirectionsService {
   // been configured with our place index name
   _placesService: MigrationPlacesService;
 
-  route(options) {
-    return new Promise((resolve, reject) => {
-      // TODO: Rewrite this method using promises (also will need to make a versionof findPlaceFromQuery
-      // returns a promise instead of using a callback) so we can handle the other use-case where
-      // instead of origin.query the source/destination positions are passed as coordinates
-      const originRequest = {
-        query: options.origin.query,
-        fields: ["geometry"],
-      };
-      this._placesService.findPlaceFromQuery(originRequest, (results, status) => {
-        const originLocation = results[0].geometry.location;
-        const departurePosition = [originLocation.lng(), originLocation.lat()];
+  route(options: DirectionsRequest) {
+    return new Promise<DirectionsResult>((resolve, reject) => {
+      this._parseOrFindLocation(options.origin)
+        .then((originResponse: ParseOrFindLocationResponse) => {
+          const departureLocation = originResponse.locationLatLng;
+          const departurePosition = originResponse.position;
 
-        // Now get the destination
-        const destinationRequest = {
-          query: options.destination.query,
-          fields: ["geometry"],
-        };
-        this._placesService.findPlaceFromQuery(destinationRequest, (results, status) => {
-          const destinationLocation = results[0].geometry.location;
-          const destinationPosition = [destinationLocation.lng(), destinationLocation.lat()];
+          this._parseOrFindLocation(options.destination)
+            .then((destinationResponse: ParseOrFindLocationResponse) => {
+              const destinationLocation = destinationResponse.locationLatLng;
+              const destinationPosition = destinationResponse.position;
 
-          const input: CalculateRouteRequest = {
-            CalculatorName: this._routeCalculatorName, // required
-            DeparturePosition: departurePosition, // required
-            DestinationPosition: destinationPosition, // required
-            TravelMode: "Car", // FIXME: Convert this from the input options
-            IncludeLegGeometry: true,
-          };
+              const input: CalculateRouteRequest = {
+                CalculatorName: this._routeCalculatorName, // required
+                DeparturePosition: departurePosition, // required
+                DestinationPosition: destinationPosition, // required
+                TravelMode: "Car", // FIXME: Convert this from the input options
+                IncludeLegGeometry: true,
+              };
 
-          const command = new CalculateRouteCommand(input);
+              const command = new CalculateRouteCommand(input);
 
-          this._client
-            .send(command)
-            .then((response) => {
-              const bounds = response.Summary.RouteBBox;
+              this._client
+                .send(command)
+                .then((response) => {
+                  const bounds = response.Summary.RouteBBox;
 
-              const googleLegs = [];
-              response.Legs.forEach(function (leg) {
-                const steps = [];
-                leg.Steps.forEach(function (step) {
-                  steps.push({
-                    duration: {
-                      text: step.DurationSeconds + " seconds", // TODO: Add conversion logic to make this seconds/minutes/hours
-                      value: step.DurationSeconds,
-                    },
-                    start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
-                    end_location: new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]),
+                  const googleLegs = [];
+                  response.Legs.forEach(function (leg) {
+                    const steps: DirectionsStep[] = [];
+                    leg.Steps.forEach(function (step) {
+                      steps.push({
+                        duration: {
+                          text: step.DurationSeconds + " seconds", // TODO: Add conversion logic to make this seconds/minutes/hours
+                          value: step.DurationSeconds,
+                        },
+                        start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
+                        end_location: new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]),
+                        travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
+                      });
+                    });
+
+                    googleLegs.push({
+                      geometry: leg.Geometry,
+                      steps: steps,
+                      start_location: departureLocation,
+                      end_location: destinationLocation,
+                    });
+                  });
+
+                  const googleRoute: DirectionsRoute = {
+                    bounds: new MigrationLatLngBounds(
+                      {
+                        lng: bounds[0],
+                        lat: bounds[1],
+                      },
+                      {
+                        lng: bounds[2],
+                        lat: bounds[3],
+                      },
+                    ),
+                    legs: googleLegs,
+                  };
+
+                  const googleResponse: DirectionsResult = {
+                    geocoded_waypoints: [], // TODO: Fill these out if the source/destination were passed as queries
+                    request: options,
+                    routes: [googleRoute],
+                    status: DirectionsStatus.OK,
+                  };
+
+                  resolve(googleResponse);
+                })
+                .catch((error) => {
+                  console.error(error);
+
+                  reject({
+                    status: DirectionsStatus.UNKNOWN_ERROR,
                   });
                 });
-
-                googleLegs.push({
-                  geometry: leg.Geometry,
-                  steps: steps,
-                  start_location: originLocation,
-                  end_location: destinationLocation,
-                });
-              });
-
-              const googleRoute = {
-                bounds: new MigrationLatLngBounds(
-                  {
-                    lng: bounds[0],
-                    lat: bounds[1],
-                  },
-                  {
-                    lng: bounds[2],
-                    lat: bounds[3],
-                  },
-                ),
-                legs: googleLegs,
-              };
-
-              const googleResponse = {
-                geocoded_waypoints: [], // TODO: Fill these out if the source/destination were passed as queries
-                request: options,
-                routes: [googleRoute],
-                status: DirectionsStatus.OK,
-              };
-
-              resolve(googleResponse);
             })
             .catch((error) => {
               console.error(error);
@@ -111,8 +209,73 @@ class MigrationDirectionsService {
                 status: DirectionsStatus.UNKNOWN_ERROR,
               });
             });
+        })
+        .catch((error) => {
+          console.error(error);
+
+          reject({
+            status: DirectionsStatus.UNKNOWN_ERROR,
+          });
         });
-      });
+    });
+  }
+
+  _parseOrFindLocation(locationInput) {
+    // The locationInput can be either a string to be geocoded, a Place, LatLng or LatLngLiteral
+    // For query or placeId, we will need to perform a request to figure out the location.
+    // Otherwise, for LatLng|LatLngLiteral we can just parse it.
+    return new Promise((resolve, reject) => {
+      // For a query, we use findPlaceFromQuery to retrieve the location
+      if (typeof locationInput === "string" || typeof locationInput?.query === "string") {
+        const query = locationInput?.query || locationInput;
+
+        const findPlaceFromQueryRequest = {
+          query: query,
+          fields: ["geometry"],
+        };
+
+        this._placesService.findPlaceFromQuery(findPlaceFromQueryRequest, (results, status) => {
+          if (status === PlacesServiceStatus.OK && results.length) {
+            const locationLatLng = results[0].geometry.location;
+            const position = [locationLatLng.lng(), locationLatLng.lat()];
+
+            resolve({
+              locationLatLng: locationLatLng,
+              position: position,
+            });
+          } else {
+            reject({});
+          }
+        });
+      } else if (typeof locationInput?.placeId === "string") {
+        // For a Place object with placeId, we use getDetails to retrieve the location
+        const getDetailsRequest = {
+          placeId: locationInput.placeId,
+        };
+
+        this._placesService.getDetails(getDetailsRequest, function (result, status) {
+          if (status === PlacesServiceStatus.OK) {
+            const locationLatLng = result.geometry.location;
+            const position = [locationLatLng.lng(), locationLatLng.lat()];
+
+            resolve({
+              locationLatLng: locationLatLng,
+              position: position,
+            });
+          } else {
+            reject({});
+          }
+        });
+      } else {
+        // Otherwise, it's a LatLng|LatLngLiteral (explicitly or as Place.location)
+        const latLngOrLiteral = locationInput?.location || locationInput;
+        const latLng = new MigrationLatLng(latLngOrLiteral);
+
+        resolve({
+          locationLatLng: latLng,
+          position: [latLng.lng(), latLng.lat()],
+        });
+      }
     });
   }
 }
