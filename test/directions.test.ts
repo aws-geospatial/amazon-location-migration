@@ -635,6 +635,46 @@ test("should call getDirections method on directionsrenderer", () => {
   expect(result).toBe(directions);
 });
 
+test("should clear directions when directionsrenderer removed from map", () => {
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+    directions: {
+      routes: [
+        {
+          bounds: null,
+          legs: [
+            {
+              geometry: {
+                LineString: 0,
+              },
+              start_location: { lat: 0, lng: 0 },
+              end_location: { lat: 1, lng: 1 },
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  expect(testDirectionsRenderer).not.toBeNull();
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddLayer).toHaveBeenCalledTimes(1);
+  expect(Marker).toHaveBeenCalledTimes(2);
+  expect(testDirectionsRenderer._getMarkers().length).toBe(2);
+
+  // Clear the directions (remove from map)
+  testDirectionsRenderer.setMap(null);
+
+  expect(testDirectionsRenderer.getMap()).toBeNull();
+  expect(mockRemoveSource).toHaveBeenCalledTimes(1);
+  expect(mockRemoveLayer).toHaveBeenCalledTimes(1);
+  expect(testDirectionsRenderer._getMarkers().length).toBe(0);
+});
+
 test("should not allow calling setDirections with multiple routes", () => {
   // TODO: This test can be removed in the future once/if we support multiple routes
   const testMap = new MigrationMap(null, {

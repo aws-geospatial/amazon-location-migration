@@ -1,0 +1,97 @@
+.search-panel {
+  height: 80%;
+  width: 15%;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  border-radius: 30px;
+  background-color: white;
+
+  /* Allow search-results-container to be scrollable as a child */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#search-bar-container {
+  margin: 20px;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.input-field {
+  width: 90%;
+  height: 24px;
+  max-width: unset;
+}
+
+#search-details-container {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+#search-details-name-container {
+  border-bottom: 2px solid lightgray;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+#details-name {
+  font-size: 1.5em;
+}
+
+#search-details-buttons-container {
+  border-bottom: 2px solid lightgray;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+}
+
+#search-results-container {
+  overflow-y: auto;
+}
+
+#search-results-list {
+  list-style-type: none;
+}
+
+.result-container {
+  display: grid;
+}
+
+.results-name {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+#search-results-list > li {
+  padding-top: 10px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid lightgray;
+}
+
+#search-results-list > li:hover {
+  background-color: rgba(20, 110, 180, 0.3);
+  cursor: pointer;
+}
+
+#back-to-results-container {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+#directions-header {
+  margin: 20px;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+#origin-container {
+  margin: 20px;
+  text-align: center;
+}
+
+#destination-container {
+  margin: 20px;
+  text-align: center;
+}
