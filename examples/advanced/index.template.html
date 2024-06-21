@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <title>Advanced Example - Migration Adapter</title>
+    <link rel="stylesheet" type="text/css" href="../common/style.css" />
+    <link rel="stylesheet" type="text/css" href="./advanced.css" />
+
+    <!-- jQuery imports for example -->
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+
+    <!-- Client logic example -->
+    <script type="module" src="./example.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <div id="search-panel-container" class="search-panel">
+      <!-- Container for showing the places/search results -->
+      <div id="places-container">
+        <div id="search-bar-container">
+          <input id="search-bar-input" class="input-field" type="text" placeholder="Enter a location" />
+        </div>
+
+        <div id="back-to-results-container">
+          <button id="back-to-results-button">Back to results</button>
+        </div>
+
+        <div id="search-details-container">
+          <div id="search-details-name-container">
+            <span id="details-name">Name Goes Here</span>
+          </div>
+          <div id="search-details-buttons-container">
+            <button id="details-get-directions">Directions</button>
+          </div>
+          <div id="search-details-fields-container">
+            <span id="details-formatted-address">Address Goes Here</span>
+          </div>
+        </div>
+        <div id="search-results-container">
+          <ul id="search-results-list"></ul>
+        </div>
+      </div>
+
+      <!-- Container for showing directions panel -->
+      <div id="directions-container">
+        <div id="directions-header">
+          <button id="close-directions">Close directions</button>
+        </div>
+
+        <div id="origin-container">
+          <input id="origin-input" class="input-field" type="text" placeholder="Enter origin, or click on map" />
+        </div>
+        <div id="destination-container">
+          <input
+            id="destination-input"
+            class="input-field"
+            type="text"
+            placeholder="Enter destination, or click on map"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Migration script import -->
+    <script src="../../dist/amazonLocationMigrationAdapter.js?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
+  </body>
+</html>

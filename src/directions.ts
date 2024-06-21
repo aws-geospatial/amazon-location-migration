@@ -312,6 +312,11 @@ class MigrationDirectionsRenderer {
   }
 
   setMap(map) {
+    // If we're being removed from the map, clear the directions first
+    if (!map) {
+      this._clearDirections();
+    }
+
     this.#map = map;
   }
 
@@ -323,18 +328,8 @@ class MigrationDirectionsRenderer {
 
     this.#directions = directions;
 
-    const maplibreMap = this.#map._getMap();
-
     // First, remove any pre-existing drawn route and its markers
-    if (this.#markers.length) {
-      maplibreMap.removeLayer("route");
-      maplibreMap.removeSource("route");
-
-      this.#markers.forEach(function (marker) {
-        marker.remove();
-      });
-      this.#markers = [];
-    }
+    this._clearDirections();
 
     const route = directions.routes[0];
 
@@ -344,6 +339,7 @@ class MigrationDirectionsRenderer {
       this.#map.fitBounds(route.bounds, boundsPaddingInPixels);
     }
 
+    const maplibreMap = this.#map._getMap();
     for (let i = 0; i < route.legs.length; i++) {
       const leg = route.legs[0];
 
@@ -446,6 +442,19 @@ class MigrationDirectionsRenderer {
 
     if (options !== undefined && "polylineOptions" in options) {
       this.#polylineOptions = options.polylineOptions;
+    }
+  }
+
+  _clearDirections() {
+    if (this.#markers.length) {
+      const maplibreMap = this.#map._getMap();
+      maplibreMap.removeLayer("route");
+      maplibreMap.removeSource("route");
+
+      this.#markers.forEach(function (marker) {
+        marker.remove();
+      });
+      this.#markers = [];
     }
   }
 
