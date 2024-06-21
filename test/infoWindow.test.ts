@@ -358,6 +358,15 @@ test("should call handler after close", () => {
   // mock infowindow so that we can mock on so that we can mock close
   const mockInfoWindow = {
     on: jest.fn(),
+    once: jest.fn(),
+    remove: jest.fn(),
+    isOpen: jest.fn().mockReturnValue(true),
+    getElement: jest.fn().mockReturnValue({
+      querySelector: jest.fn().mockReturnValue({
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+      }),
+    }),
   };
   const migrationInfoWindow = new MigrationInfoWindow({});
   migrationInfoWindow._setPopup(mockInfoWindow);
@@ -366,8 +375,16 @@ test("should call handler after close", () => {
   const handlerSpy = jest.fn();
   migrationInfoWindow.addListener("close", handlerSpy);
 
+  const mockAnchor = {
+    _getMarker: jest.fn().mockReturnValue({
+      setPopup: jest.fn(),
+    }),
+  };
+  migrationInfoWindow.open({}, mockAnchor);
+
   // mock close
   mockInfoWindow.on.mock.calls[0][1]();
+  mockInfoWindow.once.mock.calls[0][1]();
 
   expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
@@ -376,6 +393,7 @@ test("should call handler after closeclick", () => {
   // mock button so that we can mock addEventListener so that we can mock click
   const mockButton = {
     addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
   };
 
   // mock container so that we can mock the button
@@ -386,6 +404,9 @@ test("should call handler after closeclick", () => {
   // mock marker to return mockElement when getElement is called
   const mockInfoWindow = {
     getElement: jest.fn().mockReturnValue(mockContainer),
+    remove: jest.fn(),
+    isOpen: jest.fn().mockReturnValue(true),
+    once: jest.fn(),
   };
   const migrationInfoWindow = new MigrationInfoWindow({});
   migrationInfoWindow._setPopup(mockInfoWindow);
@@ -394,8 +415,16 @@ test("should call handler after closeclick", () => {
   const handlerSpy = jest.fn();
   migrationInfoWindow.addListener("closeclick", handlerSpy);
 
+  const mockAnchor = {
+    _getMarker: jest.fn().mockReturnValue({
+      setPopup: jest.fn(),
+    }),
+  };
+  migrationInfoWindow.open({}, mockAnchor);
+
   // mock click button
   mockButton.addEventListener.mock.calls[0][1]();
+  mockButton.addEventListener.mock.calls[1][1]();
 
   expect(handlerSpy).toHaveBeenCalledTimes(1);
 });

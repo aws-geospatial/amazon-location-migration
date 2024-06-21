@@ -289,7 +289,8 @@ class MigrationDirectionsRenderer {
   #preserveViewport = false;
   #suppressMarkers = false;
   #suppressPolylines = false;
-  #directionsChangedHandler;
+  #onDirectionsChangedListeners = [];
+  #onceDirectionsChangedListeners = [];
 
   constructor(options?) {
     this.#markers = [];
@@ -297,9 +298,17 @@ class MigrationDirectionsRenderer {
     this.setOptions(options);
   }
 
-  addListener(eventName, handler) {
+  addListener(eventName, handler, listenerType = "on"): any {
     if (eventName == "directions_changed") {
-      this.#directionsChangedHandler = handler;
+      const capitalizedListenerType = listenerType.charAt(0).toUpperCase() + listenerType.slice(1);
+      const listener = {
+        instance: this,
+        eventName: eventName,
+        handler: handler,
+        listenerType: capitalizedListenerType,
+      };
+      this[`_get${capitalizedListenerType}DirectionsChangedListeners`]().push(listener);
+      return listener;
     }
   }
 
@@ -321,6 +330,18 @@ class MigrationDirectionsRenderer {
   }
 
   setDirections(directions) {
+    if (this.#onDirectionsChangedListeners.length != 0) {
+      this.#onDirectionsChangedListeners.forEach((listener) => {
+        listener.handler();
+      });
+    }
+    if (this.#onceDirectionsChangedListeners.length != 0) {
+      while (this.#onceDirectionsChangedListeners.length > 0) {
+        // get handler then call it as a function
+        this.#onceDirectionsChangedListeners.pop().handler();
+      }
+    }
+
     // TODO: Currently only support one route for directions
     if (directions.routes.length !== 1) {
       return;
@@ -407,10 +428,6 @@ class MigrationDirectionsRenderer {
         this.#markers.push(endMarker);
       }
 
-      if (typeof this.#directionsChangedHandler === "function") {
-        this.#directionsChangedHandler();
-      }
-
       // TODO: Add default info windows once location information is passed into route result
     }
   }
@@ -476,6 +493,22 @@ class MigrationDirectionsRenderer {
 
   _getSuppressPolylines() {
     return this.#suppressPolylines;
+  }
+
+  _getOnDirectionsChangedListeners() {
+    return this.#onDirectionsChangedListeners;
+  }
+
+  _getOnceDirectionsChangedListeners() {
+    return this.#onceDirectionsChangedListeners;
+  }
+
+  _setOnDirectionsChangedListeners(listeners) {
+    this.#onDirectionsChangedListeners = listeners;
+  }
+
+  _setOnceDirectionsChangedListeners(listeners) {
+    this.#onceDirectionsChangedListeners = listeners;
   }
 }
 
