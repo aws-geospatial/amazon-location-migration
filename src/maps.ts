@@ -3,6 +3,7 @@
 
 import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
+  AddListenerResponse,
   GoogleMapEvent,
   GoogleMapMouseEvent,
   GoogleToMaplibreControlPosition,
@@ -72,7 +73,7 @@ class MigrationMap {
     }
   }
 
-  addListener(eventName, handler, listenerType = "on"): any {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (GoogleMapMouseEvent.includes(eventName)) {
       const wrappedHandler = (mapLibreMapMouseEvent) => {
         const googleMapMouseEvent = {

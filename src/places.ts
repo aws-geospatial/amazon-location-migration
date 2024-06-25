@@ -17,6 +17,7 @@ import {
 } from "@aws-sdk/client-location";
 
 import {
+  AddListenerResponse,
   LatLngToLngLat,
   MigrationLatLng,
   MigrationLatLngBounds,
@@ -444,10 +445,10 @@ class MigrationAutocomplete {
     }
   }
 
-  addListener(eventName, handler) {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (eventName == "place_changed") {
       // This event is triggered if the user selects either a place from the retrieved suggestions
-      this.#maplibreGeocoder.getPlacesGeocoder().on("results", (results) => {
+      const resultsWrappedHandler = (results) => {
         if (results.place) {
           // The fields could be set later, so we need to query again before converting the place
           const fields = this.#fields || ["ALL"];
@@ -463,24 +464,45 @@ class MigrationAutocomplete {
           inputElement.blur();
 
           handler();
+          if (listenerType == "once") {
+            this.#maplibreGeocoder.getPlacesGeocoder().off("results", resultsWrappedHandler);
+            this.#maplibreGeocoder.getPlacesGeocoder().off("result", resultWrappedHandler);
+          }
         }
-      });
+      };
+      this.#maplibreGeocoder.getPlacesGeocoder().on("results", resultsWrappedHandler);
 
       // This event is triggered if the user re-selects the single place that had been previously selected
       // from the list of suggestions
-      this.#maplibreGeocoder.getPlacesGeocoder().on("result", (result) => {
+      const resultWrappedHandler = (result) => {
         // The fields could be set later, so we need to query again before converting the place
         const fields = this.#fields || ["ALL"];
 
         this.#place = convertAmazonPlaceToGoogle(result.result.properties, fields, true);
 
         handler();
-      });
+        if (listenerType == "once") {
+          this.#maplibreGeocoder.getPlacesGeocoder().off("result", resultWrappedHandler);
+          this.#maplibreGeocoder.getPlacesGeocoder().off("results", resultsWrappedHandler);
+        }
+      };
+      this.#maplibreGeocoder.getPlacesGeocoder().on("result", resultWrappedHandler);
+
+      return {
+        instance: this,
+        eventName: eventName,
+        resultHandler: resultWrappedHandler,
+        resultsHandler: resultsWrappedHandler,
+      };
     }
   }
 
   _getMaplibreGeocoder() {
     return this.#maplibreGeocoder;
+  }
+
+  _setMapLibreGeocoder(geocoder) {
+    this.#maplibreGeocoder = geocoder;
   }
 }
 
@@ -544,11 +566,11 @@ class MigrationSearchBox {
     return this.#places;
   }
 
-  addListener(eventName, handler) {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (eventName == "places_changed") {
       // This event is triggered if the user selects either a place or query suggestion
       // from the retrieved suggestions
-      this.#maplibreGeocoder.getPlacesGeocoder().on("results", (results) => {
+      const resultsWrappedHandler = (results) => {
         if (results.place || results.features?.length) {
           if (results.place) {
             this.#places = [convertAmazonPlaceToGoogle(results.place.properties, ["ALL"], true)];
@@ -567,20 +589,41 @@ class MigrationSearchBox {
           inputElement.blur();
 
           handler();
+          if (listenerType == "once") {
+            this.#maplibreGeocoder.getPlacesGeocoder().off("results", resultsWrappedHandler);
+            this.#maplibreGeocoder.getPlacesGeocoder().off("result", resultWrappedHandler);
+          }
         }
-      });
+      };
+      this.#maplibreGeocoder.getPlacesGeocoder().on("results", resultsWrappedHandler);
 
       // This event is triggered if the user selects a place from a list of query suggestions
-      this.#maplibreGeocoder.getPlacesGeocoder().on("result", (result) => {
+      const resultWrappedHandler = (result) => {
         this.#places = [convertAmazonPlaceToGoogle(result.result.properties, ["ALL"], true)];
 
         handler();
-      });
+        if (listenerType == "once") {
+          this.#maplibreGeocoder.getPlacesGeocoder().off("result", resultWrappedHandler);
+          this.#maplibreGeocoder.getPlacesGeocoder().off("results", resultsWrappedHandler);
+        }
+      };
+      this.#maplibreGeocoder.getPlacesGeocoder().on("result", resultWrappedHandler);
+
+      return {
+        instance: this,
+        eventName: eventName,
+        resultHandler: resultWrappedHandler,
+        resultsHandler: resultsWrappedHandler,
+      };
     }
   }
 
   _getMaplibreGeocoder() {
     return this.#maplibreGeocoder;
+  }
+
+  _setMapLibreGeocoder(geocoder) {
+    this.#maplibreGeocoder = geocoder;
   }
 }
 

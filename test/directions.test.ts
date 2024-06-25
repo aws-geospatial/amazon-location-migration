@@ -749,6 +749,71 @@ test("should call addEventListener method on directionsrenderer", () => {
   expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
 
+test("should return undefined for addEventListener method with invalid listenerType", () => {
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+  });
+  const handlerSpy = jest.fn();
+  const listener = testDirectionsRenderer.addListener("directions_changed", handlerSpy, "");
+
+  expect(handlerSpy).toHaveBeenCalledTimes(0);
+  expect(listener).toBeUndefined();
+});
+
+test("should get new directions in handler when directions_changed event", (done) => {
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const firstDirections = {
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
+          },
+        ],
+      },
+    ],
+  };
+  const secondDirections = {
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 2, lng: 2 },
+            end_location: { lat: 3, lng: 3 },
+          },
+        ],
+      },
+    ],
+  };
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+    directions: firstDirections,
+  });
+  const handler = () => {
+    // directions should be set to new directions by the time you can call 'getDirections'
+    expect(testDirectionsRenderer.getDirections()).toBe(secondDirections);
+    done();
+  };
+  testDirectionsRenderer.addListener("directions_changed", handler);
+  testDirectionsRenderer.setDirections(secondDirections);
+});
+
 test("should return route with origin as LatLng and destination as LatLng", (done) => {
   const origin = new MigrationLatLng(1, 2);
   const destination = new MigrationLatLng(20, 21);

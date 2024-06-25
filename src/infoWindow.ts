@@ -10,6 +10,7 @@ import {
   MigrationLatLng,
 } from "./googleCommon";
 import { addListenerOnce } from "./events";
+import { AddListenerResponse } from "./googleCommon";
 
 const focusQuerySelector = [
   "a[href]",
@@ -61,7 +62,7 @@ class MigrationInfoWindow {
     }
   }
 
-  addListener(eventName, handler, listenerType = "on"): any {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (GoogleInfoWindowEvent.includes(eventName)) {
       // if close then use 'on' method on popup instance
       if (eventName === MigrationEvent.close) {

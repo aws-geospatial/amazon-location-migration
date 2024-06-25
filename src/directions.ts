@@ -4,6 +4,7 @@
 import { CalculateRouteCommand, CalculateRouteRequest, LocationClient } from "@aws-sdk/client-location";
 
 import {
+  AddListenerResponse,
   DirectionsStatus,
   LatLngLiteral,
   MigrationLatLng,
@@ -289,7 +290,8 @@ class MigrationDirectionsRenderer {
   #preserveViewport = false;
   #suppressMarkers = false;
   #suppressPolylines = false;
-  #directionsChangedHandler;
+  #onDirectionsChangedListeners = [];
+  #onceDirectionsChangedListeners = [];
 
   constructor(options?) {
     this.#markers = [];
@@ -297,9 +299,21 @@ class MigrationDirectionsRenderer {
     this.setOptions(options);
   }
 
-  addListener(eventName, handler) {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (eventName == "directions_changed") {
-      this.#directionsChangedHandler = handler;
+      // Capitalize the first letter of the listernerType string since MapLibre's method names are
+      // 'On' and 'Once', not 'on' and 'once'
+      if (typeof listenerType == "string" && listenerType.length > 0) {
+        const capitalizedListenerType = listenerType.charAt(0).toUpperCase() + listenerType.slice(1);
+        const listener = {
+          instance: this,
+          eventName: eventName,
+          handler: handler,
+          listenerType: capitalizedListenerType,
+        };
+        this[`_get${capitalizedListenerType}DirectionsChangedListeners`]().push(listener);
+        return listener;
+      }
     }
   }
 
@@ -327,6 +341,18 @@ class MigrationDirectionsRenderer {
     }
 
     this.#directions = directions;
+
+    if (this.#onDirectionsChangedListeners.length != 0) {
+      this.#onDirectionsChangedListeners.forEach((listener) => {
+        listener.handler();
+      });
+    }
+    if (this.#onceDirectionsChangedListeners.length != 0) {
+      while (this.#onceDirectionsChangedListeners.length > 0) {
+        // get handler then call it as a function
+        this.#onceDirectionsChangedListeners.pop().handler();
+      }
+    }
 
     // First, remove any pre-existing drawn route and its markers
     this._clearDirections();
@@ -407,10 +433,6 @@ class MigrationDirectionsRenderer {
         this.#markers.push(endMarker);
       }
 
-      if (typeof this.#directionsChangedHandler === "function") {
-        this.#directionsChangedHandler();
-      }
-
       // TODO: Add default info windows once location information is passed into route result
     }
   }
@@ -476,6 +498,22 @@ class MigrationDirectionsRenderer {
 
   _getSuppressPolylines() {
     return this.#suppressPolylines;
+  }
+
+  _getOnDirectionsChangedListeners() {
+    return this.#onDirectionsChangedListeners;
+  }
+
+  _getOnceDirectionsChangedListeners() {
+    return this.#onceDirectionsChangedListeners;
+  }
+
+  _setOnDirectionsChangedListeners(listeners) {
+    this.#onDirectionsChangedListeners = listeners;
+  }
+
+  _setOnceDirectionsChangedListeners(listeners) {
+    this.#onceDirectionsChangedListeners = listeners;
   }
 }
 

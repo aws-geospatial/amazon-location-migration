@@ -4,7 +4,9 @@
 import { MigrationMap } from "../src/maps";
 import { MigrationMarker } from "../src/markers";
 import { MigrationInfoWindow } from "../src/infoWindow";
+import { MigrationDirectionsRenderer } from "../src/directions";
 import { MigrationLatLng } from "../src/googleCommon";
+import { MigrationSearchBox, MigrationAutocomplete } from "../src/places";
 import { addListener, addListenerOnce, removeListener } from "../src/events";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
@@ -12,6 +14,12 @@ import { addListener, addListenerOnce, removeListener } from "../src/events";
 // the values we pass to our google migration classes get transformed
 // correctly and our called
 jest.mock("maplibre-gl");
+
+const testPlaceLabel = "Austin, TX, USA";
+const testLat = 30.268193;
+const testLng = -97.7457518;
+const testPlaceWithAddressLabel = "1337 Cool Place Road, Austin, TX, USA";
+const testPlaceId = "KEEP_AUSTIN_WEIRD";
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -177,6 +185,42 @@ test("should call handler after tilesloaded when addListener", () => {
   expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
 
+test("should call handler after drag when addListener", () => {
+  // mock marker so that we can mock on so that we can mock drag
+  const mockMarker = {
+    on: jest.fn(),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  addListener(migrationMarker, "drag", handlerSpy);
+
+  // mock drag
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "drag",
+  };
+  mockMarker.on.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  // expected translated MouseEvent (Google's version)
+  const expectedGoogleMouseEvent = {
+    domEvent: {
+      target: {},
+      type: "drag",
+    },
+    latLng: {
+      lat: expect.any(Function),
+      lng: expect.any(Function),
+    },
+  };
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
+});
+
 test("should call handler after drag when addListenerOnce", () => {
   // mock marker so that we can mock on so that we can mock drag
   const mockMarker = {
@@ -301,6 +345,167 @@ test("should call handler after dblclick when addListenerOnce", () => {
   expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
 });
 
+test("should call handler after directions_changed when addListenerOnce", () => {
+  const testMap = new MigrationMap(null, {});
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+    suppressMarkers: true,
+  });
+  const handlerSpy = jest.fn();
+  addListenerOnce(testDirectionsRenderer, "directions_changed", handlerSpy);
+  const directions = {
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
+          },
+        ],
+      },
+    ],
+  };
+
+  testDirectionsRenderer.setDirections(directions);
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+});
+
+test("should call results handler after place_changed when addListenerOnce", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  addListenerOnce(autoComplete, "place_changed", () => {
+    done();
+  });
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder._eventEmitter.emit("results", {
+    place: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: testPlaceId,
+      },
+    },
+  });
+
+  expect(autoComplete._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("result")).toStrictEqual([]);
+  expect(autoComplete._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("results")).toStrictEqual([]);
+});
+
+test("should call result handler after place_changed when addListenerOnce", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const autoComplete = new MigrationAutocomplete(inputElement);
+
+  addListenerOnce(autoComplete, "place_changed", () => {
+    done();
+  });
+
+  const geocoder = autoComplete._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder._eventEmitter.emit("result", {
+    result: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: testPlaceId,
+      },
+    },
+  });
+
+  expect(autoComplete._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("result")).toStrictEqual([]);
+  expect(autoComplete._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("results")).toStrictEqual([]);
+});
+
+test("should call result handler after places_changed when addListenerOnce", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const searchBox = new MigrationSearchBox(inputElement, {});
+
+  addListenerOnce(searchBox, "places_changed", () => {
+    done();
+  });
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder._eventEmitter.emit("result", {
+    result: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: testPlaceId,
+      },
+    },
+  });
+
+  expect(searchBox._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("result")).toStrictEqual([]);
+  expect(searchBox._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("results")).toStrictEqual([]);
+});
+
+test("should call results handler after places_changed when addListenerOnce", (done) => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+  const searchBox = new MigrationSearchBox(inputElement, {});
+
+  addListenerOnce(searchBox, "places_changed", () => {
+    done();
+  });
+
+  const geocoder = searchBox._getMaplibreGeocoder().getPlacesGeocoder();
+  geocoder._eventEmitter.emit("results", {
+    place: {
+      type: "Feature",
+      place_name: testPlaceLabel,
+      properties: {
+        Place: {
+          Label: testPlaceWithAddressLabel,
+          AddressNumber: "1337",
+          Street: "Cool Place Road",
+          Geometry: {
+            Point: [testLng, testLat],
+          },
+          Municipality: "Austin",
+        },
+        PlaceId: testPlaceId,
+      },
+    },
+  });
+
+  expect(searchBox._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("result")).toStrictEqual([]);
+  expect(searchBox._getMaplibreGeocoder().getPlacesGeocoder()._eventEmitter.listeners("results")).toStrictEqual([]);
+});
+
 test("should remove infowindow close listener", () => {
   // mock infowindow so that we can mock on so that we can mock close
   const mockInfoWindow = {
@@ -409,4 +614,56 @@ test("should remove map tilesloaded listener", () => {
   removeListener(listener);
 
   expect(mockMap.off).toHaveBeenCalledTimes(1);
+});
+
+test("should remove directionsrenderer directions_changed listeners", () => {
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({});
+
+  const onceListener = addListenerOnce(testDirectionsRenderer, "directions_changed", {});
+  removeListener(onceListener);
+  const onSistener = addListener(testDirectionsRenderer, "directions_changed", {});
+  removeListener(onSistener);
+
+  expect(testDirectionsRenderer._getOnDirectionsChangedListeners()).toStrictEqual([]);
+  expect(testDirectionsRenderer._getOnceDirectionsChangedListeners()).toStrictEqual([]);
+});
+
+test("should remove SearchBox places_changed listeners", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const searchBox = new MigrationSearchBox(inputElement);
+  const mockedGeocoder = {
+    getPlacesGeocoder: jest.fn().mockReturnValue({
+      on: jest.fn(),
+      off: jest.fn(),
+    }),
+  };
+  searchBox._setMapLibreGeocoder(mockedGeocoder);
+
+  const listener = addListenerOnce(searchBox, "places_changed", {});
+  removeListener(listener);
+
+  expect(mockedGeocoder.getPlacesGeocoder().on).toHaveBeenCalledTimes(2);
+  expect(mockedGeocoder.getPlacesGeocoder().off).toHaveBeenCalledTimes(2);
+});
+
+test("should remove Autocomplete place_changed listeners", () => {
+  const inputElement = document.createElement("input");
+  document.body.appendChild(inputElement);
+
+  const autoComplete = new MigrationAutocomplete(inputElement);
+  const mockedGeocoder = {
+    getPlacesGeocoder: jest.fn().mockReturnValue({
+      on: jest.fn(),
+      off: jest.fn(),
+    }),
+  };
+  autoComplete._setMapLibreGeocoder(mockedGeocoder);
+
+  const listener = addListenerOnce(autoComplete, "place_changed", {});
+  removeListener(listener);
+
+  expect(mockedGeocoder.getPlacesGeocoder().on).toHaveBeenCalledTimes(2);
+  expect(mockedGeocoder.getPlacesGeocoder().off).toHaveBeenCalledTimes(2);
 });
