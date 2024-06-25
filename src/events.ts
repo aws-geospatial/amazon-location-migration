@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  AddListenerResponse,
   GoogleMapEvent,
   GoogleMapMouseEvent,
   GoogleInfoWindowEvent,
@@ -16,7 +17,7 @@ import { MigrationInfoWindow } from "./infoWindow";
 import { MigrationAutocomplete, MigrationSearchBox } from "./places";
 import { MigrationDirectionsRenderer } from "./directions";
 
-function addListener(instance, eventName, handler) {
+function addListener(instance, eventName, handler): AddListenerResponse {
   if (
     instance instanceof MigrationMap ||
     instance instanceof MigrationMarker ||
@@ -29,7 +30,7 @@ function addListener(instance, eventName, handler) {
   }
 }
 
-function addListenerOnce(instance, eventName, handler) {
+function addListenerOnce(instance, eventName, handler): AddListenerResponse {
   if (
     instance instanceof MigrationMap ||
     instance instanceof MigrationMarker ||

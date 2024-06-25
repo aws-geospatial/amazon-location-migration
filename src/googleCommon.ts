@@ -340,6 +340,16 @@ GoogleToMaplibreControlPosition[MigrationControlPosition.RIGHT_BOTTOM] = "bottom
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_LEFT] = "bottom-left";
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_RIGHT] = "bottom-right";
 
+// addListener response
+export interface AddListenerResponse {
+  instance;
+  eventName: string;
+  handler?;
+  resultHandler?;
+  resultsHandler?;
+  listenerType?: string;
+}
+
 // Migration version of Google's Events
 export const MigrationEvent = {
   click: "click",

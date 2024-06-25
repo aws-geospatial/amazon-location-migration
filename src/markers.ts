@@ -3,6 +3,7 @@
 
 import { Marker, MarkerOptions } from "maplibre-gl";
 import {
+  AddListenerResponse,
   GoogleMarkerMouseDOMEvent,
   GoogleMarkerMouseEvent,
   GoogleToMaplibreEvent,
@@ -174,7 +175,7 @@ class MigrationMarker {
   // handles two types of events:
   // handles events that MapLibre markers does not support, adds event listener to marker DOM element instead - click, dblclick, contextmenu
   // handles events that MapLibre markers inherently supports, uses 'on' method - drag, dragstart, dragend
-  addListener(eventName, handler, listenerType = "on"): any {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (GoogleMarkerMouseDOMEvent.includes(eventName)) {
       const wrappedHandler = (mapLibreMouseEvent) => {
         // needed for 'click' so that map does not also register a click when clicking marker if map has a click event listener

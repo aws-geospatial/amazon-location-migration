@@ -4,6 +4,7 @@
 import { CalculateRouteCommand, CalculateRouteRequest, LocationClient } from "@aws-sdk/client-location";
 
 import {
+  AddListenerResponse,
   DirectionsStatus,
   LatLngLiteral,
   MigrationLatLng,
@@ -298,8 +299,10 @@ class MigrationDirectionsRenderer {
     this.setOptions(options);
   }
 
-  addListener(eventName, handler, listenerType = "on"): any {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (eventName == "directions_changed") {
+      // Capitalize the first letter of the listernerType string since MapLibre's method names are
+      // 'On' and 'Once', not 'on' and 'once'
       const capitalizedListenerType = listenerType.charAt(0).toUpperCase() + listenerType.slice(1);
       const listener = {
         instance: this,
@@ -330,6 +333,13 @@ class MigrationDirectionsRenderer {
   }
 
   setDirections(directions) {
+    // TODO: Currently only support one route for directions
+    if (directions.routes.length !== 1) {
+      return;
+    }
+
+    this.#directions = directions;
+
     if (this.#onDirectionsChangedListeners.length != 0) {
       this.#onDirectionsChangedListeners.forEach((listener) => {
         listener.handler();
@@ -341,13 +351,6 @@ class MigrationDirectionsRenderer {
         this.#onceDirectionsChangedListeners.pop().handler();
       }
     }
-
-    // TODO: Currently only support one route for directions
-    if (directions.routes.length !== 1) {
-      return;
-    }
-
-    this.#directions = directions;
 
     // First, remove any pre-existing drawn route and its markers
     this._clearDirections();

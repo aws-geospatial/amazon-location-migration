@@ -17,6 +17,7 @@ import {
 } from "@aws-sdk/client-location";
 
 import {
+  AddListenerResponse,
   LatLngToLngLat,
   MigrationLatLng,
   MigrationLatLngBounds,
@@ -444,7 +445,7 @@ class MigrationAutocomplete {
     }
   }
 
-  addListener(eventName, handler, listenerType = "on"): any {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (eventName == "place_changed") {
       // This event is triggered if the user selects either a place from the retrieved suggestions
       const resultsWrappedHandler = (results) => {
@@ -565,7 +566,7 @@ class MigrationSearchBox {
     return this.#places;
   }
 
-  addListener(eventName, handler, listenerType = "on"): any {
+  addListener(eventName, handler, listenerType = "on"): AddListenerResponse {
     if (eventName == "places_changed") {
       // This event is triggered if the user selects either a place or query suggestion
       // from the retrieved suggestions
