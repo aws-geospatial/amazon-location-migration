@@ -303,15 +303,17 @@ class MigrationDirectionsRenderer {
     if (eventName == "directions_changed") {
       // Capitalize the first letter of the listernerType string since MapLibre's method names are
       // 'On' and 'Once', not 'on' and 'once'
-      const capitalizedListenerType = listenerType.charAt(0).toUpperCase() + listenerType.slice(1);
-      const listener = {
-        instance: this,
-        eventName: eventName,
-        handler: handler,
-        listenerType: capitalizedListenerType,
-      };
-      this[`_get${capitalizedListenerType}DirectionsChangedListeners`]().push(listener);
-      return listener;
+      if (typeof listenerType == "string" && listenerType.length > 0) {
+        const capitalizedListenerType = listenerType.charAt(0).toUpperCase() + listenerType.slice(1);
+        const listener = {
+          instance: this,
+          eventName: eventName,
+          handler: handler,
+          listenerType: capitalizedListenerType,
+        };
+        this[`_get${capitalizedListenerType}DirectionsChangedListeners`]().push(listener);
+        return listener;
+      }
     }
   }
 
