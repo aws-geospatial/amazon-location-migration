@@ -273,14 +273,6 @@ export const PlacesServiceStatus = {
   NOT_FOUND: "NOT_FOUND",
 };
 
-export enum TravelMode {
-  DRIVING = "DRIVING",
-  WALKING = "WALKING",
-  BICYCLING = "BICYCLING",
-  TRANSIT = "TRANSIT",
-  TWO_WHEELER = "TWO_WHEELER",
-}
-
 export enum DirectionsStatus {
   OK = "OK",
   UNKNOWN_ERROR = "UNKNOWN_ERROR",

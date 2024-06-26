@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationMap } from "../src/maps";
-import { MigrationDirectionsRenderer, MigrationDirectionsService } from "../src/directions";
+import { MigrationDirectionsRenderer, MigrationDirectionsService, TravelMode, UnitSystem } from "../src/directions";
 import { MigrationPlacesService } from "../src/places";
-import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds, TravelMode } from "../src/googleCommon";
+import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../src/googleCommon";
 
 const mockAddControl = jest.fn();
 const mockFitBounds = jest.fn();
@@ -1009,6 +1009,97 @@ test("should return route with origin as Place.placeId and destination as Place.
     const bounds = route.bounds;
     expect(bounds.equals(new MigrationLatLngBounds(testCoolPlaceLocation, testAnotherCoolPlaceLocation))).toStrictEqual(
       true,
+    );
+
+    done();
+  });
+});
+
+test("should call route with options travel mode set to walking and unit system set to imperial", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.WALKING,
+    unitSystem: UnitSystem.IMPERIAL,
+  };
+
+  directionsService.route(request).then((response) => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          DeparturePosition: [4, 3],
+          DestinationPosition: [8, 7],
+          DistanceUnit: "Miles",
+          IncludeLegGeometry: true,
+          TravelMode: "Walking",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
+test("should call route with options travel mode set to driving and unit system set to metric", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    unitSystem: UnitSystem.METRIC,
+  };
+
+  directionsService.route(request).then((response) => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          DeparturePosition: [4, 3],
+          DestinationPosition: [8, 7],
+          DistanceUnit: "Kilometers",
+          IncludeLegGeometry: true,
+          TravelMode: "Car",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
+test("should call route with options travel mode set to driving and unit system set to metric", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    avoidFerries: true,
+    avoidTolls: true,
+  };
+
+  directionsService.route(request).then((response) => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          CarModeOptions: { AvoidFerries: true, AvoidTolls: true },
+          DeparturePosition: [4, 3],
+          DestinationPosition: [8, 7],
+          IncludeLegGeometry: true,
+          TravelMode: "Car",
+        },
+      }),
     );
 
     done();
