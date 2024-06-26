@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationMap } from "../src/maps";
-import { MigrationDirectionsRenderer, MigrationDirectionsService } from "../src/directions";
+import { MigrationDirectionsRenderer, MigrationDirectionsService, TravelMode, UnitSystem } from "../src/directions";
 import { MigrationPlacesService } from "../src/places";
-import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds, TravelMode } from "../src/googleCommon";
+import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../src/googleCommon";
 
 const mockAddControl = jest.fn();
 const mockFitBounds = jest.fn();
@@ -1015,6 +1015,97 @@ test("should return route with origin as Place.placeId and destination as Place.
   });
 });
 
+test("should call route with options travel mode set to walking and unit system set to imperial", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.WALKING,
+    unitSystem: UnitSystem.IMPERIAL,
+  };
+
+  directionsService.route(request).then(() => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          DeparturePosition: [4, 3],
+          DestinationPosition: [8, 7],
+          DistanceUnit: "Miles",
+          IncludeLegGeometry: true,
+          TravelMode: "Walking",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
+test("should call route with options travel mode set to driving and unit system set to metric", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    unitSystem: UnitSystem.METRIC,
+  };
+
+  directionsService.route(request).then(() => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          DeparturePosition: [4, 3],
+          DestinationPosition: [8, 7],
+          DistanceUnit: "Kilometers",
+          IncludeLegGeometry: true,
+          TravelMode: "Car",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
+test("should call route with options travel mode set to driving and unit system set to metric", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    avoidFerries: true,
+    avoidTolls: true,
+  };
+
+  directionsService.route(request).then(() => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          CarModeOptions: { AvoidFerries: true, AvoidTolls: true },
+          DeparturePosition: [4, 3],
+          DestinationPosition: [8, 7],
+          IncludeLegGeometry: true,
+          TravelMode: "Car",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
 test("route should handle client error", (done) => {
   const origin = new MigrationLatLng(1, 2);
   const destination = new MigrationLatLng(-1, -1); // The mock will throw an error for this position
@@ -1027,7 +1118,7 @@ test("route should handle client error", (done) => {
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(1);
@@ -1048,7 +1139,7 @@ test("route should handle client error when performing findPlaceFromQuery origin
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(2);
@@ -1067,7 +1158,7 @@ test("route should handle client error when performing findPlaceFromQuery destin
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(2);
@@ -1088,7 +1179,7 @@ test("route should handle client error when performing getDetails destination re
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(2);

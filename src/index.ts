@@ -4,14 +4,13 @@
 import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
 
-import { MigrationDirectionsRenderer, MigrationDirectionsService } from "./directions";
+import { MigrationDirectionsRenderer, MigrationDirectionsService, TravelMode, UnitSystem } from "./directions";
 import {
   DirectionsStatus,
   MigrationControlPosition,
   MigrationLatLng,
   MigrationLatLngBounds,
   PlacesServiceStatus,
-  TravelMode,
 } from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
@@ -120,6 +119,7 @@ const migrationInit = async function () {
       DirectionsService: MigrationDirectionsService,
       DirectionsStatus: DirectionsStatus,
       TravelMode: TravelMode,
+      UnitSystem: UnitSystem,
 
       places: {
         Autocomplete: MigrationAutocomplete,

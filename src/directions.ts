@@ -1,7 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { CalculateRouteCommand, CalculateRouteRequest, LocationClient } from "@aws-sdk/client-location";
+import {
+  CalculateRouteCommand,
+  CalculateRouteCarModeOptions,
+  CalculateRouteRequest,
+  LocationClient,
+} from "@aws-sdk/client-location";
 
 import {
   AddListenerResponse,
@@ -10,7 +15,6 @@ import {
   MigrationLatLng,
   MigrationLatLngBounds,
   PlacesServiceStatus,
-  TravelMode,
 } from "./googleCommon";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
@@ -75,9 +79,17 @@ interface DirectionsRoute {
   legs: DirectionsLeg[];
 }
 
-enum UnitSystem {
+export enum UnitSystem {
   IMPERIAL = 0.0,
   METRIC = 1.0,
+}
+
+export enum TravelMode {
+  DRIVING = "DRIVING",
+  WALKING = "WALKING",
+  BICYCLING = "BICYCLING",
+  TRANSIT = "TRANSIT",
+  TWO_WHEELER = "TWO_WHEELER",
 }
 
 interface DirectionsWaypoint {
@@ -138,9 +150,46 @@ class MigrationDirectionsService {
                 CalculatorName: this._routeCalculatorName, // required
                 DeparturePosition: departurePosition, // required
                 DestinationPosition: destinationPosition, // required
-                TravelMode: "Car", // FIXME: Convert this from the input options
                 IncludeLegGeometry: true,
               };
+
+              if ("travelMode" in options) {
+                switch (options.travelMode) {
+                  case TravelMode.DRIVING: {
+                    input.TravelMode = "Car";
+                    break;
+                  }
+                  case TravelMode.WALKING: {
+                    input.TravelMode = "Walking";
+                    break;
+                  }
+                }
+              }
+
+              if ("unitSystem" in options) {
+                if (options.unitSystem == UnitSystem.IMPERIAL) {
+                  input.DistanceUnit = "Miles";
+                } else if (options.unitSystem == UnitSystem.METRIC) {
+                  input.DistanceUnit = "Kilometers";
+                }
+              }
+
+              // only pass in avoidFerries and avoidTolls options if travel mode is Driving, Amazon Location Client will error out
+              // if CarModeOptions is passed in and travel mode is not Driving
+              if (
+                ("avoidFerries" in options || "avoidTolls" in options) &&
+                "travelMode" in options &&
+                options.travelMode == TravelMode.DRIVING
+              ) {
+                const carModeOptions: CalculateRouteCarModeOptions = {};
+                if ("avoidFerries" in options) {
+                  carModeOptions.AvoidFerries = options.avoidFerries;
+                }
+                if ("avoidTolls" in options) {
+                  carModeOptions.AvoidTolls = options.avoidTolls;
+                }
+                input.CarModeOptions = carModeOptions;
+              }
 
               const command = new CalculateRouteCommand(input);
 
