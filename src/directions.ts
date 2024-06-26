@@ -154,10 +154,15 @@ class MigrationDirectionsService {
               };
 
               if ("travelMode" in options) {
-                if (options.travelMode == TravelMode.DRIVING) {
-                  input.TravelMode = "Car";
-                } else if (options.travelMode == TravelMode.WALKING) {
-                  input.TravelMode = "Walking";
+                switch (options.travelMode) {
+                  case TravelMode.DRIVING: {
+                    input.TravelMode = "Car";
+                    break;
+                  }
+                  case TravelMode.WALKING: {
+                    input.TravelMode = "Walking";
+                    break;
+                  }
                 }
               }
 
@@ -169,7 +174,7 @@ class MigrationDirectionsService {
                 }
               }
 
-              // only pass in avoidFerries and avoidTolls options if travel mode is Driving, MapLibre will error out
+              // only pass in avoidFerries and avoidTolls options if travel mode is Driving, Amazon Location Client will error out
               // if CarModeOptions is passed in and travel mode is not Driving
               if (
                 ("avoidFerries" in options || "avoidTolls" in options) &&

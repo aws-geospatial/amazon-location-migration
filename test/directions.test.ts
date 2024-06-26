@@ -1027,7 +1027,7 @@ test("should call route with options travel mode set to walking and unit system 
     unitSystem: UnitSystem.IMPERIAL,
   };
 
-  directionsService.route(request).then((response) => {
+  directionsService.route(request).then(() => {
     expect(mockedClientSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
@@ -1057,7 +1057,7 @@ test("should call route with options travel mode set to driving and unit system 
     unitSystem: UnitSystem.METRIC,
   };
 
-  directionsService.route(request).then((response) => {
+  directionsService.route(request).then(() => {
     expect(mockedClientSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
@@ -1088,7 +1088,7 @@ test("should call route with options travel mode set to driving and unit system 
     avoidTolls: true,
   };
 
-  directionsService.route(request).then((response) => {
+  directionsService.route(request).then(() => {
     expect(mockedClientSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
@@ -1118,7 +1118,7 @@ test("route should handle client error", (done) => {
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(1);
@@ -1139,7 +1139,7 @@ test("route should handle client error when performing findPlaceFromQuery origin
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(2);
@@ -1158,7 +1158,7 @@ test("route should handle client error when performing findPlaceFromQuery destin
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(2);
@@ -1179,7 +1179,7 @@ test("route should handle client error when performing getDetails destination re
 
   directionsService
     .route(request)
-    .then((response) => {})
+    .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(2);
