@@ -10,7 +10,7 @@ export interface LatLngLiteral {
 
 export type LatLngLike = LatLngLiteral | MigrationLatLng;
 
-interface LatLngBoundsLiteral {
+export interface LatLngBoundsLiteral {
   east: number;
   north: number;
   south: number;

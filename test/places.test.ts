@@ -4,6 +4,7 @@
 import {
   MigrationAutocomplete,
   MigrationAutocompleteService,
+  MigrationPlace,
   MigrationPlacesService,
   MigrationSearchBox,
 } from "../src/places";
@@ -35,6 +36,10 @@ const mockedClientSend = jest.fn((command) => {
                 Label: testPlaceLabel,
                 Geometry: {
                   Point: [testLng, testLat],
+                },
+                TimeZone: {
+                  Name: "CST",
+                  Offset: -18000,
                 },
               },
               PlaceId: "KEEP_AUSTIN_WEIRD",
@@ -104,6 +109,7 @@ const autocompleteService = new MigrationAutocompleteService();
 autocompleteService._client = new LocationClient();
 const placesService = new MigrationPlacesService();
 placesService._client = new LocationClient();
+MigrationPlace._client = new LocationClient();
 MigrationSearchBox.prototype._client = new LocationClient();
 
 afterEach(() => {
@@ -1220,4 +1226,222 @@ test("Autocomplete should only reply with the fields that are specified", (done)
       },
     },
   });
+});
+
+test("searchByText should ignore locationBias if locationRestriction was also specified", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    query: "cool places in austin",
+    locationRestriction: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
+    locationBias: new MigrationLatLng(4, 5),
+    fields: ["*"],
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(firstResult.displayName).toStrictEqual("Austin");
+    expect(firstResult.formattedAddress).toStrictEqual(testPlaceLabel);
+    expect(firstResult.utcOffsetMinutes).toStrictEqual(-300);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchByText should accept bounds as a literal", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    textQuery: "cool places in austin",
+    locationRestriction: { east: east, north: north, south: south, west: west },
+    fields: ["*"],
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.BiasPosition).toBeUndefined();
+
+    expect(firstResult.displayName).toStrictEqual("Austin");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchByText should accept location bias if there is no bounds specified", (done) => {
+  const request = {
+    query: "cool places in austin",
+    locationBias: new MigrationLatLng(testLat, testLng),
+    fields: ["*"],
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.FilterBBox).toBeUndefined();
+
+    expect(firstResult.displayName).toStrictEqual("Austin");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchByText should accept language", (done) => {
+  const request = {
+    query: "cool places in austin",
+    locationBias: new MigrationLatLng(testLat, testLng),
+    fields: ["*"],
+    language: "en",
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Language).toStrictEqual("en");
+
+    expect(firstResult.displayName).toStrictEqual("Austin");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchByText should accept maxResultCount", (done) => {
+  const request = {
+    query: "cool places in austin",
+    locationBias: new MigrationLatLng(testLat, testLng),
+    fields: ["*"],
+    maxResultCount: 4,
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.MaxResults).toStrictEqual(4);
+
+    expect(firstResult.displayName).toStrictEqual("Austin");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("Place object toJSON will return all fields when specified", (done) => {
+  const request = {
+    query: "cool places in austin",
+    fields: ["*"],
+    maxResultCount: 4,
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    const jsonObject = firstResult.toJSON();
+
+    expect(jsonObject).toStrictEqual({
+      id: "KEEP_AUSTIN_WEIRD",
+      displayName: "Austin",
+      formattedAddress: testPlaceLabel,
+      location: { lat: testLat, lng: testLng },
+      utcOffsetMinutes: -300,
+    });
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("Place object toJSON will return only specified fields", (done) => {
+  const request = {
+    query: "cool places in austin",
+    fields: ["displayName"],
+    maxResultCount: 4,
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    const jsonObject = firstResult.toJSON();
+
+    expect(jsonObject).toStrictEqual({
+      id: "KEEP_AUSTIN_WEIRD",
+      displayName: "Austin",
+    });
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchByText should handle client error", (done) => {
+  const request = {
+    query: clientErrorQuery,
+    fields: ["*"],
+  };
+
+  MigrationPlace.searchByText(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(1);
+
+      // Signal the unit test is complete
+      done();
+    });
 });

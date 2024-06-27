@@ -17,6 +17,7 @@ import { MigrationMarker } from "./markers";
 import {
   MigrationAutocomplete,
   MigrationAutocompleteService,
+  MigrationPlace,
   MigrationPlacesService,
   MigrationSearchBox,
 } from "./places";
@@ -86,6 +87,8 @@ const migrationInit = async function () {
   MigrationAutocomplete.prototype._placeIndexName = placeIndexName;
   MigrationAutocompleteService.prototype._client = client;
   MigrationAutocompleteService.prototype._placeIndexName = placeIndexName;
+  MigrationPlace._client = client;
+  MigrationPlace._placeIndexName = placeIndexName;
   MigrationPlacesService.prototype._client = client;
   MigrationPlacesService.prototype._placeIndexName = placeIndexName;
   MigrationSearchBox.prototype._client = client;
@@ -124,6 +127,7 @@ const migrationInit = async function () {
       places: {
         Autocomplete: MigrationAutocomplete,
         AutocompleteService: MigrationAutocompleteService,
+        Place: MigrationPlace,
         PlacesService: MigrationPlacesService,
         PlacesServiceStatus: PlacesServiceStatus,
         SearchBox: MigrationSearchBox,
@@ -161,6 +165,7 @@ const migrationInit = async function () {
               resolve({
                 Autocomplete: MigrationAutocomplete,
                 AutocompleteService: MigrationAutocompleteService,
+                Place: MigrationPlace,
                 PlacesService: MigrationPlacesService,
                 PlacesServiceStatus: PlacesServiceStatus,
                 SearchBox: MigrationSearchBox,
