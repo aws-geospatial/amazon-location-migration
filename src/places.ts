@@ -42,6 +42,10 @@ interface PlaceOptions {
   requestedRegion?: string | null;
 }
 
+interface FetchFieldsRequest {
+  fields: string[];
+}
+
 interface SearchByTextRequest {
   fields: string[];
   includedType?: string;
@@ -128,12 +132,15 @@ const convertAmazonPlaceToGoogle = (placeObject, fields, includeDetailFields) =>
 };
 
 // This helper is for converting an Amazon Place object to a new Google Place class
-const convertAmazonPlaceToGoogleNewPlace = (placeObject, fields) => {
-  const place = placeObject.Place;
+const convertAmazonPlaceToGoogleNewPlace = (amazonPlaceObject, fields, googlePlace = null) => {
+  const place = amazonPlaceObject.Place;
 
-  const googlePlace = new MigrationPlace({
-    id: placeObject.PlaceId,
-  });
+  // If a Google Place object wasn't passed in, then create a new one
+  if (!googlePlace) {
+    googlePlace = new MigrationPlace({
+      id: amazonPlaceObject.PlaceId,
+    });
+  }
 
   // fields is required, so the only way to include all is by passing ['*'] or
   // specifying each individual field
@@ -320,6 +327,45 @@ class MigrationPlace {
     if (options.requestedLanguage) {
       this.requestedLanguage = options.requestedLanguage;
     }
+  }
+
+  fetchFields(options: FetchFieldsRequest): Promise<{ place: MigrationPlace }> {
+    const placeId = this.id;
+    const requestedLanguage = this.requestedLanguage;
+    const fields = options.fields; // required
+
+    const input: GetPlaceRequest = {
+      IndexName: MigrationPlace._placeIndexName, // required
+      PlaceId: placeId, // required
+    };
+
+    if (requestedLanguage) {
+      input.Language = requestedLanguage;
+    }
+
+    return new Promise((resolve, reject) => {
+      const command = new GetPlaceCommand(input);
+
+      MigrationPlace._client
+        .send(command)
+        .then((response) => {
+          const place = response.Place;
+
+          // Pass in this reference so it will get updated, but we also return it as well
+          const newPlace = convertAmazonPlaceToGoogleNewPlace({ Place: place, PlaceId: placeId }, fields, this);
+
+          resolve({
+            place: newPlace,
+          });
+        })
+        .catch((error) => {
+          console.error(error);
+
+          reject({
+            status: PlacesServiceStatus.UNKNOWN_ERROR,
+          });
+        });
+    });
   }
 
   toJSON() {
