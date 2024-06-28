@@ -48,7 +48,7 @@ const mockedClientSend = jest.fn((command) => {
         });
       }
     } else if (command instanceof GetPlaceCommand) {
-      if (command.input.PlaceId === undefined) {
+      if (command.input.PlaceId === undefined || command.input.PlaceId === clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
       } else {
@@ -1320,6 +1320,35 @@ test("searchByText should accept location bias if there is no bounds specified",
   });
 });
 
+test("searchByText should only return the specified fields", (done) => {
+  const request = {
+    query: "cool places in austin",
+    locationBias: new MigrationLatLng(testLat, testLng),
+    fields: ["displayName"],
+    language: "en",
+  };
+
+  MigrationPlace.searchByText(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Language).toStrictEqual("en");
+
+    expect(firstResult.displayName).toStrictEqual("Austin");
+    expect(firstResult.formattedAddress).toBeUndefined();
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
 test("searchByText should accept language", (done) => {
   const request = {
     query: "cool places in austin",
@@ -1436,6 +1465,112 @@ test("searchByText should handle client error", (done) => {
   };
 
   MigrationPlace.searchByText(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(1);
+
+      // Signal the unit test is complete
+      done();
+    });
+});
+
+test("fetchFields should return only specified fields", async () => {
+  const newPlace = new MigrationPlace({
+    id: "KEEP_AUSTIN_WEIRD",
+  });
+
+  // Properties on the newPlace instance should be null before calling fetchFields
+  expect(newPlace.displayName).toBeUndefined();
+  expect(newPlace.formattedAddress).toBeUndefined();
+  expect(newPlace.location).toBeUndefined();
+
+  const { place } = await newPlace.fetchFields({
+    fields: ["formattedAddress", "location"],
+  });
+
+  expect(mockedClientSend).toHaveBeenCalledTimes(1);
+  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+
+  // Properties for the requested fields on the newPlace instance should
+  // be filled in after calling fetchFields
+  expect(newPlace.formattedAddress).toStrictEqual(testPlaceWithAddressLabel);
+  expect(newPlace.location?.equals(new MigrationLatLng(testLat, testLng))).toStrictEqual(true);
+
+  // Properties for fields that weren't requested should still be null
+  expect(newPlace.displayName).toBeUndefined();
+
+  // Properties should be the same on the place object that is returned from the promise
+  expect(place.displayName).toBeUndefined();
+  expect(place.formattedAddress).toStrictEqual(testPlaceWithAddressLabel);
+  expect(place.location?.equals(new MigrationLatLng(testLat, testLng))).toStrictEqual(true);
+});
+
+test("fetchFields should return all fields if specified", async () => {
+  const newPlace = new MigrationPlace({
+    id: "KEEP_AUSTIN_WEIRD",
+  });
+
+  // Properties on the newPlace instance should be null before calling fetchFields
+  expect(newPlace.displayName).toBeUndefined();
+  expect(newPlace.formattedAddress).toBeUndefined();
+  expect(newPlace.location).toBeUndefined();
+  expect(newPlace.utcOffsetMinutes).toBeUndefined();
+
+  const { place } = await newPlace.fetchFields({
+    fields: ["*"],
+  });
+
+  expect(mockedClientSend).toHaveBeenCalledTimes(1);
+  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+
+  // Properties for all fields on the newPlace instance should
+  // be filled in after calling fetchFields
+  expect(newPlace.displayName).toStrictEqual("1337 Cool Place Road");
+  expect(newPlace.formattedAddress).toStrictEqual(testPlaceWithAddressLabel);
+  expect(newPlace.location?.equals(new MigrationLatLng(testLat, testLng))).toStrictEqual(true);
+  expect(newPlace.utcOffsetMinutes).toStrictEqual(-300);
+
+  // Properties should be the same on the place object that is returned from the promise
+  expect(place.displayName).toStrictEqual("1337 Cool Place Road");
+  expect(place.formattedAddress).toStrictEqual(testPlaceWithAddressLabel);
+  expect(place.location?.equals(new MigrationLatLng(testLat, testLng))).toStrictEqual(true);
+  expect(place.utcOffsetMinutes).toStrictEqual(-300);
+});
+
+test("fetchFields should pass language if specified", async () => {
+  const newPlace = new MigrationPlace({
+    id: "KEEP_AUSTIN_WEIRD",
+    requestedLanguage: "en",
+  });
+
+  await newPlace.fetchFields({
+    fields: ["*"],
+  });
+
+  expect(mockedClientSend).toHaveBeenCalledTimes(1);
+  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+  const clientInput = mockedClientSend.mock.calls[0][0].input;
+
+  expect(clientInput.Language).toStrictEqual("en");
+
+  // Properties for all fields on the newPlace instance should
+  // be filled in after calling fetchFields
+  expect(newPlace.displayName).toStrictEqual("1337 Cool Place Road");
+  expect(newPlace.formattedAddress).toStrictEqual(testPlaceWithAddressLabel);
+  expect(newPlace.location?.equals(new MigrationLatLng(testLat, testLng))).toStrictEqual(true);
+  expect(newPlace.utcOffsetMinutes).toStrictEqual(-300);
+});
+
+test("fetchFields should handle client error", (done) => {
+  const newPlace = new MigrationPlace({
+    id: clientErrorQuery,
+  });
+
+  newPlace
+    .fetchFields({
+      fields: ["*"],
+    })
     .then(() => {})
     .catch((error) => {
       expect(error.status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);

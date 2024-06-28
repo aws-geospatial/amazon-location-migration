@@ -21,8 +21,10 @@ async function initMap() {
   });
 
   findPlaces();
+  findCity();
 }
 
+// This function showcases Place.searchByText
 async function findPlaces() {
   const { Place } = await google.maps.importLibrary("places");
   const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
@@ -54,6 +56,32 @@ async function findPlaces() {
   } else {
     console.log("No results");
   }
+}
+
+// This function showcases Place.fetchFields
+async function findCity() {
+  const { Place } = await google.maps.importLibrary("places");
+
+  const anotherRequest = {
+    textQuery: "austin, tx",
+    fields: ["displayName", "location"],
+  };
+
+  // Do a searchByText first so that we can get a PlaceId to use for the fetchFields
+  const { places } = await Place.searchByText(anotherRequest);
+
+  // Create a Place using the PlaceId
+  const firstPlace = places[0];
+  const newPlace = new Place({
+    id: firstPlace.id,
+    requestedLanguage: "fr-CA", // optional
+  });
+
+  await newPlace.fetchFields({
+    fields: ["formattedAddress", "location"],
+  });
+
+  console.log(newPlace.formattedAddress, newPlace.location.toString());
 }
 
 initMap();
