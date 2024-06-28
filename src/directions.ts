@@ -191,66 +191,66 @@ class MigrationDirectionsService {
                 input.CarModeOptions = carModeOptions;
               }
 
-              const command = new CalculateRouteCommand(input);
+              if ("drivingOptions" in options && options.travelMode == TravelMode.DRIVING) {
+                input.DepartureTime = options.drivingOptions.departureTime;
+              }
 
-              this._client
-                .send(command)
-                .then((response) => {
-                  const bounds = response.Summary.RouteBBox;
+              if ("waypoints" in options) {
+                // Array of DirectionsWaypoint
+                this._parseOrFindLocations(options.waypoints)
+                  .then((locationReponses) => {
+                    input.WaypointPositions = locationReponses.map((locationResponse) => locationResponse.position);
 
-                  const googleLegs = [];
-                  response.Legs.forEach(function (leg) {
-                    const steps: DirectionsStep[] = [];
-                    leg.Steps.forEach(function (step) {
-                      steps.push({
-                        duration: {
-                          text: step.DurationSeconds + " seconds", // TODO: Add conversion logic to make this seconds/minutes/hours
-                          value: step.DurationSeconds,
-                        },
-                        start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
-                        end_location: new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]),
-                        travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
+                    const command = new CalculateRouteCommand(input);
+
+                    this._client
+                      .send(command)
+                      .then((response) => {
+                        const googleResponse = this._convertAmazonResponseToGoogleResponse(
+                          response,
+                          options,
+                          departureLocation,
+                          destinationLocation,
+                        );
+                        resolve(googleResponse);
+                      })
+                      .catch((error) => {
+                        console.error(error);
+
+                        reject({
+                          status: DirectionsStatus.UNKNOWN_ERROR,
+                        });
                       });
-                    });
+                  })
+                  .catch((error) => {
+                    console.error(error);
 
-                    googleLegs.push({
-                      geometry: leg.Geometry,
-                      steps: steps,
-                      start_location: departureLocation,
-                      end_location: destinationLocation,
+                    reject({
+                      status: DirectionsStatus.UNKNOWN_ERROR,
                     });
                   });
+              } else {
+                const command = new CalculateRouteCommand(input);
 
-                  const googleRoute: DirectionsRoute = {
-                    bounds: new MigrationLatLngBounds(
-                      {
-                        lng: bounds[0],
-                        lat: bounds[1],
-                      },
-                      {
-                        lng: bounds[2],
-                        lat: bounds[3],
-                      },
-                    ),
-                    legs: googleLegs,
-                  };
+                this._client
+                  .send(command)
+                  .then((response) => {
+                    const googleResponse = this._convertAmazonResponseToGoogleResponse(
+                      response,
+                      options,
+                      departureLocation,
+                      destinationLocation,
+                    );
+                    resolve(googleResponse);
+                  })
+                  .catch((error) => {
+                    console.error(error);
 
-                  const googleResponse: DirectionsResult = {
-                    geocoded_waypoints: [], // TODO: Fill these out if the source/destination were passed as queries
-                    request: options,
-                    routes: [googleRoute],
-                    status: DirectionsStatus.OK,
-                  };
-
-                  resolve(googleResponse);
-                })
-                .catch((error) => {
-                  console.error(error);
-
-                  reject({
-                    status: DirectionsStatus.UNKNOWN_ERROR,
+                    reject({
+                      status: DirectionsStatus.UNKNOWN_ERROR,
+                    });
                   });
-                });
+              }
             })
             .catch((error) => {
               console.error(error);
@@ -268,6 +268,14 @@ class MigrationDirectionsService {
           });
         });
     });
+  }
+
+  _parseOrFindLocations(locationInputs: DirectionsWaypoint[]) {
+    const locations = [];
+    for (const locationInput of locationInputs) {
+      locations.push(this._parseOrFindLocation(locationInput.location));
+    }
+    return Promise.all(locations);
   }
 
   _parseOrFindLocation(locationInput) {
@@ -328,6 +336,56 @@ class MigrationDirectionsService {
       }
     });
   }
+
+  _convertAmazonResponseToGoogleResponse(response, options, departureLocation, destinationLocation) {
+    const bounds = response.Summary.RouteBBox;
+
+    const googleLegs = [];
+    response.Legs.forEach(function (leg) {
+      const steps: DirectionsStep[] = [];
+      leg.Steps.forEach(function (step) {
+        steps.push({
+          duration: {
+            text: step.DurationSeconds + " seconds", // TODO: Add conversion logic to make this seconds/minutes/hours
+            value: step.DurationSeconds,
+          },
+          start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
+          end_location: new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]),
+          travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
+        });
+      });
+
+      googleLegs.push({
+        geometry: leg.Geometry,
+        steps: steps,
+        start_location: departureLocation,
+        end_location: destinationLocation,
+      });
+    });
+
+    const googleRoute: DirectionsRoute = {
+      bounds: new MigrationLatLngBounds(
+        {
+          lng: bounds[0],
+          lat: bounds[1],
+        },
+        {
+          lng: bounds[2],
+          lat: bounds[3],
+        },
+      ),
+      legs: googleLegs,
+    };
+
+    const googleResponse: DirectionsResult = {
+      geocoded_waypoints: [], // TODO: Fill these out if the source/destination were passed as queries
+      request: options,
+      routes: [googleRoute],
+      status: DirectionsStatus.OK,
+    };
+
+    return googleResponse;
+  }
 }
 
 class MigrationDirectionsRenderer {
@@ -341,6 +399,7 @@ class MigrationDirectionsRenderer {
   #suppressPolylines = false;
   #onDirectionsChangedListeners = [];
   #onceDirectionsChangedListeners = [];
+  #routeIds = [];
 
   constructor(options?) {
     this.#markers = [];
@@ -416,7 +475,7 @@ class MigrationDirectionsRenderer {
 
     const maplibreMap = this.#map._getMap();
     for (let i = 0; i < route.legs.length; i++) {
-      const leg = route.legs[0];
+      const leg = route.legs[i];
 
       // leg.geometry is a new field we've added, because Google doesn't provide the polyline
       // for the leg as a whole, only for the individual steps, but our API (currently) only provides
@@ -425,7 +484,8 @@ class MigrationDirectionsRenderer {
 
       // TODO: Detect geometry type instead of just doing LineString
       if (this.#suppressPolylines === false) {
-        maplibreMap.addSource("route", {
+        const routeId = "route" + i;
+        maplibreMap.addSource(routeId, {
           type: "geojson",
           data: {
             type: "Feature",
@@ -450,9 +510,9 @@ class MigrationDirectionsRenderer {
         }
 
         maplibreMap.addLayer({
-          id: "route",
+          id: routeId,
           type: "line",
-          source: "route",
+          source: routeId,
           layout: {
             "line-join": "round",
             "line-cap": "round",
@@ -460,6 +520,8 @@ class MigrationDirectionsRenderer {
           },
           paint: paintOptions,
         });
+
+        this.#routeIds.push(routeId);
       }
 
       // Add markers for the start/end locations
@@ -518,14 +580,18 @@ class MigrationDirectionsRenderer {
 
   _clearDirections() {
     if (this.#markers.length) {
-      const maplibreMap = this.#map._getMap();
-      maplibreMap.removeLayer("route");
-      maplibreMap.removeSource("route");
-
       this.#markers.forEach(function (marker) {
         marker.remove();
       });
       this.#markers = [];
+    }
+    if (this.#routeIds.length) {
+      const maplibreMap = this.#map._getMap();
+      this.#routeIds.forEach(function (routeId) {
+        maplibreMap.removeLayer(routeId);
+        maplibreMap.removeSource(routeId);
+      });
+      this.#routeIds = [];
     }
   }
 

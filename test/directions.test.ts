@@ -246,7 +246,7 @@ test("should set directionsrenderer directions option", () => {
 
   expect(testDirectionsRenderer).not.toBeNull();
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledWith("route0", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -259,9 +259,9 @@ test("should set directionsrenderer directions option", () => {
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "route",
+    id: "route0",
     type: "line",
-    source: "route",
+    source: "route0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -307,7 +307,7 @@ test("should call setDirections method on directionsrenderer", () => {
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledWith("route0", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -320,9 +320,9 @@ test("should call setDirections method on directionsrenderer", () => {
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "route",
+    id: "route0",
     type: "line",
-    source: "route",
+    source: "route0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -383,7 +383,7 @@ test("should call setDirections method on directionsrenderer twice", () => {
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(2);
-  expect(mockAddSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledWith("route0", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -396,9 +396,9 @@ test("should call setDirections method on directionsrenderer twice", () => {
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(2);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "route",
+    id: "route0",
     type: "line",
-    source: "route",
+    source: "route0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -448,7 +448,7 @@ test("should call setDirections method on directionsrenderer with all polylineOp
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledWith("route0", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -461,9 +461,9 @@ test("should call setDirections method on directionsrenderer with all polylineOp
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "route",
+    id: "route0",
     type: "line",
-    source: "route",
+    source: "route0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -510,7 +510,7 @@ test("should call setDirections method on directionsrenderer with polylineOption
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledWith("route0", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -523,9 +523,9 @@ test("should call setDirections method on directionsrenderer with polylineOption
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "route",
+    id: "route0",
     type: "line",
-    source: "route",
+    source: "route0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -572,7 +572,7 @@ test("should call setDirections method on directionsrenderer with polylineOption
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("route", {
+  expect(mockAddSource).toHaveBeenCalledWith("route0", {
     type: "geojson",
     data: {
       type: "Feature",
@@ -585,9 +585,9 @@ test("should call setDirections method on directionsrenderer with polylineOption
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "route",
+    id: "route0",
     type: "line",
-    source: "route",
+    source: "route0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -1055,6 +1055,9 @@ test("should call route with options travel mode set to driving and unit system 
     },
     travelMode: TravelMode.DRIVING,
     unitSystem: UnitSystem.METRIC,
+    drivingOptions: {
+      departureTime: new Date("2000-01-01"),
+    },
   };
 
   directionsService.route(request).then(() => {
@@ -1063,6 +1066,7 @@ test("should call route with options travel mode set to driving and unit system 
         input: {
           CalculatorName: undefined,
           DeparturePosition: [4, 3],
+          DepartureTime: new Date("2000-01-01"),
           DestinationPosition: [8, 7],
           DistanceUnit: "Kilometers",
           IncludeLegGeometry: true,
@@ -1106,6 +1110,42 @@ test("should call route with options travel mode set to driving and unit system 
   });
 });
 
+test("should call route with option waypoints set", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    waypoints: [
+      {
+        location: {
+          query: "another cool place",
+        },
+      },
+    ],
+  };
+
+  directionsService.route(request).then(() => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          DeparturePosition: [4, 3],
+          DestinationPosition: [8, 7],
+          IncludeLegGeometry: true,
+          TravelMode: "Car",
+          WaypointPositions: [[8, 7]],
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
 test("route should handle client error", (done) => {
   const origin = new MigrationLatLng(1, 2);
   const destination = new MigrationLatLng(-1, -1); // The mock will throw an error for this position
@@ -1114,6 +1154,35 @@ test("route should handle client error", (done) => {
     origin: origin,
     destination: destination,
     travelMode: TravelMode.DRIVING,
+  };
+
+  directionsService
+    .route(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(1);
+
+      // Signal the unit test is complete
+      done();
+    });
+});
+
+test("route should handle client error with waypoint specified", (done) => {
+  const origin = new MigrationLatLng(1, 2);
+  const destination = new MigrationLatLng(-1, -1); // The mock will throw an error for this position
+
+  const request = {
+    origin: origin,
+    destination: destination,
+    travelMode: TravelMode.DRIVING,
+    waypoints: [
+      {
+        location: {
+          query: "another cool place",
+        },
+      },
+    ],
   };
 
   directionsService
@@ -1175,6 +1244,36 @@ test("route should handle client error when performing getDetails destination re
       placeId: clientErrorPlaceId,
     },
     travelMode: TravelMode.DRIVING,
+  };
+
+  directionsService
+    .route(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(2);
+
+      // Signal the unit test is complete
+      done();
+    });
+});
+
+test("route should handle client error when performing getDetails waypoint request", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    waypoints: [
+      {
+        location: {
+          placeId: clientErrorPlaceId,
+        },
+      },
+    ],
   };
 
   directionsService
