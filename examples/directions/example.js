@@ -34,10 +34,26 @@ function initMap() {
   };
 
   document.getElementById("start").addEventListener("change", onChangeHandler);
+  document.getElementById("waypoint1").addEventListener("change", onChangeHandler);
+  document.getElementById("waypoint2").addEventListener("change", onChangeHandler);
+  document.getElementById("waypoint3").addEventListener("change", onChangeHandler);
   document.getElementById("end").addEventListener("change", onChangeHandler);
 }
 
 function calculateAndDisplayRoute(directionsService, directionsRenderer) {
+  // create waypoint array to pass into route call
+  const waypoints = [];
+  for (let i = 1; i <= 3; i++) {
+    const elementValue = document.getElementById("waypoint" + i).value;
+    if (elementValue != "-") {
+      waypoints.push({
+        location: {
+          query: elementValue,
+        },
+      });
+    }
+  }
+  // make route call
   directionsService
     .route({
       origin: {
@@ -47,6 +63,7 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
         query: document.getElementById("end").value,
       },
       travelMode: google.maps.TravelMode.DRIVING,
+      waypoints: waypoints,
     })
     .then((response) => {
       directionsRenderer.setDirections(response);
@@ -54,6 +71,7 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
     .catch((e) => window.alert("Directions request failed due to " + e));
 }
 
+// generates a polyline with a random color, weight, and opacity
 function generateRandomPolylineOptions() {
   return {
     strokeColor: generateRandomHexColor(),
@@ -78,5 +96,5 @@ function generateRandomDouble() {
 }
 
 function generateRandomInt() {
-  return Math.floor(Math.random() * 10) + 1;
+  return Math.floor(Math.random() * 6) + 5;
 }

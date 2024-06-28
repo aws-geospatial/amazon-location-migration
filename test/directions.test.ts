@@ -718,6 +718,55 @@ test("should not allow calling setDirections with multiple routes", () => {
   expect(testDirectionsRenderer.getDirections()).toBeUndefined();
 });
 
+test("should call setDirections with a route that contains multiple legs and create multiple markers", () => {
+  const testMap = new MigrationMap(null, {
+    center: { lat: testLat, lng: testLng },
+    zoom: 9,
+  });
+  const testDirectionsRenderer = new MigrationDirectionsRenderer({
+    map: testMap,
+  });
+  const directions = {
+    routes: [
+      {
+        bounds: null,
+        legs: [
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 2, lng: 2 },
+            steps: [
+              {
+                start_location: { lat: 0, lng: 0 },
+                end_location: { lat: 1, lng: 1 },
+              },
+            ],
+          },
+          {
+            geometry: {
+              LineString: 0,
+            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 2, lng: 2 },
+            steps: [
+              {
+                start_location: { lat: 1, lng: 1 },
+                end_location: { lat: 2, lng: 2 },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  testDirectionsRenderer.setDirections(directions);
+
+  expect(testDirectionsRenderer._getMarkers().length).toBe(3);
+});
+
 test("should call addEventListener method on directionsrenderer", () => {
   const testMap = new MigrationMap(null, {
     center: { lat: testLat, lng: testLng },

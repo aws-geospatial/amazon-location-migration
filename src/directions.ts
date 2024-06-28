@@ -120,6 +120,8 @@ interface DirectionsResult {
   status: DirectionsStatus;
 }
 
+const ASCII_CODE_A = 65;
+
 class MigrationDirectionsService {
   // This will be populated by the top level module
   // that creates our location client
@@ -206,12 +208,7 @@ class MigrationDirectionsService {
                     this._client
                       .send(command)
                       .then((response) => {
-                        const googleResponse = this._convertAmazonResponseToGoogleResponse(
-                          response,
-                          options,
-                          departureLocation,
-                          destinationLocation,
-                        );
+                        const googleResponse = this._convertAmazonResponseToGoogleResponse(response, options);
                         resolve(googleResponse);
                       })
                       .catch((error) => {
@@ -235,12 +232,7 @@ class MigrationDirectionsService {
                 this._client
                   .send(command)
                   .then((response) => {
-                    const googleResponse = this._convertAmazonResponseToGoogleResponse(
-                      response,
-                      options,
-                      departureLocation,
-                      destinationLocation,
-                    );
+                    const googleResponse = this._convertAmazonResponseToGoogleResponse(response, options);
                     resolve(googleResponse);
                   })
                   .catch((error) => {
@@ -337,7 +329,7 @@ class MigrationDirectionsService {
     });
   }
 
-  _convertAmazonResponseToGoogleResponse(response, options, departureLocation, destinationLocation) {
+  _convertAmazonResponseToGoogleResponse(response, options) {
     const bounds = response.Summary.RouteBBox;
 
     const googleLegs = [];
@@ -358,8 +350,8 @@ class MigrationDirectionsService {
       googleLegs.push({
         geometry: leg.Geometry,
         steps: steps,
-        start_location: departureLocation,
-        end_location: destinationLocation,
+        start_location: new MigrationLatLng(leg.StartPosition[1], leg.StartPosition[0]), // start_location of leg, not entire route
+        end_location: new MigrationLatLng(leg.EndPosition[1], leg.EndPosition[0]), // end_location of leg, not entire route
       });
     });
 
@@ -524,27 +516,34 @@ class MigrationDirectionsRenderer {
         this.#routeIds.push(routeId);
       }
 
-      // Add markers for the start/end locations
+      // Add markers for the start location of the current leg
       if (this.#suppressMarkers === false) {
         const startLocation = leg.start_location;
-        const endLocation = leg.end_location;
 
         const startMarkerOptions =
-          this.#markerOptions === undefined ? { label: "A" } : structuredClone(this.#markerOptions);
+          this.#markerOptions === undefined
+            ? { label: String.fromCharCode(ASCII_CODE_A + i) }
+            : structuredClone(this.#markerOptions);
         startMarkerOptions.position = startLocation;
         startMarkerOptions.map = this.#map;
         const startMarker = new MigrationMarker(startMarkerOptions);
         this.#markers.push(startMarker);
-
-        const endMarkerOptions =
-          this.#markerOptions === undefined ? { label: "B" } : structuredClone(this.#markerOptions);
-        endMarkerOptions.position = endLocation;
-        endMarkerOptions.map = this.#map;
-        const endMarker = new MigrationMarker(endMarkerOptions);
-        this.#markers.push(endMarker);
       }
 
       // TODO: Add default info windows once location information is passed into route result
+    }
+
+    // Add final marker for end location of enture route
+    if (this.#suppressMarkers === false) {
+      const lastLeg = route.legs[route.legs.length - 1];
+      const endMarkerOptions =
+        this.#markerOptions === undefined
+          ? { label: String.fromCharCode(ASCII_CODE_A + route.legs.length) }
+          : structuredClone(this.#markerOptions);
+      endMarkerOptions.position = lastLeg.end_location;
+      endMarkerOptions.map = this.#map;
+      const endMarker = new MigrationMarker(endMarkerOptions);
+      this.#markers.push(endMarker);
     }
   }
 

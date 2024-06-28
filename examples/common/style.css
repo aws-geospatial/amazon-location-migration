@@ -23,8 +23,9 @@ body {
 /* This is for the directions example */
 #floating-panel {
   position: absolute;
-  top: 10px;
-  left: 25%;
+  top: 5%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 5;
   background-color: #fff;
   padding: 5px;
@@ -32,7 +33,7 @@ body {
   text-align: center;
   font-family: "Roboto", "sans-serif";
   line-height: 30px;
-  padding-left: 10px;
+  width: 1000px;
 }
 
 .example-links {
