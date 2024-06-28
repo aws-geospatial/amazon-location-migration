@@ -140,12 +140,10 @@ class MigrationDirectionsService {
     return new Promise<DirectionsResult>((resolve, reject) => {
       this._parseOrFindLocation(options.origin)
         .then((originResponse: ParseOrFindLocationResponse) => {
-          const departureLocation = originResponse.locationLatLng;
           const departurePosition = originResponse.position;
 
           this._parseOrFindLocation(options.destination)
             .then((destinationResponse: ParseOrFindLocationResponse) => {
-              const destinationLocation = destinationResponse.locationLatLng;
               const destinationPosition = destinationResponse.position;
 
               const input: CalculateRouteRequest = {
