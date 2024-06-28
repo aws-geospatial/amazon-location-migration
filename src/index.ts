@@ -148,9 +148,11 @@ const migrationInit = async function () {
                 ControlPosition: MigrationControlPosition,
                 LatLng: MigrationLatLng,
                 LatLngBounds: MigrationLatLngBounds,
-                addListener: addListener,
-                addListenerOnce: addListenerOnce,
-                removeListener: removeListener,
+                event: {
+                  addListener: addListener,
+                  addListenerOnce: addListenerOnce,
+                  removeListener: removeListener,
+                },
               });
               break;
 
