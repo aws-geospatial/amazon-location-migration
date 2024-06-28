@@ -66,11 +66,14 @@ test("can dynamically import core classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { ControlPosition, LatLng, LatLngBounds } = await google.maps.importLibrary("core");
+  const { ControlPosition, LatLng, LatLngBounds, event } = await google.maps.importLibrary("core");
 
   expect(ControlPosition).toBeDefined();
   expect(LatLng).toBeDefined();
   expect(LatLngBounds).toBeDefined();
+  expect(event.addListener).toBeDefined();
+  expect(event.addListenerOnce).toBeDefined();
+  expect(event.removeListener).toBeDefined();
 });
 
 test("can dynamically import maps classes", async () => {
