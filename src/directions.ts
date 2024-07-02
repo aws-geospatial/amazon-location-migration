@@ -121,6 +121,8 @@ interface DirectionsResult {
 }
 
 const ASCII_CODE_A = 65;
+const KILOMETERS_TO_MILES_CONSTANT = 0.621371;
+const KILOMETERS_TO_METERS_CONSTANT = 1000;
 
 class MigrationDirectionsService {
   // This will be populated by the top level module
@@ -166,14 +168,6 @@ class MigrationDirectionsService {
                 }
               }
 
-              if ("unitSystem" in options) {
-                if (options.unitSystem == UnitSystem.IMPERIAL) {
-                  input.DistanceUnit = "Miles";
-                } else if (options.unitSystem == UnitSystem.METRIC) {
-                  input.DistanceUnit = "Kilometers";
-                }
-              }
-
               // only pass in avoidFerries and avoidTolls options if travel mode is Driving, Amazon Location Client will error out
               // if CarModeOptions is passed in and travel mode is not Driving
               if (
@@ -198,15 +192,21 @@ class MigrationDirectionsService {
               if ("waypoints" in options) {
                 // Array of DirectionsWaypoint
                 this._parseOrFindLocations(options.waypoints)
-                  .then((locationReponses) => {
-                    input.WaypointPositions = locationReponses.map((locationResponse) => locationResponse.position);
+                  .then((waypointResponses) => {
+                    input.WaypointPositions = waypointResponses.map((locationResponse) => locationResponse.position);
 
                     const command = new CalculateRouteCommand(input);
 
                     this._client
                       .send(command)
                       .then((response) => {
-                        const googleResponse = this._convertAmazonResponseToGoogleResponse(response, options);
+                        const googleResponse = this._convertAmazonResponseToGoogleResponse(
+                          response,
+                          options,
+                          originResponse,
+                          destinationResponse,
+                          waypointResponses,
+                        );
                         resolve(googleResponse);
                       })
                       .catch((error) => {
@@ -230,7 +230,12 @@ class MigrationDirectionsService {
                 this._client
                   .send(command)
                   .then((response) => {
-                    const googleResponse = this._convertAmazonResponseToGoogleResponse(response, options);
+                    const googleResponse = this._convertAmazonResponseToGoogleResponse(
+                      response,
+                      options,
+                      originResponse,
+                      destinationResponse,
+                    );
                     resolve(googleResponse);
                   })
                   .catch((error) => {
@@ -279,7 +284,8 @@ class MigrationDirectionsService {
 
         const findPlaceFromQueryRequest = {
           query: query,
-          fields: ["geometry"],
+          // place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
+          fields: ["geometry", "place_id", "types", "formatted_address"],
         };
 
         this._placesService.findPlaceFromQuery(findPlaceFromQueryRequest, (results, status) => {
@@ -290,6 +296,9 @@ class MigrationDirectionsService {
             resolve({
               locationLatLng: locationLatLng,
               position: position,
+              place_id: results[0].place_id,
+              types: results[0].types,
+              formatted_address: results[0].formatted_address,
             });
           } else {
             reject({});
@@ -309,6 +318,9 @@ class MigrationDirectionsService {
             resolve({
               locationLatLng: locationLatLng,
               position: position,
+              place_id: locationInput?.placeId,
+              types: result.types,
+              formatted_address: result.formatted_address,
             });
           } else {
             reject({});
@@ -327,16 +339,23 @@ class MigrationDirectionsService {
     });
   }
 
-  _convertAmazonResponseToGoogleResponse(response, options) {
+  _convertAmazonResponseToGoogleResponse(response, options, originResponse, destinationResponse, waypointResponses?) {
     const bounds = response.Summary.RouteBBox;
 
     const googleLegs = [];
-    response.Legs.forEach(function (leg) {
+    // using "(leg) =>" instead of "function(leg)" to allow us to access 'this'
+    response.Legs.forEach((leg) => {
       const steps: DirectionsStep[] = [];
-      leg.Steps.forEach(function (step) {
+      leg.Steps.forEach((step) => {
         steps.push({
+          distance: {
+            // we do not support Google's behavior of using the unit system of the country of origin and so we will use
+            // Amazon Location's default unit system of kilometers if the unit system option is not specified
+            text: this._convertKilometersToGoogleDistanceText(step.Distance, options),
+            value: step.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
+          },
           duration: {
-            text: step.DurationSeconds + " seconds", // TODO: Add conversion logic to make this seconds/minutes/hours
+            text: this._formatSecondsAsGoogleDurationText(step.DurationSeconds),
             value: step.DurationSeconds,
           },
           start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
@@ -346,10 +365,22 @@ class MigrationDirectionsService {
       });
 
       googleLegs.push({
+        distance: {
+          // we do not support Google's behavior of using the unit system of the country of origin and so we will use
+          // Amazon Location's default unit system of kilometers if the unit system option is not specified
+          text: this._convertKilometersToGoogleDistanceText(leg.Distance, options),
+          value: leg.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
+        },
+        duration: {
+          text: this._formatSecondsAsGoogleDurationText(leg.DurationSeconds),
+          value: leg.DurationSeconds,
+        },
         geometry: leg.Geometry,
         steps: steps,
         start_location: new MigrationLatLng(leg.StartPosition[1], leg.StartPosition[0]), // start_location of leg, not entire route
         end_location: new MigrationLatLng(leg.EndPosition[1], leg.EndPosition[0]), // end_location of leg, not entire route
+        start_address: originResponse.formatted_address,
+        end_address: destinationResponse.formatted_address,
       });
     });
 
@@ -368,13 +399,90 @@ class MigrationDirectionsService {
     };
 
     const googleResponse: DirectionsResult = {
-      geocoded_waypoints: [], // TODO: Fill these out if the source/destination were passed as queries
       request: options,
       routes: [googleRoute],
       status: DirectionsStatus.OK,
     };
 
+    // add geocoded waypoints if the data is available
+    const geocodedWaypoints =
+      waypointResponses != null
+        ? this._constructGeocodedWaypointsFromResponses(originResponse, destinationResponse, waypointResponses)
+        : this._constructGeocodedWaypointsFromResponses(originResponse, destinationResponse);
+    if (geocodedWaypoints != null) {
+      googleResponse["geocoded_waypoints"] = geocodedWaypoints;
+    }
+
     return googleResponse;
+  }
+
+  _formatSecondsAsGoogleDurationText(seconds) {
+    // convert seconds to hours and minutes, rounding up to whole minutes
+    const hours = Math.floor(seconds / 3600);
+    const remainingSeconds = seconds % 3600;
+    const minutes = Math.ceil(remainingSeconds / 60);
+
+    // take care of the "1 hour" or "1 min" edge case
+    const hourString = hours > 0 ? `${hours === 1 ? `${hours} hour` : `${hours} hours`}` : "";
+    const minuteString = minutes > 0 ? `${minutes === 1 ? `${minutes} min` : `${minutes} mins`}` : "";
+
+    // return hour and minute strings only if they are set
+    if (hourString && minuteString) {
+      return `${hourString} ${minuteString}`;
+    } else {
+      return hourString || minuteString;
+    }
+  }
+
+  _convertKilometersToGoogleDistanceText(kilometers, options) {
+    return "unitSystem" in options && options.unitSystem == UnitSystem.IMPERIAL
+      ? kilometers * KILOMETERS_TO_MILES_CONSTANT + " mi"
+      : kilometers + " km";
+  }
+
+  _constructGeocodedWaypointsFromResponses(
+    originResponse,
+    destinationResponse,
+    waypointResponses?,
+  ): DirectionsGeocodedWaypoint[] {
+    const geocodedWaypoints = [];
+
+    // add origin geocoded waypoint
+    const originGeocodedWaypoint = this._constructGeocodedWaypoint(originResponse);
+    if (originGeocodedWaypoint != null) {
+      geocodedWaypoints.push(originGeocodedWaypoint);
+    }
+
+    // add geocoded waypoints
+    if (waypointResponses != null) {
+      waypointResponses.forEach((waypointResponse) => {
+        const geocodedWaypoint = this._constructGeocodedWaypoint(waypointResponse);
+        if (geocodedWaypoint != null) {
+          geocodedWaypoints.push(geocodedWaypoint);
+        }
+      });
+    }
+
+    // add destination geocoded waypoint
+    const destinationGeocodedWaypoint = this._constructGeocodedWaypoint(destinationResponse);
+    if (destinationGeocodedWaypoint != null) {
+      geocodedWaypoints.push(destinationGeocodedWaypoint);
+    }
+
+    // if there are no geocodedWaypoints then return null
+    return geocodedWaypoints.length == 0 ? null : geocodedWaypoints;
+  }
+
+  _constructGeocodedWaypoint(locationResponse) {
+    const geocodedWaypoint = {};
+    if (locationResponse.place_id != null) {
+      geocodedWaypoint["place_id"] = locationResponse.place_id;
+    }
+    if (locationResponse.types != null) {
+      geocodedWaypoint["types"] = locationResponse.types;
+    }
+    geocodedWaypoint["geocoder_status"] = DirectionsStatus.OK;
+    return "place_id" in geocodedWaypoint || "types" in geocodedWaypoint ? geocodedWaypoint : null;
   }
 }
 

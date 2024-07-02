@@ -97,6 +97,13 @@ const convertAmazonPlaceToGoogle = (placeObject, fields, includeDetailFields) =>
     googlePlace["reference"] = placeObject.PlaceId;
   }
 
+  // Needed for MigrationDirectionsService.route method's response field "geocoded_waypoints"
+  // which needs DirectionsGeocodedWaypoint objects that have property "type" which is the
+  // equivalent of Amazon Location's "Categories" property
+  if ((includeAllFields || fields.includes("types")) && place.Categories != null) {
+    googlePlace["types"] = place.Categories;
+  }
+
   // Handle additional fields for getDetails request
   if (includeDetailFields) {
     // Our time zone offset is given in seconds, but Google's uses minutes

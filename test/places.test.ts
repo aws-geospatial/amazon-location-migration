@@ -41,6 +41,7 @@ const mockedClientSend = jest.fn((command) => {
                   Name: "CST",
                   Offset: -18000,
                 },
+                Categories: ["City"],
               },
               PlaceId: "KEEP_AUSTIN_WEIRD",
             },
@@ -64,6 +65,7 @@ const mockedClientSend = jest.fn((command) => {
               Offset: -18000,
             },
             Municipality: "Austin",
+            Categories: ["City"],
           },
         });
       }
@@ -141,6 +143,7 @@ test("findPlaceFromQuery should only return the requested fields", (done) => {
     expect(firstResult.formatted_address).toBeUndefined();
     expect(firstResult.place_id).toBeUndefined();
     expect(firstResult.reference).toBeUndefined();
+    expect(firstResult.types).toBeUndefined();
 
     // Signal the unit test is complete
     done();
@@ -167,6 +170,7 @@ test("findPlaceFromQuery should return all fields when ALL are requested", (done
     expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     expect(firstResult.reference).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(firstResult.types).toStrictEqual(["City"]);
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -237,6 +241,7 @@ test("getDetails should return all fields by default", (done) => {
     expect(result.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(result.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     expect(result.reference).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(result.types).toStrictEqual(["City"]);
     expect(result.utc_offset).toStrictEqual(-300);
     expect(result.utc_offset_minutes).toStrictEqual(-300);
     expect(result.vicinity).toStrictEqual("1337 Cool Place Road, Austin");
@@ -265,6 +270,7 @@ test("getDetails should only return the requested fields", (done) => {
     expect(result.geometry).toBeUndefined();
     expect(result.formatted_address).toBeUndefined();
     expect(result.reference).toBeUndefined();
+    expect(result.types).toBeUndefined();
     expect(result.utc_offset).toBeUndefined();
     expect(result.utc_offset_minutes).toBeUndefined();
 
