@@ -59,7 +59,7 @@ const mockedClientSend = jest.fn((command) => {
           Legs: [
             {
               Distance: 9001,
-              DurationSeconds: 1337,
+              DurationSeconds: 12032,
               EndPosition: endPosition,
               Geometry: {
                 LineString: [
@@ -112,6 +112,7 @@ const mockedClientSend = jest.fn((command) => {
                 Geometry: {
                   Point: [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
                 },
+                Categories: ["City"],
               },
               PlaceId: "KEEP_AUSTIN_WEIRD",
             },
@@ -126,6 +127,7 @@ const mockedClientSend = jest.fn((command) => {
                 Geometry: {
                   Point: [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
                 },
+                Categories: ["City"],
               },
               PlaceId: "ANOTHER_COOL_PLACE",
             },
@@ -145,6 +147,7 @@ const mockedClientSend = jest.fn((command) => {
             Geometry: {
               Point: [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
             },
+            Categories: ["City"],
             TimeZone: {
               Offset: -18000,
             },
@@ -1049,16 +1052,40 @@ test("should return route with origin as Place.placeId and destination as Place.
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
 
+    const geocodedWaypoints = response.geocoded_waypoints;
     const routes = response.routes;
-
+    expect(geocodedWaypoints?.length).toStrictEqual(2);
     expect(routes.length).toStrictEqual(1);
 
     const route = routes[0];
-
     const bounds = route.bounds;
+    const legs = route.legs;
     expect(bounds.equals(new MigrationLatLngBounds(testCoolPlaceLocation, testAnotherCoolPlaceLocation))).toStrictEqual(
       true,
     );
+    expect(legs.length).toStrictEqual(1);
+
+    const leg = legs[0];
+    const distance = leg.distance;
+    const steps = leg.steps;
+    const duration = leg.duration;
+    const start_address = leg.start_address;
+    const end_address = leg.end_address;
+    const start_location = leg.start_location;
+    const end_location = leg.end_location;
+    expect(distance).toStrictEqual({
+      text: "9001 km",
+      value: 9001000,
+    });
+    expect(steps.length).toStrictEqual(3);
+    expect(duration).toStrictEqual({
+      text: "3 hours 21 mins",
+      value: 12032,
+    });
+    expect(start_address).toStrictEqual("cool place, austin, tx");
+    expect(end_address).toStrictEqual("another cool place, austin, tx");
+    expect(start_location.equals(new MigrationLatLng(testCoolPlaceLocation))).toStrictEqual(true);
+    expect(end_location.equals(new MigrationLatLng(testAnotherCoolPlaceLocation))).toStrictEqual(true);
 
     done();
   });
@@ -1083,7 +1110,6 @@ test("should call route with options travel mode set to walking and unit system 
           CalculatorName: undefined,
           DeparturePosition: [4, 3],
           DestinationPosition: [8, 7],
-          DistanceUnit: "Miles",
           IncludeLegGeometry: true,
           TravelMode: "Walking",
         },
@@ -1117,7 +1143,6 @@ test("should call route with options travel mode set to driving and unit system 
           DeparturePosition: [4, 3],
           DepartureTime: new Date("2000-01-01"),
           DestinationPosition: [8, 7],
-          DistanceUnit: "Kilometers",
           IncludeLegGeometry: true,
           TravelMode: "Car",
         },
@@ -1128,7 +1153,7 @@ test("should call route with options travel mode set to driving and unit system 
   });
 });
 
-test("should call route with options travel mode set to driving and unit system set to metric", (done) => {
+test("should call route with options avoidFerries set to true and avoidTolls set to true", (done) => {
   const request = {
     origin: {
       placeId: "KEEP_AUSTIN_WEIRD",
