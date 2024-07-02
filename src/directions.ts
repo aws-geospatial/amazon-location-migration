@@ -284,7 +284,7 @@ class MigrationDirectionsService {
 
         const findPlaceFromQueryRequest = {
           query: query,
-          // place_id and types needed for geocoded_waypoints response property, name needed for leg start_address and end_address
+          // place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
           fields: ["geometry", "place_id", "types", "formatted_address"],
         };
 
@@ -343,6 +343,7 @@ class MigrationDirectionsService {
     const bounds = response.Summary.RouteBBox;
 
     const googleLegs = [];
+    // using "(leg) =>" instead of "function(leg)" to allow us to access 'this'
     response.Legs.forEach((leg) => {
       const steps: DirectionsStep[] = [];
       leg.Steps.forEach((step) => {
@@ -354,8 +355,6 @@ class MigrationDirectionsService {
             value: step.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
           },
           duration: {
-            // can only access 'this' because arrow functions
-            // https://stackoverflow.com/questions/43724426/this-is-undefined-inside-the-foreach-loop
             text: this._formatSecondsAsGoogleDurationText(step.DurationSeconds),
             value: step.DurationSeconds,
           },
@@ -373,8 +372,6 @@ class MigrationDirectionsService {
           value: leg.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
         },
         duration: {
-          // can only access 'this' because arrow functions
-          // https://stackoverflow.com/questions/43724426/this-is-undefined-inside-the-foreach-loop
           text: this._formatSecondsAsGoogleDurationText(leg.DurationSeconds),
           value: leg.DurationSeconds,
         },
@@ -420,11 +417,9 @@ class MigrationDirectionsService {
   }
 
   _formatSecondsAsGoogleDurationText(seconds) {
-    // get number of hours
+    // convert seconds to hours and minutes, rounding up to whole minutes
     const hours = Math.floor(seconds / 3600);
     const remainingSeconds = seconds % 3600;
-
-    // get number of minutes from remaining seconds after removing seconds contributed to hour count
     const minutes = Math.ceil(remainingSeconds / 60);
 
     // take care of the "1 hour" or "1 min" edge case
@@ -439,10 +434,10 @@ class MigrationDirectionsService {
     }
   }
 
-  _convertKilometersToGoogleDistanceText(meters, options) {
+  _convertKilometersToGoogleDistanceText(kilometers, options) {
     return "unitSystem" in options && options.unitSystem == UnitSystem.IMPERIAL
-      ? meters * KILOMETERS_TO_MILES_CONSTANT + " mi"
-      : meters + " km";
+      ? kilometers * KILOMETERS_TO_MILES_CONSTANT + " mi"
+      : kilometers + " km";
   }
 
   _constructGeocodedWaypointsFromResponses(
