@@ -2,7 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationMap } from "../src/maps";
-import { MigrationDirectionsRenderer, MigrationDirectionsService, TravelMode, UnitSystem } from "../src/directions";
+import {
+  MigrationDirectionsRenderer,
+  MigrationDirectionsService,
+  MigrationDistanceMatrixService,
+  TravelMode,
+  UnitSystem,
+  DistanceMatrixElementStatus,
+  DistanceMatrixStatus,
+} from "../src/directions";
 import { MigrationPlacesService } from "../src/places";
 import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../src/googleCommon";
 
@@ -155,6 +163,21 @@ const mockedClientSend = jest.fn((command) => {
           },
         });
       }
+    } else if (command instanceof CalculateRouteMatrixCommand) {
+      // checks if DestinationPositions array contains clientErrorDestinationPosition
+      if (
+        command.input.DestinationPositions?.some(
+          (position) =>
+            position.length === clientErrorDestinationPosition.length &&
+            position.every((num, index) => num === clientErrorDestinationPosition[index]),
+        )
+      ) {
+        resolve({});
+      } else {
+        resolve({
+          RouteMatrix: [[{ Distance: 12, DurationSeconds: 24 }]],
+        });
+      }
     } else {
       reject();
     }
@@ -174,15 +197,19 @@ import {
   CalculateRouteCommand,
   GetPlaceCommand,
   SearchPlaceIndexForTextCommand,
+  CalculateRouteMatrixCommand,
 } from "@aws-sdk/client-location";
 
 const directionsService = new MigrationDirectionsService();
+const distanceMatrixService = new MigrationDistanceMatrixService();
 directionsService._client = new LocationClient();
+distanceMatrixService._client = new LocationClient();
 
-// The DirectionsService also uses the PlacesService in cases where the route is specified with a query string
+// The DirectionsService and DistanceMatrixService also uses the PlacesService in cases where the route is specified with a query string
 // or PlaceId, so we need to set up a mocked one here.
 MigrationPlacesService.prototype._client = new LocationClient();
 directionsService._placesService = new MigrationPlacesService();
+distanceMatrixService._placesService = new MigrationPlacesService();
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
@@ -1356,6 +1383,117 @@ test("route should handle client error when performing getDetails waypoint reque
     .catch((error) => {
       expect(error.status).toStrictEqual(DirectionsStatus.UNKNOWN_ERROR);
       expect(console.error).toHaveBeenCalledTimes(2);
+
+      // Signal the unit test is complete
+      done();
+    });
+});
+
+test("should return getDistanceMatrix with origin as Place.placeId and destination as Place.query", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.DRIVING,
+  };
+
+  distanceMatrixService.getDistanceMatrix(request).then((response) => {
+    // Since origin was a placeId and destination was a query input, these will trigger a
+    // getDetails and findPlaceFromQuery request (respectively) to retrieve the location geometry,
+    // so there will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for distance matrix)
+    expect(mockedClientSend).toHaveBeenCalledTimes(3);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
+
+    const rows = response.rows;
+    expect(rows.length).toStrictEqual(1);
+
+    const row = rows[0];
+    expect(row.elements.length).toStrictEqual(1);
+
+    const element = row.elements[0];
+    expect(element.distance).toStrictEqual({
+      text: "12 km",
+      value: 12000,
+    });
+    expect(element.duration).toStrictEqual({
+      text: "1 min",
+      value: 24,
+    });
+    expect(element.status).toStrictEqual(DistanceMatrixElementStatus.OK);
+
+    done();
+  });
+});
+
+test("getDistanceMatrix should handle client error when performing getDetails destination request", (done) => {
+  const request = {
+    origins: ["cool place"],
+    destinations: [
+      {
+        placeId: clientErrorPlaceId,
+      },
+    ],
+    travelMode: TravelMode.DRIVING,
+  };
+
+  distanceMatrixService
+    .getDistanceMatrix(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(DistanceMatrixStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(2);
+
+      done();
+    });
+});
+
+test("getDistanceMatrix should handle client error when performing findPlaceFromQuery origin request", (done) => {
+  const request = {
+    origins: [clientErrorQuery],
+    destinations: [
+      {
+        query: "cool place",
+      },
+    ],
+    travelMode: TravelMode.DRIVING,
+  };
+
+  distanceMatrixService
+    .getDistanceMatrix(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(DistanceMatrixStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(2);
+
+      done();
+    });
+});
+
+test("getDistanceMatrix should handle client error", (done) => {
+  const origin = new MigrationLatLng(1, 2);
+  const destination = new MigrationLatLng(-1, -1); // The mock will throw an error for this position
+
+  const request = {
+    origins: [origin],
+    destinations: [destination],
+    travelMode: TravelMode.DRIVING,
+  };
+
+  distanceMatrixService
+    .getDistanceMatrix(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(DistanceMatrixStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(1);
 
       // Signal the unit test is complete
       done();

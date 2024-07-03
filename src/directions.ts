@@ -3,8 +3,10 @@
 
 import {
   CalculateRouteCommand,
+  CalculateRouteMatrixCommand,
   CalculateRouteCarModeOptions,
   CalculateRouteRequest,
+  CalculateRouteMatrixRequest,
   LocationClient,
 } from "@aws-sdk/client-location";
 
@@ -120,9 +122,58 @@ interface DirectionsResult {
   status: DirectionsStatus;
 }
 
+export enum DistanceMatrixStatus {
+  INVALID_REQUEST = "INVALID_REQUEST",
+  MAX_DIMENSIONS_EXCEEDED = "MAX_DIMENSIONS_EXCEEDED",
+  MAX_ELEMENTS_EXCEEDED = "MAX_ELEMENTS_EXCEEDED",
+  OK = "OK",
+  OVER_QUERY_LIMIT = "OVER_QUERY_LIMIT",
+  REQUEST_DENIED = "REQUEST_DENIED",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
+}
+
+export enum DistanceMatrixElementStatus {
+  OK = "OK",
+  ZERO_RESULTS = "ZERO_RESULTS",
+  NOT_FOUND = "NOT_FOUND",
+}
+
+interface DistanceMatrixResponseElement {
+  distance: Distance;
+  duration: Duration;
+  status: DistanceMatrixElementStatus;
+}
+
+interface DistanceMatrixResponseRow {
+  elements: DistanceMatrixResponseElement[];
+}
+
+interface DistanceMatrixRequest {
+  destinations: (string | MigrationLatLng | Place | LatLngLiteral)[];
+  origins: (string | MigrationLatLng | Place | LatLngLiteral)[];
+  travelMode: TravelMode;
+  avoidFerries?: boolean;
+  avoidHighways?: boolean;
+  avoidTolls?: boolean;
+  drivingOptions?: DrivingOptions;
+  language?: string | null;
+  region?: string | null;
+  unitSystem?: UnitSystem;
+}
+
+interface DistanceMatrixResponse {
+  destinationAddresses: string[];
+  originAddresses: string[];
+  rows: DistanceMatrixResponseRow[];
+}
+
 const ASCII_CODE_A = 65;
 const KILOMETERS_TO_MILES_CONSTANT = 0.621371;
 const KILOMETERS_TO_METERS_CONSTANT = 1000;
+// place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
+const ROUTE_FIND_LOCATION_FIELDS = ["geometry", "place_id", "types", "formatted_address"];
+// formatted_address needed for originAddresses and destinationAddresses
+const DISTANCE_MATRIX_FIND_LOCATION_FIELDS = ["geometry", "formatted_address"];
 
 class MigrationDirectionsService {
   // This will be populated by the top level module
@@ -140,11 +191,11 @@ class MigrationDirectionsService {
 
   route(options: DirectionsRequest) {
     return new Promise<DirectionsResult>((resolve, reject) => {
-      this._parseOrFindLocation(options.origin)
+      parseOrFindLocation(options.origin, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
         .then((originResponse: ParseOrFindLocationResponse) => {
           const departurePosition = originResponse.position;
 
-          this._parseOrFindLocation(options.destination)
+          parseOrFindLocation(options.destination, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
             .then((destinationResponse: ParseOrFindLocationResponse) => {
               const destinationPosition = destinationResponse.position;
 
@@ -191,7 +242,11 @@ class MigrationDirectionsService {
 
               if ("waypoints" in options) {
                 // Array of DirectionsWaypoint
-                this._parseOrFindLocations(options.waypoints)
+                parseOrFindLocations(
+                  options.waypoints.map((waypoint) => waypoint.location),
+                  this._placesService,
+                  ROUTE_FIND_LOCATION_FIELDS,
+                )
                   .then((waypointResponses) => {
                     input.WaypointPositions = waypointResponses.map((locationResponse) => locationResponse.position);
 
@@ -265,80 +320,6 @@ class MigrationDirectionsService {
     });
   }
 
-  _parseOrFindLocations(locationInputs: DirectionsWaypoint[]) {
-    const locations = [];
-    for (const locationInput of locationInputs) {
-      locations.push(this._parseOrFindLocation(locationInput.location));
-    }
-    return Promise.all(locations);
-  }
-
-  _parseOrFindLocation(locationInput) {
-    // The locationInput can be either a string to be geocoded, a Place, LatLng or LatLngLiteral
-    // For query or placeId, we will need to perform a request to figure out the location.
-    // Otherwise, for LatLng|LatLngLiteral we can just parse it.
-    return new Promise((resolve, reject) => {
-      // For a query, we use findPlaceFromQuery to retrieve the location
-      if (typeof locationInput === "string" || typeof locationInput?.query === "string") {
-        const query = locationInput?.query || locationInput;
-
-        const findPlaceFromQueryRequest = {
-          query: query,
-          // place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
-          fields: ["geometry", "place_id", "types", "formatted_address"],
-        };
-
-        this._placesService.findPlaceFromQuery(findPlaceFromQueryRequest, (results, status) => {
-          if (status === PlacesServiceStatus.OK && results.length) {
-            const locationLatLng = results[0].geometry.location;
-            const position = [locationLatLng.lng(), locationLatLng.lat()];
-
-            resolve({
-              locationLatLng: locationLatLng,
-              position: position,
-              place_id: results[0].place_id,
-              types: results[0].types,
-              formatted_address: results[0].formatted_address,
-            });
-          } else {
-            reject({});
-          }
-        });
-      } else if (typeof locationInput?.placeId === "string") {
-        // For a Place object with placeId, we use getDetails to retrieve the location
-        const getDetailsRequest = {
-          placeId: locationInput.placeId,
-        };
-
-        this._placesService.getDetails(getDetailsRequest, function (result, status) {
-          if (status === PlacesServiceStatus.OK) {
-            const locationLatLng = result.geometry.location;
-            const position = [locationLatLng.lng(), locationLatLng.lat()];
-
-            resolve({
-              locationLatLng: locationLatLng,
-              position: position,
-              place_id: locationInput?.placeId,
-              types: result.types,
-              formatted_address: result.formatted_address,
-            });
-          } else {
-            reject({});
-          }
-        });
-      } else {
-        // Otherwise, it's a LatLng|LatLngLiteral (explicitly or as Place.location)
-        const latLngOrLiteral = locationInput?.location || locationInput;
-        const latLng = new MigrationLatLng(latLngOrLiteral);
-
-        resolve({
-          locationLatLng: latLng,
-          position: [latLng.lng(), latLng.lat()],
-        });
-      }
-    });
-  }
-
   _convertAmazonResponseToGoogleResponse(response, options, originResponse, destinationResponse, waypointResponses?) {
     const bounds = response.Summary.RouteBBox;
 
@@ -351,11 +332,11 @@ class MigrationDirectionsService {
           distance: {
             // we do not support Google's behavior of using the unit system of the country of origin and so we will use
             // Amazon Location's default unit system of kilometers if the unit system option is not specified
-            text: this._convertKilometersToGoogleDistanceText(step.Distance, options),
+            text: convertKilometersToGoogleDistanceText(step.Distance, options),
             value: step.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
           },
           duration: {
-            text: this._formatSecondsAsGoogleDurationText(step.DurationSeconds),
+            text: formatSecondsAsGoogleDurationText(step.DurationSeconds),
             value: step.DurationSeconds,
           },
           start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
@@ -368,11 +349,11 @@ class MigrationDirectionsService {
         distance: {
           // we do not support Google's behavior of using the unit system of the country of origin and so we will use
           // Amazon Location's default unit system of kilometers if the unit system option is not specified
-          text: this._convertKilometersToGoogleDistanceText(leg.Distance, options),
+          text: convertKilometersToGoogleDistanceText(leg.Distance, options),
           value: leg.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
         },
         duration: {
-          text: this._formatSecondsAsGoogleDurationText(leg.DurationSeconds),
+          text: formatSecondsAsGoogleDurationText(leg.DurationSeconds),
           value: leg.DurationSeconds,
         },
         geometry: leg.Geometry,
@@ -414,30 +395,6 @@ class MigrationDirectionsService {
     }
 
     return googleResponse;
-  }
-
-  _formatSecondsAsGoogleDurationText(seconds) {
-    // convert seconds to hours and minutes, rounding up to whole minutes
-    const hours = Math.floor(seconds / 3600);
-    const remainingSeconds = seconds % 3600;
-    const minutes = Math.ceil(remainingSeconds / 60);
-
-    // take care of the "1 hour" or "1 min" edge case
-    const hourString = hours > 0 ? `${hours === 1 ? `${hours} hour` : `${hours} hours`}` : "";
-    const minuteString = minutes > 0 ? `${minutes === 1 ? `${minutes} min` : `${minutes} mins`}` : "";
-
-    // return hour and minute strings only if they are set
-    if (hourString && minuteString) {
-      return `${hourString} ${minuteString}`;
-    } else {
-      return hourString || minuteString;
-    }
-  }
-
-  _convertKilometersToGoogleDistanceText(kilometers, options) {
-    return "unitSystem" in options && options.unitSystem == UnitSystem.IMPERIAL
-      ? kilometers * KILOMETERS_TO_MILES_CONSTANT + " mi"
-      : kilometers + " km";
   }
 
   _constructGeocodedWaypointsFromResponses(
@@ -737,4 +694,213 @@ class MigrationDirectionsRenderer {
   }
 }
 
-export { MigrationDirectionsService, MigrationDirectionsRenderer };
+class MigrationDistanceMatrixService {
+  // This will be populated by the top level module
+  // that creates our location client
+  _client: LocationClient;
+
+  // This will be populated by the top level module
+  // that is passed our route calculator name
+  _routeCalculatorName: string;
+
+  // This will be populated by the top level module
+  // that already has a MigrationPlacesService that has
+  // been configured with our place index name
+  _placesService: MigrationPlacesService;
+
+  getDistanceMatrix(request: DistanceMatrixRequest, callback?) {
+    return new Promise<DistanceMatrixResponse>((resolve, reject) => {
+      parseOrFindLocations(request.origins, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
+        .then((originsResponse) => {
+          parseOrFindLocations(request.destinations, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
+            .then((destinationsResponse) => {
+              const input: CalculateRouteMatrixRequest = {
+                CalculatorName: this._routeCalculatorName, // required
+                DeparturePositions: originsResponse.map((originResponse) => originResponse.position), // required
+                DestinationPositions: destinationsResponse.map((destinationResponse) => destinationResponse.position), // required
+              };
+
+              // TODO: add option fields to request
+
+              const command = new CalculateRouteMatrixCommand(input);
+              this._client
+                .send(command)
+                .then((response) => {
+                  const googleResponse = this._convertAmazonResponseToGoogleResponse(
+                    response,
+                    originsResponse,
+                    destinationsResponse,
+                    request,
+                  );
+                  resolve(googleResponse);
+                })
+                .catch((error) => {
+                  console.error(error);
+
+                  reject({
+                    status: DistanceMatrixStatus.UNKNOWN_ERROR,
+                  });
+                });
+            })
+            .catch((error) => {
+              console.error(error);
+
+              reject({
+                status: DistanceMatrixStatus.UNKNOWN_ERROR,
+              });
+            });
+        })
+        .catch((error) => {
+          console.error(error);
+
+          reject({
+            status: DistanceMatrixStatus.UNKNOWN_ERROR,
+          });
+        });
+    });
+
+    // TODO: add callback(request, DistanceMatrixStatus.OK) logic
+  }
+
+  _convertAmazonResponseToGoogleResponse(
+    calculateRouteMatrixResponse,
+    originsResponse,
+    destinationsResponse,
+    request,
+  ): DistanceMatrixResponse {
+    const distanceMatrixResponseRows = [];
+    calculateRouteMatrixResponse.RouteMatrix.forEach((row) => {
+      const distanceMatrixResponseRow = {
+        elements: [],
+      };
+      row.forEach((cell) => {
+        // add element with response data to row
+        distanceMatrixResponseRow.elements.push({
+          distance: {
+            text: convertKilometersToGoogleDistanceText(cell.Distance, request),
+            value: cell.Distance * KILOMETERS_TO_METERS_CONSTANT,
+          },
+          duration: {
+            text: formatSecondsAsGoogleDurationText(cell.DurationSeconds),
+            value: cell.DurationSeconds,
+          },
+          status: DistanceMatrixElementStatus.OK,
+        });
+      });
+      distanceMatrixResponseRows.push(distanceMatrixResponseRow);
+    });
+
+    // TODO: add destinationAddresses and originAddresses to response using destinationsResponse and originsResponse
+    // once PlacesService can reverse geocode (need to retrieve address name for coordinates to add to address arrays)
+    const distanceMatrixResponse = {
+      originAddresses: [],
+      destinationAddresses: [],
+      rows: distanceMatrixResponseRows,
+    };
+
+    return distanceMatrixResponse;
+  }
+}
+
+function parseOrFindLocations(
+  locationInputs: (string | MigrationLatLng | LatLngLiteral | Place)[],
+  placesService: MigrationPlacesService,
+  findPlaceFromQueryFields: string[],
+) {
+  const locations = [];
+  for (const locationInput of locationInputs) {
+    locations.push(parseOrFindLocation(locationInput, placesService, findPlaceFromQueryFields));
+  }
+  return Promise.all(locations);
+}
+
+function parseOrFindLocation(locationInput, placesService: MigrationPlacesService, findPlaceFromQueryFields: string[]) {
+  // The locationInput can be either a string to be geocoded, a Place, LatLng or LatLngLiteral
+  // For query or placeId, we will need to perform a request to figure out the location.
+  // Otherwise, for LatLng|LatLngLiteral we can just parse it.
+  return new Promise((resolve, reject) => {
+    // For a query, we use findPlaceFromQuery to retrieve the location
+    if (typeof locationInput === "string" || typeof locationInput?.query === "string") {
+      const query = locationInput?.query || locationInput;
+
+      const findPlaceFromQueryRequest = {
+        query: query,
+        fields: findPlaceFromQueryFields,
+      };
+
+      placesService.findPlaceFromQuery(findPlaceFromQueryRequest, (results, status) => {
+        if (status === PlacesServiceStatus.OK && results.length) {
+          const locationLatLng = results[0].geometry.location;
+          const position = [locationLatLng.lng(), locationLatLng.lat()];
+
+          resolve({
+            locationLatLng: locationLatLng,
+            position: position,
+            place_id: results[0].place_id,
+            types: results[0].types,
+            formatted_address: results[0].formatted_address,
+          });
+        } else {
+          reject({});
+        }
+      });
+    } else if (typeof locationInput?.placeId === "string") {
+      // For a Place object with placeId, we use getDetails to retrieve the location
+      const getDetailsRequest = {
+        placeId: locationInput.placeId,
+      };
+
+      placesService.getDetails(getDetailsRequest, function (result, status) {
+        if (status === PlacesServiceStatus.OK) {
+          const locationLatLng = result.geometry.location;
+          const position = [locationLatLng.lng(), locationLatLng.lat()];
+
+          resolve({
+            locationLatLng: locationLatLng,
+            position: position,
+            place_id: locationInput?.placeId,
+            types: result.types,
+            formatted_address: result.formatted_address,
+          });
+        } else {
+          reject({});
+        }
+      });
+    } else {
+      // Otherwise, it's a LatLng|LatLngLiteral (explicitly or as Place.location)
+      const latLngOrLiteral = locationInput?.location || locationInput;
+      const latLng = new MigrationLatLng(latLngOrLiteral);
+
+      resolve({
+        locationLatLng: latLng,
+        position: [latLng.lng(), latLng.lat()],
+      });
+    }
+  });
+}
+
+function formatSecondsAsGoogleDurationText(seconds) {
+  // convert seconds to days, hours, and minutes, rounding up to whole minutes
+  const days = Math.floor(seconds / 86400); // 1 day = 86400 seconds
+  const remainingSeconds = seconds % 86400;
+  const hours = Math.floor(remainingSeconds / 3600);
+  const remainingMinuteSeconds = remainingSeconds % 3600;
+  const minutes = Math.ceil(remainingMinuteSeconds / 60);
+
+  // take care of the "1 day", "1 hour", or "1 min" edge case
+  const dayString = days > 0 ? `${days === 1 ? `${days} day` : `${days} days`}` : "";
+  const hourString = hours > 0 ? `${hours === 1 ? `${hours} hour` : `${hours} hours`}` : "";
+  const minuteString = minutes > 0 ? `${minutes === 1 ? `${minutes} min` : `${minutes} mins`}` : "";
+
+  // return day, hour, and minute strings only if they are set
+  const parts = [dayString, hourString, minuteString].filter((str) => str !== "");
+  return parts.join(" ");
+}
+
+function convertKilometersToGoogleDistanceText(kilometers, options) {
+  return "unitSystem" in options && options.unitSystem == UnitSystem.IMPERIAL
+    ? kilometers * KILOMETERS_TO_MILES_CONSTANT + " mi"
+    : kilometers + " km";
+}
+
+export { MigrationDirectionsService, MigrationDirectionsRenderer, MigrationDistanceMatrixService };
