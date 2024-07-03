@@ -4,7 +4,15 @@
 import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
 
-import { MigrationDirectionsRenderer, MigrationDirectionsService, TravelMode, UnitSystem } from "./directions";
+import {
+  MigrationDirectionsRenderer,
+  MigrationDirectionsService,
+  MigrationDistanceMatrixService,
+  TravelMode,
+  UnitSystem,
+  DistanceMatrixElementStatus,
+  DistanceMatrixStatus,
+} from "./directions";
 import {
   DirectionsStatus,
   MigrationControlPosition,
@@ -95,13 +103,15 @@ const migrationInit = async function () {
   MigrationSearchBox.prototype._placeIndexName = placeIndexName;
   MigrationDirectionsService.prototype._client = client;
   MigrationDirectionsService.prototype._routeCalculatorName = routeCalculatorName;
+  MigrationDistanceMatrixService.prototype._client = client;
+  MigrationDistanceMatrixService.prototype._routeCalculatorName = routeCalculatorName;
 
-  // Additionally, we need to create a places service for our directions service
-  // to use, since it can optionally be passed source/destinations that are string
-  // queries instead of actual LatLng coordinates. Constructing it here and passing
-  // it in will make sure it is already configured with the appropriate client
-  // and place index name.
+  // Additionally, we need to create a places service for our directions service and distance matrix
+  // service to use, since it can optionally be passed source/destinations that are string queries
+  // instead of actual LatLng coordinates. Constructing it here and passing it in will make sure
+  // it is already configured with the appropriate client and place index name.
   MigrationDirectionsService.prototype._placesService = new MigrationPlacesService();
+  MigrationDistanceMatrixService.prototype._placesService = new MigrationPlacesService();
 
   // Create the Google Maps namespace with our migration classes
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
@@ -120,9 +130,12 @@ const migrationInit = async function () {
 
       DirectionsRenderer: MigrationDirectionsRenderer,
       DirectionsService: MigrationDirectionsService,
+      DistanceMatrixService: MigrationDistanceMatrixService,
       DirectionsStatus: DirectionsStatus,
       TravelMode: TravelMode,
       UnitSystem: UnitSystem,
+      DistanceMatrixElementStatus: DistanceMatrixElementStatus,
+      DistanceMatrixStatus: DistanceMatrixStatus,
 
       places: {
         Autocomplete: MigrationAutocomplete,
@@ -178,8 +191,11 @@ const migrationInit = async function () {
               resolve({
                 DirectionsRenderer: MigrationDirectionsRenderer,
                 DirectionsService: MigrationDirectionsService,
+                DistanceMatrixService: MigrationDistanceMatrixService,
                 DirectionsStatus: DirectionsStatus,
                 TravelMode: TravelMode,
+                DistanceMatrixElementStatus: DistanceMatrixElementStatus,
+                DistanceMatrixStatus: DistanceMatrixStatus,
               });
               break;
 

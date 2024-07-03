@@ -49,6 +49,9 @@ test("importing the adapter should populate google.maps namespace for direct loa
   expect(google.maps).toHaveProperty("DirectionsService");
   expect(google.maps).toHaveProperty("DirectionsStatus");
   expect(google.maps).toHaveProperty("TravelMode");
+  expect(google.maps).toHaveProperty("DistanceMatrixService");
+  expect(google.maps).toHaveProperty("DistanceMatrixElementStatus");
+  expect(google.maps).toHaveProperty("DistanceMatrixStatus");
 
   // Places classes
   expect(google.maps.places).toHaveProperty("Autocomplete");
@@ -105,14 +108,23 @@ test("can dynamically import routes classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { DirectionsRenderer, DirectionsService, DirectionsStatus, TravelMode } = await google.maps.importLibrary(
-    "routes",
-  );
+  const {
+    DirectionsRenderer,
+    DirectionsService,
+    DistanceMatrixService,
+    DirectionsStatus,
+    TravelMode,
+    DistanceMatrixElementStatus,
+    DistanceMatrixStatus,
+  } = await google.maps.importLibrary("routes");
 
   expect(DirectionsRenderer).toBeDefined();
   expect(DirectionsService).toBeDefined();
+  expect(DistanceMatrixService);
   expect(DirectionsStatus).toBeDefined();
   expect(TravelMode).toBeDefined();
+  expect(DistanceMatrixElementStatus).toBeDefined();
+  expect(DistanceMatrixStatus).toBeDefined();
 });
 
 test("can dynamically import marker classes", async () => {
