@@ -191,11 +191,11 @@ class MigrationDirectionsService {
 
   route(options: DirectionsRequest) {
     return new Promise<DirectionsResult>((resolve, reject) => {
-      _parseOrFindLocation(options.origin, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
+      parseOrFindLocation(options.origin, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
         .then((originResponse: ParseOrFindLocationResponse) => {
           const departurePosition = originResponse.position;
 
-          _parseOrFindLocation(options.destination, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
+          parseOrFindLocation(options.destination, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
             .then((destinationResponse: ParseOrFindLocationResponse) => {
               const destinationPosition = destinationResponse.position;
 
@@ -242,7 +242,7 @@ class MigrationDirectionsService {
 
               if ("waypoints" in options) {
                 // Array of DirectionsWaypoint
-                _parseOrFindLocations(
+                parseOrFindLocations(
                   options.waypoints.map((waypoint) => waypoint.location),
                   this._placesService,
                   ROUTE_FIND_LOCATION_FIELDS,
@@ -710,9 +710,9 @@ class MigrationDistanceMatrixService {
 
   getDistanceMatrix(request: DistanceMatrixRequest, callback?) {
     return new Promise<DistanceMatrixResponse>((resolve, reject) => {
-      _parseOrFindLocations(request.origins, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
+      parseOrFindLocations(request.origins, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
         .then((originsResponse) => {
-          _parseOrFindLocations(request.destinations, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
+          parseOrFindLocations(request.destinations, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
             .then((destinationsResponse) => {
               const input: CalculateRouteMatrixRequest = {
                 CalculatorName: this._routeCalculatorName, // required
@@ -802,23 +802,19 @@ class MigrationDistanceMatrixService {
   }
 }
 
-function _parseOrFindLocations(
+function parseOrFindLocations(
   locationInputs: (string | MigrationLatLng | LatLngLiteral | Place)[],
   placesService: MigrationPlacesService,
   findPlaceFromQueryFields: string[],
 ) {
   const locations = [];
   for (const locationInput of locationInputs) {
-    locations.push(_parseOrFindLocation(locationInput, placesService, findPlaceFromQueryFields));
+    locations.push(parseOrFindLocation(locationInput, placesService, findPlaceFromQueryFields));
   }
   return Promise.all(locations);
 }
 
-function _parseOrFindLocation(
-  locationInput,
-  placesService: MigrationPlacesService,
-  findPlaceFromQueryFields: string[],
-) {
+function parseOrFindLocation(locationInput, placesService: MigrationPlacesService, findPlaceFromQueryFields: string[]) {
   // The locationInput can be either a string to be geocoded, a Place, LatLng or LatLngLiteral
   // For query or placeId, we will need to perform a request to figure out the location.
   // Otherwise, for LatLng|LatLngLiteral we can just parse it.
