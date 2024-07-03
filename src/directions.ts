@@ -170,7 +170,9 @@ interface DistanceMatrixResponse {
 const ASCII_CODE_A = 65;
 const KILOMETERS_TO_MILES_CONSTANT = 0.621371;
 const KILOMETERS_TO_METERS_CONSTANT = 1000;
+// place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
 const ROUTE_FIND_LOCATION_FIELDS = ["geometry", "place_id", "types", "formatted_address"];
+// formatted_address needed for originAddresses and destinationAddresses
 const DISTANCE_MATRIX_FIND_LOCATION_FIELDS = ["geometry", "formatted_address"];
 
 class MigrationDirectionsService {
@@ -827,7 +829,6 @@ function _parseOrFindLocation(
 
       const findPlaceFromQueryRequest = {
         query: query,
-        // place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
         fields: findPlaceFromQueryFields,
       };
 
