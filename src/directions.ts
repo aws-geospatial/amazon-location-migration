@@ -332,11 +332,11 @@ class MigrationDirectionsService {
           distance: {
             // we do not support Google's behavior of using the unit system of the country of origin and so we will use
             // Amazon Location's default unit system of kilometers if the unit system option is not specified
-            text: _convertKilometersToGoogleDistanceText(step.Distance, options),
+            text: convertKilometersToGoogleDistanceText(step.Distance, options),
             value: step.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
           },
           duration: {
-            text: _formatSecondsAsGoogleDurationText(step.DurationSeconds),
+            text: formatSecondsAsGoogleDurationText(step.DurationSeconds),
             value: step.DurationSeconds,
           },
           start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
@@ -349,11 +349,11 @@ class MigrationDirectionsService {
         distance: {
           // we do not support Google's behavior of using the unit system of the country of origin and so we will use
           // Amazon Location's default unit system of kilometers if the unit system option is not specified
-          text: _convertKilometersToGoogleDistanceText(leg.Distance, options),
+          text: convertKilometersToGoogleDistanceText(leg.Distance, options),
           value: leg.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
         },
         duration: {
-          text: _formatSecondsAsGoogleDurationText(leg.DurationSeconds),
+          text: formatSecondsAsGoogleDurationText(leg.DurationSeconds),
           value: leg.DurationSeconds,
         },
         geometry: leg.Geometry,
@@ -777,11 +777,11 @@ class MigrationDistanceMatrixService {
         // add element with response data to row
         distanceMatrixResponseRow.elements.push({
           distance: {
-            text: _convertKilometersToGoogleDistanceText(cell.Distance, request),
+            text: convertKilometersToGoogleDistanceText(cell.Distance, request),
             value: cell.Distance * KILOMETERS_TO_METERS_CONSTANT,
           },
           duration: {
-            text: _formatSecondsAsGoogleDurationText(cell.DurationSeconds),
+            text: formatSecondsAsGoogleDurationText(cell.DurationSeconds),
             value: cell.DurationSeconds,
           },
           status: DistanceMatrixElementStatus.OK,
@@ -879,7 +879,7 @@ function parseOrFindLocation(locationInput, placesService: MigrationPlacesServic
   });
 }
 
-function _formatSecondsAsGoogleDurationText(seconds) {
+function formatSecondsAsGoogleDurationText(seconds) {
   // convert seconds to days, hours, and minutes, rounding up to whole minutes
   const days = Math.floor(seconds / 86400); // 1 day = 86400 seconds
   const remainingSeconds = seconds % 86400;
@@ -897,7 +897,7 @@ function _formatSecondsAsGoogleDurationText(seconds) {
   return parts.join(" ");
 }
 
-function _convertKilometersToGoogleDistanceText(kilometers, options) {
+function convertKilometersToGoogleDistanceText(kilometers, options) {
   return "unitSystem" in options && options.unitSystem == UnitSystem.IMPERIAL
     ? kilometers * KILOMETERS_TO_MILES_CONSTANT + " mi"
     : kilometers + " km";
