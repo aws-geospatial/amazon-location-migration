@@ -189,7 +189,7 @@ class MigrationDirectionsService {
   // been configured with our place index name
   _placesService: MigrationPlacesService;
 
-  route(options: DirectionsRequest) {
+  route(options: DirectionsRequest, callback?) {
     return new Promise<DirectionsResult>((resolve, reject) => {
       parseOrFindLocation(options.origin, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
         .then((originResponse: ParseOrFindLocationResponse) => {
@@ -262,6 +262,12 @@ class MigrationDirectionsService {
                           destinationResponse,
                           waypointResponses,
                         );
+
+                        // if a callback was given, invoke it before resolving the promise
+                        if (callback) {
+                          callback(googleResponse, DirectionsStatus.OK);
+                        }
+
                         resolve(googleResponse);
                       })
                       .catch((error) => {
@@ -291,6 +297,12 @@ class MigrationDirectionsService {
                       originResponse,
                       destinationResponse,
                     );
+
+                    // if a callback was given, invoke it before resolving the promise
+                    if (callback) {
+                      callback(googleResponse, DirectionsStatus.OK);
+                    }
+
                     resolve(googleResponse);
                   })
                   .catch((error) => {
@@ -720,7 +732,39 @@ class MigrationDistanceMatrixService {
                 DestinationPositions: destinationsResponse.map((destinationResponse) => destinationResponse.position), // required
               };
 
-              // TODO: add option fields to request
+              if ("travelMode" in request) {
+                switch (request.travelMode) {
+                  case TravelMode.DRIVING: {
+                    input.TravelMode = "Car";
+                    break;
+                  }
+                  case TravelMode.WALKING: {
+                    input.TravelMode = "Walking";
+                    break;
+                  }
+                }
+              }
+
+              // only pass in avoidFerries and avoidTolls options if travel mode is Driving, Amazon Location Client will error out
+              // if CarModeOptions is passed in and travel mode is not Driving
+              if (
+                ("avoidFerries" in request || "avoidTolls" in request) &&
+                "travelMode" in request &&
+                request.travelMode == TravelMode.DRIVING
+              ) {
+                const carModeOptions: CalculateRouteCarModeOptions = {};
+                if ("avoidFerries" in request) {
+                  carModeOptions.AvoidFerries = request.avoidFerries;
+                }
+                if ("avoidTolls" in request) {
+                  carModeOptions.AvoidTolls = request.avoidTolls;
+                }
+                input.CarModeOptions = carModeOptions;
+              }
+
+              if ("drivingOptions" in request && request.travelMode == TravelMode.DRIVING) {
+                input.DepartureTime = request.drivingOptions.departureTime;
+              }
 
               const command = new CalculateRouteMatrixCommand(input);
               this._client
@@ -732,6 +776,12 @@ class MigrationDistanceMatrixService {
                     destinationsResponse,
                     request,
                   );
+
+                  // if a callback was given, invoke it before resolving the promise
+                  if (callback) {
+                    callback(googleResponse, DistanceMatrixStatus.OK);
+                  }
+
                   resolve(googleResponse);
                 })
                 .catch((error) => {
@@ -758,8 +808,6 @@ class MigrationDistanceMatrixService {
           });
         });
     });
-
-    // TODO: add callback(request, DistanceMatrixStatus.OK) logic
   }
 
   _convertAmazonResponseToGoogleResponse(
