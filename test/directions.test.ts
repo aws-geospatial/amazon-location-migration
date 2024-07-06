@@ -1118,6 +1118,49 @@ test("should return route with origin as Place.placeId and destination as Place.
   });
 });
 
+test("should return route with origin as LatLng and destination as LatLng with callback specified", (done) => {
+  const origin = new MigrationLatLng(1, 2);
+  const destination = new MigrationLatLng(20, 21);
+
+  const request = {
+    origin: origin,
+    destination: destination,
+    travelMode: TravelMode.DRIVING,
+  };
+
+  directionsService
+    .route(request, (results, status) => {
+      // Since origin and destination are both specified as parseable values, the only mocked
+      // LocationClient call should be the CalculateRouteCommand
+      expect(mockedClientSend).toHaveBeenCalledTimes(1);
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+
+      const routes = results.routes;
+
+      expect(routes.length).toStrictEqual(1);
+
+      const route = routes[0];
+
+      const bounds = route.bounds;
+      expect(bounds.equals(new MigrationLatLngBounds(origin, destination))).toStrictEqual(true);
+
+      const legs = route.legs;
+
+      expect(legs.length).toStrictEqual(1);
+
+      const leg = legs[0];
+
+      expect(leg.steps.length).toStrictEqual(3);
+      expect(leg.start_location.equals(origin)).toStrictEqual(true);
+      expect(leg.end_location.equals(destination)).toStrictEqual(true);
+
+      expect(status).toStrictEqual(DirectionsStatus.OK);
+    })
+    .then(() => {
+      done();
+    });
+});
+
 test("should call route with options travel mode set to walking and unit system set to imperial", (done) => {
   const request = {
     origin: {
@@ -1245,6 +1288,45 @@ test("should call route with option waypoints set", (done) => {
 
     done();
   });
+});
+
+test("should call route with option waypoints set and callback specified", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    waypoints: [
+      {
+        location: {
+          query: "another cool place",
+        },
+      },
+    ],
+  };
+
+  directionsService
+    .route(request, (_, status) => {
+      expect(mockedClientSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: {
+            CalculatorName: undefined,
+            DeparturePosition: [4, 3],
+            DestinationPosition: [8, 7],
+            IncludeLegGeometry: true,
+            TravelMode: "Car",
+            WaypointPositions: [[8, 7]],
+          },
+        }),
+      );
+      expect(status).toStrictEqual(DirectionsStatus.OK);
+    })
+    .then(() => {
+      done();
+    });
 });
 
 test("route should handle client error", (done) => {
@@ -1434,6 +1516,108 @@ test("should return getDistanceMatrix with origin as Place.placeId and destinati
   });
 });
 
+test("should call getDistanceMatrix with options avoidFerries set to true and avoidTolls set to true", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.DRIVING,
+    avoidFerries: true,
+    avoidTolls: true,
+  };
+
+  distanceMatrixService.getDistanceMatrix(request).then(() => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          CarModeOptions: { AvoidFerries: true, AvoidTolls: true },
+          DeparturePositions: [[4, 3]],
+          DestinationPositions: [[8, 7]],
+          TravelMode: "Car",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
+test("should call getDistanceMatrix with options travel mode set to driving, unit system set to metric, and departureTime set", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.DRIVING,
+    unitSystem: UnitSystem.METRIC,
+    drivingOptions: {
+      departureTime: new Date("2000-01-01"),
+    },
+  };
+
+  distanceMatrixService.getDistanceMatrix(request).then(() => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          DeparturePositions: [[4, 3]],
+          DepartureTime: new Date("2000-01-01"),
+          DestinationPositions: [[8, 7]],
+          TravelMode: "Car",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
+test("should call getDistanceMatrix with options travel mode set to walking and unit system set to imperial", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.WALKING,
+    unitSystem: UnitSystem.IMPERIAL,
+  };
+
+  distanceMatrixService.getDistanceMatrix(request).then(() => {
+    expect(mockedClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          CalculatorName: undefined,
+          DeparturePositions: [[4, 3]],
+          DestinationPositions: [[8, 7]],
+          TravelMode: "Walking",
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
 test("getDistanceMatrix should handle client error when performing getDetails destination request", (done) => {
   const request = {
     origins: ["cool place"],
@@ -1496,6 +1680,52 @@ test("getDistanceMatrix should handle client error", (done) => {
       expect(console.error).toHaveBeenCalledTimes(1);
 
       // Signal the unit test is complete
+      done();
+    });
+});
+
+test("getDistanceMatrix will invoke the callback if specified", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.DRIVING,
+  };
+
+  distanceMatrixService
+    .getDistanceMatrix(request, (results, status) => {
+      expect(mockedClientSend).toHaveBeenCalledTimes(3);
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
+
+      const rows = results.rows;
+      expect(rows.length).toStrictEqual(1);
+
+      const row = rows[0];
+      expect(row.elements.length).toStrictEqual(1);
+
+      const element = row.elements[0];
+      expect(element.distance).toStrictEqual({
+        text: "12 km",
+        value: 12000,
+      });
+      expect(element.duration).toStrictEqual({
+        text: "1 min",
+        value: 24,
+      });
+      expect(element.status).toStrictEqual(DistanceMatrixElementStatus.OK);
+
+      expect(status).toStrictEqual(DistanceMatrixStatus.OK);
+    })
+    .then(() => {
       done();
     });
 });
