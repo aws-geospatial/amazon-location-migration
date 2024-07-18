@@ -39,6 +39,7 @@
     "lint:fix": "eslint --fix .",
     "typedoc": "typedoc",
     "test": "jest --collectCoverage --collectCoverageFrom=src/**/*.{ts,js}",
+    "prebuild": "node -p \"'export const PACKAGE_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
     "build": "npm-run-all build:*",
     "build:ts": "npm-run-all build-ts:*",
     "build:bundle": "rollup -c",

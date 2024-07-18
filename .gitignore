@@ -11,6 +11,9 @@
 index.html
 google.html
 
+# generated version file
+/src/version.ts
+
 # production
 /build
 /dist
