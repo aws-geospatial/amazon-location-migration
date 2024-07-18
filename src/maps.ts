@@ -12,6 +12,7 @@ import {
   MigrationLatLng,
   MigrationLatLngBounds,
 } from "./googleCommon";
+import { PACKAGE_VERSION } from "./version";
 
 /*
   This migration map class is a thin wrapper replacement for google.maps.Map, which
@@ -63,6 +64,16 @@ class MigrationMap {
     if (options.tilt) {
       maplibreOptions.pitch = options.tilt;
     }
+
+    // Add our custom user agent header with our package version
+    maplibreOptions.transformRequest = (url: string) => {
+      return {
+        url: url,
+        headers: {
+          "X-Amz-User-Agent": `${navigator.userAgent} migration-adapter-${PACKAGE_VERSION}`,
+        },
+      };
+    };
 
     this.#map = new Map(maplibreOptions);
 
