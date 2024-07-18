@@ -95,6 +95,7 @@ test("should set migration map options", () => {
     maxZoom: 18,
     pitch: 45,
     bearing: 90,
+    transformRequest: expect.any(Function),
   };
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
@@ -117,6 +118,7 @@ test("should set migration map options with control position not available in Ma
     style: undefined,
     center: [testLng, testLat],
     zoom: 9,
+    transformRequest: expect.any(Function),
   };
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
