@@ -13,8 +13,10 @@ import {
   DistanceMatrixElementStatus,
   DistanceMatrixStatus,
 } from "./directions";
+import { MigrationGeocoder } from "./geocoder";
 import {
   DirectionsStatus,
+  GeocoderStatus,
   MigrationControlPosition,
   MigrationLatLng,
   MigrationLatLngBounds,
@@ -97,6 +99,8 @@ const migrationInit = async function () {
   MigrationAutocomplete.prototype._placeIndexName = placeIndexName;
   MigrationAutocompleteService.prototype._client = client;
   MigrationAutocompleteService.prototype._placeIndexName = placeIndexName;
+  MigrationGeocoder.prototype._client = client;
+  MigrationGeocoder.prototype._placeIndexName = placeIndexName;
   MigrationPlace._client = client;
   MigrationPlace._placeIndexName = placeIndexName;
   MigrationPlacesService.prototype._client = client;
@@ -110,10 +114,14 @@ const migrationInit = async function () {
 
   // Additionally, we need to create a places service for our directions service and distance matrix
   // service to use, since it can optionally be passed source/destinations that are string queries
-  // instead of actual LatLng coordinates. Constructing it here and passing it in will make sure
+  // instead of actual LatLng coordinates.
+  // We also need to create a places service for the Geocoder, which will use it for the
+  // address and placeId geocode requests.
+  // Constructing it here and passing it in will make sure
   // it is already configured with the appropriate client and place index name.
   MigrationDirectionsService.prototype._placesService = new MigrationPlacesService();
   MigrationDistanceMatrixService.prototype._placesService = new MigrationPlacesService();
+  MigrationGeocoder.prototype._placesService = new MigrationPlacesService();
 
   // Create the Google Maps namespace with our migration classes
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
@@ -138,6 +146,9 @@ const migrationInit = async function () {
       UnitSystem: UnitSystem,
       DistanceMatrixElementStatus: DistanceMatrixElementStatus,
       DistanceMatrixStatus: DistanceMatrixStatus,
+
+      Geocoder: MigrationGeocoder,
+      GeocoderStatus: GeocoderStatus,
 
       places: {
         Autocomplete: MigrationAutocomplete,
@@ -168,6 +179,13 @@ const migrationInit = async function () {
                   addListenerOnce: addListenerOnce,
                   removeListener: removeListener,
                 },
+              });
+              break;
+
+            case "geocoding":
+              resolve({
+                Geocoder: MigrationGeocoder,
+                GeocoderStatus: GeocoderStatus,
               });
               break;
 

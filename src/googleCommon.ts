@@ -17,6 +17,8 @@ export interface LatLngBoundsLiteral {
   west: number;
 }
 
+export type LatLngBoundsLike = LatLngBoundsLiteral | MigrationLatLngBounds;
+
 // Migration version of google.maps.LatLng
 export class MigrationLatLng {
   #lat: number;
@@ -282,6 +284,16 @@ export enum DirectionsStatus {
   ZERO_RESULTS = "ZERO_RESULTS",
   MAX_WAYPOINTS_EXCEEDED = "MAX_WAYPOINTS_EXCEEDED",
   NOT_FOUND = "NOT_FOUND",
+}
+
+export enum GeocoderStatus {
+  ERROR = "ERROR",
+  INVALID_REQUEST = "INVALID_REQUEST",
+  OK = "OK",
+  OVER_QUERY_LIMIT = "OVER_QUERY_LIMIT",
+  REQUEST_DENIED = "REQUEST_DENIED",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
+  ZERO_RESULTS = "ZERO_RESULTS",
 }
 
 // Migration version of google.maps.ControlPosition

@@ -18,12 +18,13 @@
 
 let map;
 let userLocation, originLocation, destinationLocation;
-let placesService, directionsService, directionsRenderer;
+let placesService, directionsService, directionsRenderer, geocoder;
 let predictionItems = [];
 let markers = [];
 let searchBarAutocomplete, originAutocomplete, destinationAutocomplete;
 let currentPlaces = [];
 let currentDisplayedPlace;
+let inDirectionsMode = false;
 let travelMode;
 
 // navigator.geolocation.getCurrentPosition can sometimes take a long time to return,
@@ -62,6 +63,9 @@ async function initMap(center) {
     zoom: 14,
     mapId: "DEMO_MAP_ID",
   });
+
+  const { Geocoder } = await google.maps.importLibrary("geocoding");
+  geocoder = new Geocoder();
 
   const { Autocomplete, AutocompleteService, PlacesService, PlacesServiceStatus, SearchBox } =
     await google.maps.importLibrary("places");
@@ -111,6 +115,50 @@ async function initMap(center) {
     destinationAutocomplete.setBounds(map.getBounds());
   });
 
+  // If we are in directions mode, and the user has cleared out the origin
+  // or destination input fields, clicking on the map should choose that
+  // clicked location as the empty origin/destination
+  map.addListener("click", (mapMouseEvent) => {
+    const clickedLatLng = mapMouseEvent.latLng;
+
+    const originInput = $("#origin-input").val();
+    const destinationInput = $("#destination-input").val();
+    let replacedInput = false;
+
+    // Replace whichever input field is empty, starting with the origin (in case they are both empty)
+    if (!originInput) {
+      replacedInput = true;
+      originLocation = clickedLatLng;
+    } else if (!destinationInput) {
+      replacedInput = true;
+      destinationLocation = clickedLatLng;
+    }
+
+    // If one of the inputs was empty, calculate a new route and fill in the empty input field
+    if (replacedInput) {
+      calculateRoute();
+
+      // Use the geocoder to populate the input field we replaced with an address
+      geocoder
+        .geocode({
+          location: clickedLatLng,
+        })
+        .then((response) => {
+          const results = response.results;
+          if (results) {
+            const topResult = results[0];
+            const address = topResult.formatted_address;
+
+            if (!originInput) {
+              $("#origin-input").val(address);
+            } else if (!destinationInput) {
+              $("#destination-input").val(address);
+            }
+          }
+        });
+    }
+  });
+
   // When user selects a single place or query list in SearchBox, show them in the
   // details pane and add marker(s) for the place(s).
   searchBarAutocomplete.addListener("places_changed", () => {
@@ -154,6 +202,8 @@ async function initMap(center) {
     $("#places-container").hide();
     $("#directions-container").show();
 
+    inDirectionsMode = true;
+
     // Use the user's location as the origin by default
     originLocation = userLocation;
     $("#origin-input").val("Your location");
@@ -172,6 +222,8 @@ async function initMap(center) {
 
     // Clear the directions from the map
     directionsRenderer.setMap(null);
+
+    inDirectionsMode = false;
   });
 }
 
