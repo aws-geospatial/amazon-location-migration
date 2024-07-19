@@ -61,6 +61,10 @@ test("importing the adapter should populate google.maps namespace for direct loa
   expect(google.maps.places).toHaveProperty("PlacesServiceStatus");
   expect(google.maps.places).toHaveProperty("SearchBox");
 
+  // Geocoder classes
+  expect(google.maps).toHaveProperty("Geocoder");
+  expect(google.maps).toHaveProperty("GeocoderStatus");
+
   // Verify our mock callback has been invoked after loading the adapter
   expect(mockMigrationCallback).toHaveBeenCalledTimes(1);
 });
@@ -135,6 +139,16 @@ test("can dynamically import marker classes", async () => {
 
   expect(AdvancedMarkerElement).toBeDefined();
   expect(Marker).toBeDefined();
+});
+
+test("can dynamically import geocoder classes", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { Geocoder, GeocoderStatus } = await google.maps.importLibrary("geocoding");
+
+  expect(Geocoder).toBeDefined();
+  expect(GeocoderStatus).toBeDefined();
 });
 
 test("should report an error if a library we don't support is requested", async () => {

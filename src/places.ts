@@ -18,7 +18,9 @@ import {
 
 import {
   AddListenerResponse,
+  LatLngBoundsLike,
   LatLngBoundsLiteral,
+  LatLngLike,
   LatLngLiteral,
   LatLngToLngLat,
   MigrationLatLng,
@@ -40,6 +42,13 @@ interface PlaceOptions {
   id: string;
   requestedLanguage?: string | null;
   requestedRegion?: string | null;
+}
+
+interface FindPlaceFromQueryRequest {
+  fields: string[];
+  language?: string | null;
+  locationBias?: LatLngLike | LatLngBoundsLike | string;
+  query: string;
 }
 
 interface FetchFieldsRequest {
@@ -186,7 +195,7 @@ class MigrationPlacesService {
   _client: LocationClient; // This will be populated by the top level module that creates our location client
   _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
 
-  findPlaceFromQuery(request, callback) {
+  findPlaceFromQuery(request: FindPlaceFromQueryRequest, callback) {
     const query = request.query;
     const fields = request.fields;
     const locationBias = request.locationBias; // optional
@@ -858,4 +867,6 @@ export {
   MigrationPlace,
   MigrationPlacesService,
   MigrationSearchBox,
+  convertAmazonPlaceToGoogle,
+  FindPlaceFromQueryRequest,
 };
