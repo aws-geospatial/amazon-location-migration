@@ -1,4 +1,4 @@
-## Supported Google API's
+## Supported Google APIs - Map
 
 ### [Map class](https://developers.google.com/maps/documentation/javascript/reference/map)
 
