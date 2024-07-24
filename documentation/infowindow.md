@@ -1,4 +1,4 @@
-## Supported Google API's
+## Supported Google APIs - InfoWindow
 
 ### [InfoWindow class](https://developers.google.com/maps/documentation/javascript/reference/info-window#InfoWindow)
 

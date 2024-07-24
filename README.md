@@ -96,6 +96,10 @@ function initMap() {
 window.initMap = initMap;
 ```
 
+## Supported Google APIs
+
+For a full overview of supported Google Maps APIs and current limitations, please see the [Supported APIs documentation](documentation/supportedLibraries.md).
+
 ## Contributing
 
 We welcome community contributions and pull requests. See [CONTRIBUTING](CONTRIBUTING.md) for information on how to set up a development environment, run the examples and submit code.

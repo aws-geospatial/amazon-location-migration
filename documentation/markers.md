@@ -1,4 +1,4 @@
-## Supported Google API's
+## Supported Google APIs - Markers
 
 ### [AdvancedMarkerElement class](https://developers.google.com/maps/documentation/javascript/reference/advanced-markers#AdvancedMarkerElement)
 
