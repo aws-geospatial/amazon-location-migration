@@ -12,8 +12,8 @@
 | [MapsNetworkError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsNetworkError)                 | :x:                |       |
 | [MapsNetworkErrorEndpoint](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsNetworkErrorEndpoint) | :x:                |       |
 | [MapsRequestError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsRequestError)                 | :x:                |       |
-| [MapsServerError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsRequestError)                  | :x:                |       |
-| [MVCArray](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsServerError)                          | :x:                |       |
+| [MapsServerError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsServerError)                   | :x:                |       |
+| [MVCArray](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MVCArray)                                 | :x:                |       |
 | [MVCObject](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MVCObject)                               | :x:                |       |
 | [Point](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.Point)                                       | :x:                |       |
 | [Settings](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.Settings)                                 | :x:                |       |
