@@ -60,20 +60,20 @@ async function findPlaces() {
 
 // This function showcases Place.fetchFields
 async function findCity() {
-  const { Place } = await google.maps.importLibrary("places");
+  const { AutocompleteService, Place } = await google.maps.importLibrary("places");
 
-  const anotherRequest = {
-    textQuery: "austin, tx",
-    fields: ["displayName", "location"],
-  };
+  const autocompleteService = new AutocompleteService();
 
-  // Do a searchByText first so that we can get a PlaceId to use for the fetchFields
-  const { places } = await Place.searchByText(anotherRequest);
+  // Use autocomplete to get a place_id for a given POI, so that we can use that to
+  // showcase Place.fetchFields
+  const { predictions } = await autocompleteService.getPlacePredictions({
+    input: "austin, tx",
+  });
 
-  // Create a Place using the PlaceId
-  const firstPlace = places[0];
+  // Create a Place using the place_id
+  const firstPrediction = predictions[0];
   const newPlace = new Place({
-    id: firstPlace.id,
+    id: firstPrediction.place_id,
     requestedLanguage: "fr-CA", // optional
   });
 
