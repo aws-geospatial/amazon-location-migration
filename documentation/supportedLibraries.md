@@ -2,133 +2,133 @@
 
 ### [CoreLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary)
 
-| Interface                                                                                                                                                                      | Supported          | Notes |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ----- |
-| [ControlPosition](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.ControlPosition)                   | :white_check_mark: |       |
-| [event](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.event)                                       | :white_check_mark: |       |
-| [LatLng](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.LatLng)                                     | :white_check_mark: |       |
-| [LatLngAltitude](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.LatLngAltitude)                     | :x:                |       |
-| [LatLngBounds](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.LatLngBounds)                         | :white_check_mark: |       |
-| [MapsNetworkError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsNetworkError)                 | :x:                |       |
-| [MapsNetworkErrorEndpoint](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsNetworkErrorEndpoint) | :x:                |       |
-| [MapsRequestError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsRequestError)                 | :x:                |       |
-| [MapsServerError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MapsServerError)                   | :x:                |       |
-| [MVCArray](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MVCArray)                                 | :x:                |       |
-| [MVCObject](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.MVCObject)                               | :x:                |       |
-| [Point](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.Point)                                       | :x:                |       |
-| [Settings](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.Settings)                                 | :x:                |       |
-| [Size](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.Size)                                         | :x:                |       |
-| [SymbolPath](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.SymbolPath)                             | :x:                |       |
-| [UnitSystem](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#CoreLibrary.UnitSystem)                             | :x:                |       |
+| Interface                                                                                                                                              | Supported          | Notes |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ----- |
+| [ControlPosition](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/control#ControlPosition)                  | :white_check_mark: |       |
+| [event](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/event#event)                                        | :white_check_mark: |       |
+| [LatLng](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#LatLng)                                | :white_check_mark: |       |
+| [LatLngAltitude](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#LatLngAltitude)                | :x:                |       |
+| [LatLngBounds](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#LatLngBounds)                    | :white_check_mark: |       |
+| [MapsNetworkError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/errors#MapsNetworkError)                 | :x:                |       |
+| [MapsNetworkErrorEndpoint](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/errors#MapsNetworkErrorEndpoint) | :x:                |       |
+| [MapsRequestError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/errors#MapsRequestError)                 | :x:                |       |
+| [MapsServerError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/errors#MapsServerError)                   | :x:                |       |
+| [MVCArray](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/event#MVCArray)                                  | :x:                |       |
+| [MVCObject](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/event#MVCObject)                                | :x:                |       |
+| [Point](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#Point)                                  | :x:                |       |
+| [Settings](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/settings#Settings)                               | :x:                |       |
+| [Size](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#Size)                                    | :x:                |       |
+| [SymbolPath](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/marker#SymbolPath)                             | :x:                |       |
+| [UnitSystem](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#UnitSystem)                         | :x:                |       |
 
 ### [MapsLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary)
 
-| Interface                                                                                                                                                            | Supported          | Notes                    |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------ |
-| [BicyclingLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.BicyclingLayer)           | :x:                |                          |
-| [Circle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.Circle)                           | :x:                |                          |
-| [Data](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.Data)                               | :x:                |                          |
-| [FeatureType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.FeatureType)                 | :x:                |                          |
-| [GroundOverlay](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.GroundOverlay)             | :x:                |                          |
-| [ImageMapType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.ImageMapType)               | :x:                |                          |
-| [InfoWindow](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.InfoWindow)                   | :white_check_mark: | [Details](infowindow.md) |
-| [KmlLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.KmlLayer)                       | :x:                |                          |
-| [KmlLayerStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.KmlLayerStatus)           | :x:                |                          |
-| [Map](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.Map)                                 | :white_check_mark: | [Details](maps.md)       |
-| [MapTypeControlStyle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.MapTypeControlStyle) | :x:                |                          |
-| [MapTypeId](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.MapTypeId)                     | :x:                |                          |
-| [MapTypeRegistry](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.MapTypeRegistry)         | :x:                |                          |
-| [MaxZoomService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.MaxZoomService)           | :x:                |                          |
-| [MaxZoomStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.MaxZoomStatus)             | :x:                |                          |
-| [OverlayView](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.OverlayView)                 | :x:                |                          |
-| [Polygon](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.Polygon)                         | :x:                |                          |
-| [Polyline](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.Polyline)                       | :x:                |                          |
-| [Rectangle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.Rectangle)                     | :x:                |                          |
-| [RenderingType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.RenderingType)             | :x:                |                          |
-| [StrokePosition](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.StrokePosition)           | :x:                |                          |
-| [StyledMapType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.StyledMapType)             | :x:                |                          |
-| [TrafficLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.TrafficLayer)               | :x:                |                          |
-| [TransitLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.TransitLayer)               | :x:                |                          |
-| [WebGLOverlayView](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.WebGLOverlayView)       | :x:                |                          |
-| [ZoomChangeEvent](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary.ZoomChangeEvent)         | :x:                |                          |
+| Interface                                                                                                                                     | Supported          | Notes                    |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------ |
+| [BicyclingLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#BicyclingLayer)               | :x:                |                          |
+| [Circle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Circle)                           | :x:                |                          |
+| [Data](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/data#Data)                                  | :x:                |                          |
+| [FeatureType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/data-driven-styling#FeatureType)     | :x:                |                          |
+| [GroundOverlay](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/image-overlay#GroundOverlay)       | :x:                |                          |
+| [ImageMapType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/image-overlay#ImageMapType)         | :x:                |                          |
+| [InfoWindow](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/info-window#InfoWindow)               | :white_check_mark: | [Details](infowindow.md) |
+| [KmlLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/kml#KmlLayer)                           | :x:                |                          |
+| [KmlLayerStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/kml#KmlLayerStatus)               | :x:                |                          |
+| [Map](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#Map)                                     | :white_check_mark: | [Details](maps.md)       |
+| [MapTypeControlStyle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/control#MapTypeControlStyle) | :x:                |                          |
+| [MapTypeId](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#MapTypeId)                         | :x:                |                          |
+| [MapTypeRegistry](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#MapTypeRegistry)             | :x:                |                          |
+| [MaxZoomService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/max-zoom#MaxZoomService)          | :x:                |                          |
+| [MaxZoomStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/max-zoom#MaxZoomStatus)            | :x:                |                          |
+| [OverlayView](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/overlay-view#OverlayView)            | :x:                |                          |
+| [Polygon](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Polygon)                         | :x:                |                          |
+| [Polyline](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Polyline)                       | :x:                |                          |
+| [Rectangle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Rectangle)                     | :x:                |                          |
+| [RenderingType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#RenderingType)                 | :x:                |                          |
+| [StrokePosition](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#StrokePosition)           | :x:                |                          |
+| [StyledMapType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/image-overlay#StyledMapType)       | :x:                |                          |
+| [TrafficLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#TrafficLayer)                   | :x:                |                          |
+| [TransitLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#TransitLayer)                   | :x:                |                          |
+| [WebGLOverlayView](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/webgl#WebGLOverlayView)         | :x:                |                          |
+| [ZoomChangeEvent](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#ZoomChangeEvent)             | :x:                |                          |
 
 ### [PlacesLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary)
 
-| Interface                                                                                                                                                                            | Supported          | Notes |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ----- |
-| [AccessibilityOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.AccessibilityOptions)             | :x:                |       |
-| [AddressComponent](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.AddressComponent)                     | :x:                |       |
-| [Attribution](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.Attribution)                               | :x:                |       |
-| [AuthorAttribution](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.AuthorAttribution)                   | :x:                |       |
-| [Autocomplete](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.Autocomplete)                             | :white_check_mark: |       |
-| [AutocompleteService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.AutocompleteService)               | :white_check_mark: |       |
-| [AutocompleteSessionToken](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.AutocompleteSessionToken)     | :x:                |       |
-| [AutocompleteSuggestion](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.AutocompleteSuggestion)         | :x:                |       |
-| [BusinessStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.BusinessStatus)                         | :x:                |       |
-| [ConnectorAggregation](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.ConnectorAggregation)             | :x:                |       |
-| [EVChargeOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.EVChargeOptions)                       | :x:                |       |
-| [EVConnectorType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.EVConnectorType)                       | :x:                |       |
-| [FormattableText](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.FormattableText)                       | :x:                |       |
-| [FuelOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.FuelOptions)                               | :x:                |       |
-| [FuelPrice](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.FuelPrice)                                   | :x:                |       |
-| [FuelType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.FuelType)                                     | :x:                |       |
-| [Money](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.Money)                                           | :x:                |       |
-| [OpeningHours](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.OpeningHours)                             | :x:                |       |
-| [OpeningHoursPeriod](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.OpeningHoursPeriod)                 | :x:                |       |
-| [OpeningHoursPoint](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.OpeningHoursPoint)                   | :x:                |       |
-| [ParkingOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.ParkingOptions)                         | :x:                |       |
-| [PaymentOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.PaymentOptions)                         | :x:                |       |
-| [Photo](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.Photo)                                           | :x:                |       |
-| [Place](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.Place)                                           | :white_check_mark: |       |
-| [PlacePrediction](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.PlacePrediction)                       | :x:                |       |
-| [PlacesService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.PlacesService)                           | :white_check_mark: |       |
-| [PlacesServiceStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.PlacesServiceStatus)               | :white_check_mark: |       |
-| [PlusCode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.PlusCode)                                     | :x:                |       |
-| [PriceLevel](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.PriceLevel)                                 | :x:                |       |
-| [RankBy](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.RankBy)                                         | :x:                |       |
-| [Review](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.Review)                                         | :x:                |       |
-| [SearchBox](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.SearchBox)                                   | :white_check_mark: |       |
-| [SearchByTextRankPreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.SearchByTextRankPreference) | :x:                |       |
-| [SearchNearbyRankPreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.SearchNearbyRankPreference) | :x:                |       |
-| [StringRange](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#PlacesLibrary.StringRange)                               | :x:                |       |
+| Interface                                                                                                                                                         | Supported          | Notes |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
+| [AccessibilityOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#AccessibilityOptions)                     | :x:                |       |
+| [AddressComponent](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#AddressComponent)                             | :x:                |       |
+| [Attribution](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Attribution)                                       | :x:                |       |
+| [AuthorAttribution](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#AuthorAttribution)                           | :x:                |       |
+| [Autocomplete](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#Autocomplete)                             | :white_check_mark: |       |
+| [AutocompleteService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService) | :white_check_mark: |       |
+| [AutocompleteSessionToken](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/autocomplete-data#AutocompleteSessionToken) | :x:                |       |
+| [AutocompleteSuggestion](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/autocomplete-data#AutocompleteSuggestion)     | :x:                |       |
+| [BusinessStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#BusinessStatus)                        | :x:                |       |
+| [ConnectorAggregation](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#ConnectorAggregation)                     | :x:                |       |
+| [EVChargeOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#EVChargeOptions)                               | :x:                |       |
+| [EVConnectorType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#EVConnectorType)                               | :x:                |       |
+| [FormattableText](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/autocomplete-data#FormattableText)                   | :x:                |       |
+| [FuelOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#FuelOptions)                                       | :x:                |       |
+| [FuelPrice](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#FuelPrice)                                           | :x:                |       |
+| [FuelType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#FuelType)                                             | :x:                |       |
+| [Money](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Money)                                                   | :x:                |       |
+| [OpeningHours](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#OpeningHours)                                     | :x:                |       |
+| [OpeningHoursPeriod](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#OpeningHoursPeriod)                         | :x:                |       |
+| [OpeningHoursPoint](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#OpeningHoursPoint)                           | :x:                |       |
+| [ParkingOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#ParkingOptions)                                 | :x:                |       |
+| [PaymentOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#PaymentOptions)                                 | :x:                |       |
+| [Photo](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Photo)                                                   | :x:                |       |
+| [Place](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place)                                                   | :white_check_mark: |       |
+| [PlacePrediction](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/autocomplete-data#PlacePrediction)                   | :x:                |       |
+| [PlacesService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#PlacesService)                          | :white_check_mark: |       |
+| [PlacesServiceStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#PlacesServiceStatus)              | :white_check_mark: |       |
+| [PlusCode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#PlusCode)                                             | :x:                |       |
+| [PriceLevel](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#PriceLevel)                                         | :x:                |       |
+| [RankBy](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#RankBy)                                        | :x:                |       |
+| [Review](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Review)                                                 | :x:                |       |
+| [SearchBox](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox)                                   | :white_check_mark: |       |
+| [SearchByTextRankPreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRankPreference)         | :x:                |       |
+| [SearchNearbyRankPreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchNearbyRankPreference)         | :x:                |       |
+| [StringRange](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/autocomplete-data#StringRange)                           | :x:                |       |
 
 ### [GeocodingLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeocodingLibrary)
 
-| Interface                                                                                                                                                                         | Supported          | Notes |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
-| [Containment](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeocodingLibrary.Containment)                         | :x:                |       |
-| [ExtraGeocodeComputation](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeocodingLibrary.ExtraGeocodeComputation) | :x:                |       |
-| [Geocoder](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeocodingLibrary.Geocoder)                               | :white_check_mark: |       |
-| [GeocoderLocationType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeocodingLibrary.GeocoderLocationType)       | :x:                |       |
-| [GeocoderStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeocodingLibrary.GeocoderStatus)                   | :white_check_mark: |       |
-| [SpatialRelationship](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeocodingLibrary.DDSpatialRelationshipDD)     | :x:                |       |
+| Interface                                                                                                                                              | Supported          | Notes |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ----- |
+| [Containment](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geocoder#Containment)                         | :x:                |       |
+| [ExtraGeocodeComputation](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geocoder#ExtraGeocodeComputation) | :x:                |       |
+| [Geocoder](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geocoder#Geocoder)                               | :white_check_mark: |       |
+| [GeocoderLocationType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geocoder#GeocoderLocationType)       | :x:                |       |
+| [GeocoderStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geocoder#GeocoderStatus)                   | :white_check_mark: |       |
+| [SpatialRelationship](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geocoder#SpatialRelationship)         | :x:                |       |
 
 ### [RoutesLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary)
 
-| Interface                                                                                                                                                                              | Supported          | Notes |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
-| [DirectionsRenderer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.DirectionsRenderer)                   | :white_check_mark: |       |
-| [DirectionsService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.DirectionsService)                     | :white_check_mark: |       |
-| [DirectionsStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.DirectionsStatus)                       | :white_check_mark: |       |
-| [DistanceMatrixElementStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.DistanceMatrixElementStatus) | :white_check_mark: |       |
-| [DistanceMatrixService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.DistanceMatrixService)             | :white_check_mark: |       |
-| [DistanceMatrixStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.DistanceMatrixStatus)               | :white_check_mark: |       |
-| [TrafficModel](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.TrafficModel)                               | :x:                |       |
-| [TransitMode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.TransitMode)                                 | :x:                |       |
-| [TransitRoutePreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.TransitRoutePreference)           | :x:                |       |
-| [TravelMode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.TravelMode)                                   | :white_check_mark: |       |
-| [VehicleType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#RoutesLibrary.VehicleType)                                 | :x:                |       |
+| Interface                                                                                                                                                             | Supported          | Notes |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
+| [DirectionsRenderer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsRenderer)                        | :white_check_mark: |       |
+| [DirectionsService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsService)                          | :white_check_mark: |       |
+| [DirectionsStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsStatus)                            | :white_check_mark: |       |
+| [DistanceMatrixElementStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixElementStatus) | :white_check_mark: |       |
+| [DistanceMatrixService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixService)             | :white_check_mark: |       |
+| [DistanceMatrixStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixStatus)               | :white_check_mark: |       |
+| [TrafficModel](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#TrafficModel)                                    | :x:                |       |
+| [TransitMode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#TransitMode)                                      | :x:                |       |
+| [TransitRoutePreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#TransitRoutePreference)                | :x:                |       |
+| [TravelMode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#TravelMode)                                        | :white_check_mark: |       |
+| [VehicleType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#VehicleType)                                      | :x:                |       |
 
 ### [MarkerLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary)
 
-| Interface                                                                                                                                                                        | Supported          | Notes                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------- |
-| [AdvancedMarkerClickEvent](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary.AdvancedMarkerClickEvent) | :x:                |                                                   |
-| [AdvancedMarkerElement](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary.AdvancedMarkerElement)       | :white_check_mark: | [Details](markers.md#advancedmarkerelement-class) |
-| [Animation](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary.Animation)                               | :x:                |                                                   |
-| [CollisionBehavior](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary.CollisionBehavior)               | :x:                |                                                   |
-| [Marker](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary.Marker)                                     | :white_check_mark: | [Details](markers.md#marker-class)                |
-| [PinElement](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary.PinElement)                             | :x:                |                                                   |
+| Interface                                                                                                                                                        | Supported          | Notes                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------- |
+| [AdvancedMarkerClickEvent](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/advanced-markers#AdvancedMarkerClickEvent) | :x:                |                                                   |
+| [AdvancedMarkerElement](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/advanced-markers#AdvancedMarkerElement)       | :white_check_mark: | [Details](markers.md#advancedmarkerelement-class) |
+| [Animation](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/marker#Animation)                                         | :x:                |                                                   |
+| [CollisionBehavior](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/marker#CollisionBehavior)                         | :x:                |                                                   |
+| [Marker](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/marker#Marker)                                               | :white_check_mark: | [Details](markers.md#marker-class)                |
+| [PinElement](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/advanced-markers#PinElement)                             | :x:                |                                                   |
 
 ## Unsupported Google APIs
 
