@@ -40,9 +40,9 @@ To send us a pull request, please:
 1. Fork the repository.
 
 ```
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration-adapter
-cd amazon-location-migration-adapter
-git remote add upstream https://github.com/aws-geospatial/amazon-location-migration-adapter.git
+git clone https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration
+cd amazon-location-migration
+git remote add upstream https://github.com/aws-geospatial/amazon-location-migration.git
 git remote set-url --push upstream THESE_ARENT_THE_DROIDS_WERE_LOOKING_FOR
 ```
 
@@ -51,9 +51,9 @@ At this point, your remote setup should look something like this:
 
 ```
 > git remote -v
-origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration-adapter.git (fetch)
-origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration-adapter.git (push)
-upstream	https://github.com/aws-geospatial/amazon-location-migration-adapter.git (fetch)
+origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration.git (fetch)
+origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration.git (push)
+upstream	https://github.com/aws-geospatial/amazon-location-migration.git (fetch)
 upstream	THESE_ARENT_THE_DROIDS_WERE_LOOKING_FOR (push)
 ```
 

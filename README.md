@@ -1,8 +1,8 @@
-# Amazon Location Migration Adapter
+# Amazon Location Migration
 
-[![Tests](https://github.com/aws-geospatial/amazon-location-migration-adapter/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration-adapter/actions/workflows/build.yml)
+[![Tests](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml)
 
-The Amazon Location Migration Adapter provides a bridge for users to test migrating their Google Maps application to use [Amazon Location Service](https://aws.amazon.com/location/). The adapter replaces the import of the Google Maps client SDK, which allows the rest of the applications logic to remain untouched, while under the hood it will be making Amazon Location Service requests instead.
+Amazon Location Migration provides a bridge for users to test migrating their Google Maps application to use [Amazon Location Service](https://aws.amazon.com/location/). The adapter replaces the import of the Google Maps client SDK, which allows the rest of the applications logic to remain untouched, while under the hood it will be making Amazon Location Service requests instead.
 
 ## Usage
 
@@ -37,7 +37,7 @@ If your application uses the [dynamic library import](https://developers.google.
 To use the migration adapter, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
 
 ```html
-<script src="https://www.unpkg.com/@aws/amazon-location-migration-adapter?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
+<script src="https://www.unpkg.com/@aws/amazon-location-migration?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
 ```
 
 If there are any resources that your application doesn't use, you can omit those query parameters. Only the `region` and `apiKey` are required.
@@ -75,7 +75,7 @@ To use the migration adapter, you replace that line with the following (with you
 ```html
 <script
   async
-  src="https://www.unpkg.com/@aws/amazon-location-migration-adapter?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
+  src="https://www.unpkg.com/@aws/amazon-location-migration?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
 ></script>
 ```
 
