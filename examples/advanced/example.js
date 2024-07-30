@@ -14,7 +14,7 @@
 //  - Origin/destination can be typed/chosen, or can click on map/marker after clearing the field
 //
 // This is meant to be showcased as the client logic that is able to remain untouched
-// and retain the same functionality when using the migration adapter.
+// and retain the same functionality when using the Amazon Location Migration SDK.
 
 let map;
 let userLocation, originLocation, destinationLocation;

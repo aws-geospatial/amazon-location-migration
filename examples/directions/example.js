@@ -5,7 +5,7 @@
 // requests and then draw driving directions.
 //
 // This is meant to be showcased as the client logic that is able to remain untouched
-// and retain the same functionality when using the migration adapter.
+// and retain the same functionality when using the Amazon Location Migration SDK.
 //
 // This example was adapted from https://developers.google.com/maps/documentation/javascript/examples/directions-simple
 

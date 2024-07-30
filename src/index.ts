@@ -35,7 +35,7 @@ import { MigrationInfoWindow } from "./infoWindow";
 import { addListener, addListenerOnce, removeListener } from "./events";
 import { PACKAGE_VERSION } from "./version";
 
-// Dynamically load the MapLibre and MapLibre Geocoder stylesheets so that our migration adapter is the only thing our users need to import
+// Dynamically load the MapLibre and MapLibre Geocoder stylesheets so that our migration SDK is the only thing our users need to import
 // Without this, many MapLibre rendering features won't work (e.g. markers and info windows won't be visible)
 // Also the MapLibre Geocoder input field won't function properly
 const maplibreStyle = document.createElement("link");
@@ -89,7 +89,7 @@ const migrationInit = async function () {
 
   const client = new LocationClient({
     region: region, // Region containing Amazon Location resource
-    customUserAgent: `migration-adapter-${PACKAGE_VERSION}`, // Append tag with adapter version to the default user agent
+    customUserAgent: `migration-sdk-${PACKAGE_VERSION}`, // Append tag with SDK version to the default user agent
     ...authHelper.getLocationClientConfig(), // Configures the client to use API keys when making supported requests
   });
 

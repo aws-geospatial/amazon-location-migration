@@ -6,7 +6,7 @@
 // a marker is placed at that location and the map moves to the selected place.
 //
 // This is meant to be showcased as the client logic that is able to remain untouched
-// and retain the same functionality when using the migration adapter.
+// and retain the same functionality when using the Amazon Location Migration SDK.
 
 let map;
 let placesService;

@@ -1,5 +1,5 @@
 {
-  "name": "@aws/amazon-location-migration",
+  "name": "@aws/amazon-location-migration-sdk",
   "description": "Amazon Location Migration for JavaScript",
   "license": "Apache-2.0",
   "version": "0.9.0",
@@ -21,10 +21,10 @@
   "engines": {
     "node": ">= 16.0.0"
   },
-  "browser": "./dist/amazonLocationMigrationAdapter.js",
+  "browser": "./dist/amazonLocationMigrationSDK.js",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
-  "unpkg": "./dist/amazonLocationMigrationAdapter.js",
+  "unpkg": "./dist/amazonLocationMigrationSDK.js",
   "files": [
     "./LICENSE.txt",
     "./README.md",

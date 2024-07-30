@@ -70,7 +70,7 @@ class MigrationMap {
       return {
         url: url,
         headers: {
-          "X-Amz-User-Agent": `${navigator.userAgent} migration-adapter-${PACKAGE_VERSION}`,
+          "X-Amz-User-Agent": `${navigator.userAgent} migration-sdk-${PACKAGE_VERSION}`,
         },
       };
     };
