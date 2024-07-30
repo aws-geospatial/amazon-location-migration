@@ -4,7 +4,7 @@
 // This example showcases the new Places API.
 //
 // This is meant to be showcased as the client logic that is able to remain untouched
-// and retain the same functionality when using the migration adapter.
+// and retain the same functionality when using the Amazon Location Migration SDK.
 
 const austinCoords = { lat: 30.268193, lng: -97.7457518 }; // Austin, TX :)
 

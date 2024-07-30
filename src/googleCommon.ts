@@ -297,7 +297,6 @@ export enum GeocoderStatus {
 }
 
 // Migration version of google.maps.ControlPosition
-// This is only used in adapter standalone mode and in unit tests
 export const MigrationControlPosition = {
   TOP_LEFT: 1,
   TOP_CENTER: 2,

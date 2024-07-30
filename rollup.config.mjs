@@ -10,7 +10,7 @@ import nodePolyfills from "rollup-plugin-polyfill-node";
 const banner = `
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-// Third party license at https://github.com/aws-geospatial/amazon-location-migration-adapter/blob/main/LICENSE-THIRD-PARTY.txt
+// Third party license at https://github.com/aws-geospatial/amazon-location-migration/blob/main/LICENSE-THIRD-PARTY.txt
 `;
 
 export default {
@@ -28,13 +28,13 @@ export default {
 
   output: [
     {
-      file: "dist/amazonLocationMigrationAdapter.js",
+      file: "dist/amazonLocationMigrationSDK.js",
       format: "esm",
       banner,
       plugins: [
         getBabelOutputPlugin({
           minified: true,
-          moduleId: "amazonLocationMigrationAdapter",
+          moduleId: "amazonLocationMigrationSDK",
           presets: [["@babel/env", { modules: "umd" }]],
         }),
       ],

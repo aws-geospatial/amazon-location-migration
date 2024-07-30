@@ -1,6 +1,6 @@
 {
-  "name": "@aws/amazon-location-migration-adapter",
-  "description": "Amazon Location Migration Adapter for JavaScript",
+  "name": "@aws/amazon-location-migration-sdk",
+  "description": "Amazon Location Migration SDK for JavaScript",
   "license": "Apache-2.0",
   "version": "0.9.0",
   "keywords": [],
@@ -9,10 +9,10 @@
     "email": "",
     "url": "https://aws.amazon.com/"
   },
-  "homepage": "https://code.amazon.com/packages/AWSWaypointMigrationAdapter",
+  "homepage": "https://github.com/aws-geospatial/amazon-location-migration",
   "repository": {
     "type": "git",
-    "url": "ssh://git.amazon.com/pkg/AWSWaypointMigrationAdapter"
+    "url": "https://github.com/aws-geospatial/amazon-location-migration"
   },
   "contributors": [
     "Chris Galvan <chgalvan@amazon.com>",
@@ -21,10 +21,10 @@
   "engines": {
     "node": ">= 16.0.0"
   },
-  "browser": "./dist/amazonLocationMigrationAdapter.js",
+  "browser": "./dist/amazonLocationMigrationSDK.js",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
-  "unpkg": "./dist/amazonLocationMigrationAdapter.js",
+  "unpkg": "./dist/amazonLocationMigrationSDK.js",
   "files": [
     "./LICENSE.txt",
     "./README.md",

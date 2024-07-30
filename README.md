@@ -1,12 +1,12 @@
-# Amazon Location Migration Adapter
+# Amazon Location Migration SDK
 
-[![Tests](https://github.com/aws-geospatial/amazon-location-migration-adapter/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration-adapter/actions/workflows/build.yml)
+[![Tests](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml)
 
-The Amazon Location Migration Adapter provides a bridge for users to test migrating their Google Maps application to use [Amazon Location Service](https://aws.amazon.com/location/). The adapter replaces the import of the Google Maps client SDK, which allows the rest of the applications logic to remain untouched, while under the hood it will be making Amazon Location Service requests instead.
+The Amazon Location Migration SDK provides a bridge for users to test migrating their Google Maps application to use [Amazon Location Service](https://aws.amazon.com/location/). The SDK replaces the import of the Google Maps client SDK, which allows the rest of the applications logic to remain untouched, while under the hood it will be making Amazon Location Service requests instead.
 
 ## Usage
 
-In order to use the adapter, you will first need to create Amazon Location Service resources based on what kinds of Google Maps API calls your application uses.
+In order to use the SDK, you will first need to create Amazon Location Service resources based on what kinds of Google Maps API calls your application uses.
 Please follow the instructions linked below based on your applications needs:
 
 - Maps - https://docs.aws.amazon.com/location/latest/developerguide/map-prerequisites.html
@@ -17,7 +17,7 @@ Once you have created your resources, you can create an API key and give it acce
 
 https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html
 
-Now that you have your resources and API key, you can replace your Google Maps JavaScript API import with the adapter. Here are examples based on which Google import method your application uses:
+Now that you have your resources and API key, you can replace your Google Maps JavaScript API import with the SDK. Here are examples based on which Google import method your application uses:
 
 ### Dynamic Library Import
 
@@ -34,10 +34,10 @@ If your application uses the [dynamic library import](https://developers.google.
 </script>
 ```
 
-To use the migration adapter, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
+To use the migration SDK, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
 
 ```html
-<script src="https://www.unpkg.com/@aws/amazon-location-migration-adapter?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
+<script src="https://www.unpkg.com/@aws/amazon-location-migration-sdk?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
 ```
 
 If there are any resources that your application doesn't use, you can omit those query parameters. Only the `region` and `apiKey` are required.
@@ -70,12 +70,12 @@ If your application uses the [legacy direct script loading tag](https://develope
 ></script>
 ```
 
-To use the migration adapter, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
+To use the migration SDK, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
 
 ```html
 <script
   async
-  src="https://www.unpkg.com/@aws/amazon-location-migration-adapter?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
+  src="https://www.unpkg.com/@aws/amazon-location-migration-sdk?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
 ></script>
 ```
 

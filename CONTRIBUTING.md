@@ -40,9 +40,9 @@ To send us a pull request, please:
 1. Fork the repository.
 
 ```
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration-adapter
-cd amazon-location-migration-adapter
-git remote add upstream https://github.com/aws-geospatial/amazon-location-migration-adapter.git
+git clone https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration
+cd amazon-location-migration
+git remote add upstream https://github.com/aws-geospatial/amazon-location-migration.git
 git remote set-url --push upstream THESE_ARENT_THE_DROIDS_WERE_LOOKING_FOR
 ```
 
@@ -51,9 +51,9 @@ At this point, your remote setup should look something like this:
 
 ```
 > git remote -v
-origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration-adapter.git (fetch)
-origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration-adapter.git (push)
-upstream	https://github.com/aws-geospatial/amazon-location-migration-adapter.git (fetch)
+origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration.git (fetch)
+origin	https://github.com/<YOUR_GITHUB_USERNAME>/amazon-location-migration.git (push)
+upstream	https://github.com/aws-geospatial/amazon-location-migration.git (fetch)
 upstream	THESE_ARENT_THE_DROIDS_WERE_LOOKING_FOR (push)
 ```
 
@@ -64,11 +64,11 @@ npm install
 ```
 
 3. Modify the source; please focus on the specific change you are contributing. If you also reformat all the code, it will be hard for us to focus on your change.
-4. Build the adapter.
+4. Build the SDK.
 
 ```
 > npm run build
-created dist/amazonLocationMigrationAdapter.js in 2.1s
+created dist/amazonLocationMigrationSDK.js in 2.1s
 ```
 
 5. Ensure local tests pass.
@@ -86,7 +86,7 @@ GitHub provides additional document on [forking a repository](https://help.githu
 
 ## Running Examples
 
-Once you have built the migration adapter in your development environment, there are several examples under the `<root>/examples` folder that you can run locally with the built migration adapter.
+Once you have built the migration SDK in your development environment, there are several examples under the `<root>/examples` folder that you can run locally with the built migration SDK.
 
 The examples are generated from templates that have placeholder values for your resources (e.g. API keys, map name, place index, etc...). You will need to fill out an `examples/config.json` file with your specific values.
 
@@ -98,9 +98,9 @@ cp examples/config.template.json examples/config.json
 
 Next, open your new `examples/config.json` file and fill it in with your resource values. Anytime you run the examples, they will be auto-generated reading from your `examples/config.json`.
 
-Each example has an `index.html` and a `google.html` page, of which the only difference between them is that the `index.html` imports our migration adapter.
+Each example has an `index.html` and a `google.html` page, of which the only difference between them is that the `index.html` imports our migration SDK.
 The examples also have an `example.js` script that holds the client logic for the example. This client logic is shared between both `index` and `google` example pages
-in order to showcase that the client logic can invoke the same `google.maps` APIs, but will be re-routed by the migration adapter for any APIs that the migration adapter supports.
+in order to showcase that the client logic can invoke the same `google.maps` APIs, but will be re-routed by the migration SDK for any APIs that the migration SDK supports.
 
 The examples can be generated + hosted on a local webserver with the following command:
 

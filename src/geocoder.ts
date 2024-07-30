@@ -37,7 +37,7 @@ interface GeocoderResult {
 }
 
 interface GeocoderGeometry {
-  bounds?: google.maps.LatLngBounds;
+  bounds?: MigrationLatLngBounds;
   location: MigrationLatLng;
 }
 
