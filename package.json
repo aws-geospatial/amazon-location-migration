@@ -80,10 +80,10 @@
     "!(*.{js,ts})": "prettier --write --ignore-unknown"
   },
   "dependencies": {
-    "@aws-sdk/client-location": "^3.535.0",
-    "@aws/amazon-location-for-maplibre-gl-geocoder": "^1.0.3",
-    "@aws/amazon-location-utilities-auth-helper": "^1.0.6",
-    "maplibre-gl": "^4.1.1"
+    "@aws-sdk/client-location": "^3.621.0",
+    "@aws/amazon-location-for-maplibre-gl-geocoder": "^1.0.5",
+    "@aws/amazon-location-utilities-auth-helper": "^1.0.7",
+    "maplibre-gl": "^4.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.21.8",
