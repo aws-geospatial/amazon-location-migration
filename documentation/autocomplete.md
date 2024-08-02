@@ -13,9 +13,9 @@
 | [setOptions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#Autocomplete.setOptions)                             | :white_check_mark: |                                                                                                                                                                    |
 | [setTypes](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#Autocomplete.setTypes)                                 | :x:                |                                                                                                                                                                    |
 
-| [Events](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#Autocomplete-Events)               | Supported          | Notes                                                                               |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------- |
-| [place_changed](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#Autocomplete.place_changed) | :white_check_mark: | Event is supported, `PlaceResult` has limitations documented [here](placeResult.md) |
+| [Events](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#Autocomplete-Events)               | Supported          | Notes                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------- |
+| [place_changed](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#Autocomplete.place_changed) | :white_check_mark: | Event is supported, `PlaceResult` has [limitations](placeResult.md) |
 
 ### [AutocompleteService class](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService)
 
@@ -35,3 +35,11 @@
 | [terms](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletePrediction.terms)                                 | :x:                |       |
 | [types](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletePrediction.types)                                 | :x:                |       |
 | [distance_meters](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletePrediction.distance_meters)             | :x:                |       |
+
+### [SearchBox class](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox)
+
+| [Methods](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox-Methods)     | Supported          | Notes                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| [getBounds](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox.getBounds) | :white_check_mark: |                                                                                                                              |
+| [getPlaces](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox.getPlaces) | :white_check_mark: | Event is supported, `PlaceResult` has [limitations](placeResult.md)                                                          |
+| [setBounds](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox.setBounds) | :white_check_mark: | setBounds is used to bias, but the geocoder's bounds is a firm restriction, so we use the center of the input bounds to bias |
