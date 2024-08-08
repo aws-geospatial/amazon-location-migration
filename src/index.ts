@@ -74,11 +74,11 @@ const routeCalculatorName = urlParams.get("routeCalculator");
 // Optional, will invoke after migrationInit has finished executing
 const postMigrationCallback = urlParams.get("callback");
 
-// Optional, but if user wants to use a Map, this is required
-const mapName = urlParams.get("map");
+// Optional, by default will use the "StandardLight" map style
+const styleName = urlParams.get("styleName") || "StandardLight";
 
 // Style URL is used by the Map for making requests
-const styleUrl = `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/${mapName}/style-descriptor?key=${apiKey}`;
+const styleUrl = `https://maps.geo.${region}.amazonaws.com/v2/styles/${styleName}/descriptor?key=${apiKey}`;
 
 const migrationInit = async function () {
   // Pass our style url (which includes the API key) to our Migration Map class

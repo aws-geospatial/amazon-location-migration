@@ -65,8 +65,33 @@ class MigrationMap {
       maplibreOptions.pitch = options.tilt;
     }
 
+    // Retrieve the apiKey from the styleUrl so that we can append
+    // it as a query param to map tile requests below
+    // TODO: This and the extra transformRequest logic below can be replaced
+    // once the amazon-location-utilities-auth-helper-js has been updated
+    // to provide a transformRequest map option
+    let apiKey = "";
+    if (this._styleUrl) {
+      const styleUrl = new URL(this._styleUrl);
+      const styleParams = new URLSearchParams(styleUrl.search);
+      apiKey = styleParams.get("key");
+    }
+
     // Add our custom user agent header with our package version
     maplibreOptions.transformRequest = (url: string) => {
+      // Append apiKey if missing (see comment above)
+      if (url.match("https://maps.(geo|geo-fips).(.*).amazonaws.com")) {
+        const tempUrl = new URL(url);
+        const params = new URLSearchParams(tempUrl.search);
+
+        if (!params.has("key")) {
+          params.set("key", apiKey);
+
+          tempUrl.search = params.toString();
+          url = tempUrl.toString();
+        }
+      }
+
       return {
         url: url,
         headers: {
