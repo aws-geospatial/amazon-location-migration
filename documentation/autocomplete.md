@@ -19,10 +19,10 @@
 
 ### [AutocompleteService class](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService)
 
-| [Methods](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService-Methods)                         | Supported          | Notes                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------- |
-| [getPlacePredictions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getPlacePredictions) | :white_check_mark: | `AutocompletePrediction` has [limitations](#autocompleteprediction-interface) |
-| [getQueryPredictions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getQueryPredictions) | :white_check_mark: | `AutocompletePrediction` has [limitations](#autocompleteprediction-interface) |
+| [Methods](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService-Methods)                         | Supported          | Notes                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------- |
+| [getPlacePredictions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getPlacePredictions) | :white_check_mark: | `AutocompletePrediction` has [limitations](#autocompleteprediction-interface)           |
+| [getQueryPredictions](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getQueryPredictions) | :white_check_mark: | `QueryAutocompletePrediction` has [limitations](#queryautocompleteprediction-interface) |
 
 ### [AutocompletePrediction interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletePrediction)
 
@@ -35,6 +35,15 @@
 | [terms](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletePrediction.terms)                                 | :x:                |       |
 | [types](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletePrediction.types)                                 | :x:                |       |
 | [distance_meters](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompletePrediction.distance_meters)             | :x:                |       |
+
+### [QueryAutocompletePrediction interface](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction)
+
+| [Properties](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction-Properties)                 | Supported          | Notes |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
+| [description](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.description)               | :white_check_mark: |       |
+| [matched_substrings](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.matched_substrings) | :x:                |       |
+| [place_id](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.place_id)                     | :white_check_mark: |       |
+| [terms](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.terms)                           | :x:                |       |
 
 ### [SearchBox class](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox)
 
