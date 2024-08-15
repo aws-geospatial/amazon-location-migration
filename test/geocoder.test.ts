@@ -105,7 +105,7 @@ import {
 } from "@aws-sdk/client-location";
 
 const placesService = new MigrationPlacesService();
-placesService._client = new LocationClient();
+placesService._clientV1 = new LocationClient();
 MigrationGeocoder.prototype._client = new LocationClient();
 MigrationGeocoder.prototype._placesService = placesService;
 

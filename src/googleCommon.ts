@@ -265,15 +265,15 @@ export const LatLngToLngLat = function (coord): [number, number] {
   return null;
 };
 
-export const PlacesServiceStatus = {
-  OK: "OK",
-  UNKNOWN_ERROR: "UNKNOWN_ERROR",
-  OVER_QUERY_LIMIT: "OVER_QUERY_LIMIT",
-  REQUEST_DENIED: "REQUEST_DENIED",
-  INVALID_REQUEST: "INVALID_REQUEST",
-  ZERO_RESULTS: "ZERO_RESULTS",
-  NOT_FOUND: "NOT_FOUND",
-};
+export enum PlacesServiceStatus {
+  OK = "OK",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
+  OVER_QUERY_LIMIT = "OVER_QUERY_LIMIT",
+  REQUEST_DENIED = "REQUEST_DENIED",
+  INVALID_REQUEST = "INVALID_REQUEST",
+  ZERO_RESULTS = "ZERO_RESULTS",
+  NOT_FOUND = "NOT_FOUND",
+}
 
 export enum DirectionsStatus {
   OK = "OK",
@@ -418,8 +418,3 @@ export const GoogleMarkerMouseDOMEvent = [MigrationEvent.click, MigrationEvent.d
 
 // List of Google InfoWindow Events
 export const GoogleInfoWindowEvent = [MigrationEvent.close, MigrationEvent.closeclick];
-
-export interface QueryAutocompletePrediction {
-  description: string;
-  place_id?: string;
-}

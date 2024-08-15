@@ -41,9 +41,9 @@
 | [Properties](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction-Properties)                 | Supported          | Notes |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
 | [description](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.description)               | :white_check_mark: |       |
-| [matched_substrings](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.matched_substrings) | :x:                |       |
+| [matched_substrings](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.matched_substrings) | :white_check_mark: |       |
 | [place_id](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.place_id)                     | :white_check_mark: |       |
-| [terms](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.terms)                           | :x:                |       |
+| [terms](https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#QueryAutocompletePrediction.terms)                           | :white_check_mark: |       |
 
 ### [SearchBox class](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-widget#SearchBox)
 

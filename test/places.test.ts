@@ -22,7 +22,7 @@ const testPlaceWithAddressLabel = "1337 Cool Place Road, Austin, TX, USA";
 
 const clientErrorQuery = "THIS_WILL_CAUSE_A_CLIENT_ERROR";
 
-const mockedClientSend = jest.fn((command) => {
+const mockedClientSendV1 = jest.fn((command) => {
   return new Promise((resolve, reject) => {
     if (command instanceof SearchPlaceIndexForTextCommand) {
       if (command.input.Text == clientErrorQuery) {
@@ -48,7 +48,7 @@ const mockedClientSend = jest.fn((command) => {
           ],
         });
       }
-    } else if (command instanceof GetPlaceCommand) {
+    } else if (command instanceof GetPlaceCommandV1) {
       if (command.input.PlaceId === undefined || command.input.PlaceId === clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
@@ -96,21 +96,148 @@ jest.mock("@aws-sdk/client-location", () => ({
   ...jest.requireActual("@aws-sdk/client-location"),
   LocationClient: jest.fn().mockImplementation(() => {
     return {
-      send: mockedClientSend,
+      send: mockedClientSendV1,
     };
   }),
 }));
 import {
-  GetPlaceCommand,
+  GetPlaceCommand as GetPlaceCommandV1,
   LocationClient,
   SearchPlaceIndexForSuggestionsCommand,
   SearchPlaceIndexForTextCommand,
 } from "@aws-sdk/client-location";
 
+const mockedClientSend = jest.fn((command) => {
+  return new Promise((resolve, reject) => {
+    if (command instanceof GetPlaceCommand) {
+      if (command.input.PlaceId === undefined || command.input.PlaceId === clientErrorQuery) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          Place: {
+            Label: testPlaceWithAddressLabel,
+            AddressNumber: "1337",
+            Street: "Cool Place Road",
+            Geometry: {
+              Point: [testLng, testLat],
+            },
+            TimeZone: {
+              Offset: -18000,
+            },
+            Municipality: "Austin",
+            Categories: ["City"],
+          },
+        });
+      }
+    } else if (command instanceof SuggestCommand) {
+      if (command.input.Query == clientErrorQuery) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          ResultItems: [
+            {
+              Highlights: {
+                Title: [
+                  {
+                    StartIndex: 0,
+                    EndIndex: 3,
+                  },
+                ],
+              },
+              Query: {
+                QueryId: "cool_query_id",
+                QueryType: "Chain",
+              },
+              SuggestResultItemType: "Query",
+              Title: "cool places near austin",
+            },
+            {
+              Highlights: {
+                Title: [
+                  {
+                    StartIndex: 0,
+                    EndIndex: 3,
+                  },
+                ],
+                Address: {
+                  Label: [
+                    {
+                      StartIndex: 0,
+                      EndIndex: 3,
+                    },
+                  ],
+                },
+              },
+              Place: {
+                Address: {
+                  Label: "123 Cool Place Way, Austin, TX, United States",
+                  Country: {
+                    Code2: "US",
+                    Code3: "USA",
+                    Name: "United States",
+                  },
+                  Region: {
+                    Code: "TX",
+                    Name: "Texas",
+                  },
+                  SubRegion: {
+                    Name: "Travis",
+                  },
+                  Locality: "Austin",
+                  District: "Fun",
+                  PostalCode: "78704-1144",
+                  Street: "Cool Place Way",
+                  StreetComponents: [
+                    {
+                      BaseName: "Cool Place",
+                      Type: "Way",
+                      TypePlacement: "AfterBaseName",
+                      TypeSeparator: " ",
+                      Language: "en",
+                    },
+                  ],
+                  AddressNumber: "123",
+                },
+                Distance: 1337,
+                FoodTypes: [
+                  {
+                    LocalizedName: "Burgers",
+                    Primary: true,
+                  },
+                ],
+                PlaceId: "COOL_PLACE_1",
+                PlaceType: "PointOfInterest",
+                Position: [testLng, testLat],
+              },
+              SuggestResultItemType: "Place",
+              Title: "123 Cool Place Way",
+            },
+          ],
+        });
+      }
+    } else {
+      reject();
+    }
+  });
+});
+
+jest.mock("@amzn/geoplaces-client", () => ({
+  ...jest.requireActual("@amzn/geoplaces-client"),
+  GeoPlacesClient: jest.fn().mockImplementation(() => {
+    return {
+      send: mockedClientSend,
+    };
+  }),
+}));
+import { GeoPlacesClient, GetPlaceCommand, SuggestCommand, SuggestRequest } from "@amzn/geoplaces-client";
+
 const autocompleteService = new MigrationAutocompleteService();
-autocompleteService._client = new LocationClient();
+autocompleteService._client = new GeoPlacesClient();
 const placesService = new MigrationPlacesService();
-placesService._client = new LocationClient();
+placesService._clientV1 = new LocationClient();
+placesService._client = new GeoPlacesClient();
 MigrationPlace._client = new LocationClient();
 MigrationSearchBox.prototype._client = new LocationClient();
 
@@ -131,8 +258,8 @@ test("findPlaceFromQuery should only return the requested fields", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
 
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -160,8 +287,8 @@ test("findPlaceFromQuery should return all fields when ALL are requested", (done
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
 
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -194,9 +321,9 @@ test("findPlaceFromQuery should translate location bias", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
     expect(clientInput.BiasPosition[0]).toStrictEqual(biasLng);
     expect(clientInput.BiasPosition[1]).toStrictEqual(biasLat);
 
@@ -231,8 +358,8 @@ test("getDetails should return all fields by default", (done) => {
   };
 
   placesService.getDetails(request, (result, status) => {
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
 
     const returnedLatLng = result.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -259,8 +386,8 @@ test("getDetails should only return the requested fields", (done) => {
   };
 
   placesService.getDetails(request, (result, status) => {
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
 
     expect(result.name).toStrictEqual("1337 Cool Place Road");
     expect(result.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
@@ -310,9 +437,9 @@ test("textSearch should ignore location if bounds was also specified", (done) =>
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
@@ -339,9 +466,9 @@ test("textSearch should accept bounds as a literal", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
@@ -364,9 +491,9 @@ test("textSearch should accept location bias if there is no bounds specified", (
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.FilterBBox).toBeUndefined();
@@ -390,9 +517,9 @@ test("textSearch should accept language", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.Language).toStrictEqual("en");
@@ -416,9 +543,9 @@ test("textSearch should convert region to countries filter", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.FilterCountries).toStrictEqual(["us"]);
@@ -455,10 +582,10 @@ test("getQueryPredictions should accept locationBias as LatLng", (done) => {
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toBeUndefined();
+    expect(clientInput.FilterBoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
     expect(results.length).toStrictEqual(2);
@@ -466,10 +593,38 @@ test("getQueryPredictions should accept locationBias as LatLng", (done) => {
     const firstResult = results[0];
     expect(firstResult.description).toStrictEqual("cool places near austin");
     expect(firstResult.place_id).toBeUndefined();
+    expect(firstResult.reference).toBeUndefined();
+
+    const firstTerms = firstResult.terms;
+    expect(firstTerms.length).toStrictEqual(1);
+    expect(firstTerms[0].offset).toStrictEqual(0);
+    expect(firstTerms[0].value).toStrictEqual("cool places near austin");
+
+    const firstMatchedSubstrings = firstResult.matched_substrings;
+    expect(firstMatchedSubstrings.length).toStrictEqual(1);
+    expect(firstMatchedSubstrings[0].offset).toStrictEqual(0);
+    expect(firstMatchedSubstrings[0].length).toStrictEqual(3);
 
     const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(secondResult.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
     expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+    expect(secondResult.reference).toStrictEqual("COOL_PLACE_1");
+
+    const secondTerms = secondResult.terms;
+    expect(secondTerms.length).toStrictEqual(4);
+    expect(secondTerms[0].offset).toStrictEqual(0);
+    expect(secondTerms[0].value).toStrictEqual("123 Cool Place Way");
+    expect(secondTerms[1].offset).toStrictEqual(20);
+    expect(secondTerms[1].value).toStrictEqual("Austin");
+    expect(secondTerms[2].offset).toStrictEqual(28);
+    expect(secondTerms[2].value).toStrictEqual("TX");
+    expect(secondTerms[3].offset).toStrictEqual(32);
+    expect(secondTerms[3].value).toStrictEqual("United States");
+
+    const secondMatchedSubstrings = secondResult.matched_substrings;
+    expect(secondMatchedSubstrings.length).toStrictEqual(1);
+    expect(secondMatchedSubstrings[0].offset).toStrictEqual(0);
+    expect(secondMatchedSubstrings[0].length).toStrictEqual(3);
 
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
@@ -486,22 +641,13 @@ test("getQueryPredictions should accept locationBias as LatLngLiteral", (done) =
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toBeUndefined();
+    expect(clientInput.FilterBoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
     expect(results.length).toStrictEqual(2);
-
-    const firstResult = results[0];
-    expect(firstResult.description).toStrictEqual("cool places near austin");
-    expect(firstResult.place_id).toBeUndefined();
-
-    const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
-    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
-
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -521,22 +667,13 @@ test("getQueryPredictions should accept locationBias as LatLngBounds", (done) =>
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
-
-    const firstResult = results[0];
-    expect(firstResult.description).toStrictEqual("cool places near austin");
-    expect(firstResult.place_id).toBeUndefined();
-
-    const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
-    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
-
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -556,22 +693,13 @@ test("getQueryPredictions should accept locationBias as LatLngBoundsLiteral", (d
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
-
-    const firstResult = results[0];
-    expect(firstResult.description).toStrictEqual("cool places near austin");
-    expect(firstResult.place_id).toBeUndefined();
-
-    const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
-    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
-
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -592,22 +720,13 @@ test("getQueryPredictions should ignore location if bounds was also specified", 
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
-
-    const firstResult = results[0];
-    expect(firstResult.description).toStrictEqual("cool places near austin");
-    expect(firstResult.place_id).toBeUndefined();
-
-    const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
-    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
-
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -627,22 +746,13 @@ test("getQueryPredictions should accept bounds as a literal", (done) => {
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
-
-    const firstResult = results[0];
-    expect(firstResult.description).toStrictEqual("cool places near austin");
-    expect(firstResult.place_id).toBeUndefined();
-
-    const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
-    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
-
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -658,22 +768,40 @@ test("getQueryPredictions should accept location if there is no bounds specified
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
-    expect(clientInput.FilterBBox).toBeUndefined();
+    expect(clientInput.FilterBoundingBox).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
-    const firstResult = results[0];
-    expect(firstResult.description).toStrictEqual("cool places near austin");
-    expect(firstResult.place_id).toBeUndefined();
+    // Signal the unit test is complete
+    done();
+  });
+});
 
-    const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
-    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
+test("getQueryPredictions should bias towards a circle if both location and radius are specified", (done) => {
+  const request = {
+    input: "cool place",
+    location: { lat: testLat, lng: testLng },
+    radius: 1337,
+  };
 
+  autocompleteService.getQueryPredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.BiasPosition).toBeUndefined();
+    expect(clientInput.FilterCircle).toStrictEqual({
+      Center: [testLng, testLat],
+      Radius: 1337,
+    });
+
+    expect(results.length).toStrictEqual(2);
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -690,22 +818,13 @@ test("getQueryPredictions should accept language", (done) => {
 
   autocompleteService.getQueryPredictions(request, (results, status) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.Language).toStrictEqual("en");
 
     expect(results.length).toStrictEqual(2);
-
-    const firstResult = results[0];
-    expect(firstResult.description).toStrictEqual("cool places near austin");
-    expect(firstResult.place_id).toBeUndefined();
-
-    const secondResult = results[1];
-    expect(secondResult.description).toStrictEqual("123 cool place way, austin, tx");
-    expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
-
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -741,17 +860,17 @@ test("getPlacePredictions should only return result with place_id", (done) => {
 
   autocompleteService.getPlacePredictions(request).then((response) => {
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBBox).toBeUndefined();
+    expect(clientInput.FilterBoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
     const predictions = response.predictions;
     expect(predictions.length).toStrictEqual(1);
 
     const prediction = predictions[0];
-    expect(prediction.description).toStrictEqual("123 cool place way, austin, tx");
+    expect(prediction.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
     expect(prediction.place_id).toStrictEqual("COOL_PLACE_1");
 
     // Signal the unit test is complete
@@ -770,24 +889,24 @@ test("getPlacePredictions will also invoke the callback if specified", (done) =>
       expect(results.length).toStrictEqual(1);
 
       const firstResult = results[0];
-      expect(firstResult.description).toStrictEqual("123 cool place way, austin, tx");
+      expect(firstResult.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
       expect(firstResult.place_id).toStrictEqual("COOL_PLACE_1");
 
       expect(status).toStrictEqual(PlacesServiceStatus.OK);
     })
     .then((response) => {
       expect(mockedClientSend).toHaveBeenCalledTimes(1);
-      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForSuggestionsCommand));
-      const clientInput = mockedClientSend.mock.calls[0][0].input;
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
+      const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-      expect(clientInput.FilterBBox).toBeUndefined();
+      expect(clientInput.FilterBoundingBox).toBeUndefined();
       expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
       const predictions = response.predictions;
       expect(predictions.length).toStrictEqual(1);
 
       const prediction = predictions[0];
-      expect(prediction.description).toStrictEqual("123 cool place way, austin, tx");
+      expect(prediction.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
       expect(prediction.place_id).toStrictEqual("COOL_PLACE_1");
 
       // Signal the unit test is complete
@@ -865,7 +984,7 @@ test("SearchBox should return first suggestion result when pressing Enter", (don
     const places = searchBox.getPlaces();
 
     expect(places.length).toStrictEqual(1);
-    expect(mockedClientSend).toHaveBeenCalledTimes(2);
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(2);
 
     const place = places[0];
 
@@ -898,7 +1017,7 @@ test("SearchBox should handle single place result when clicked on", (done) => {
     const places = searchBox.getPlaces();
 
     expect(places.length).toStrictEqual(1);
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
 
     const place = places[0];
 
@@ -944,7 +1063,7 @@ test("SearchBox should handle user selecting an item from the list after choosin
     const places = searchBox.getPlaces();
 
     expect(places.length).toStrictEqual(1);
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
 
     const place = places[0];
 
@@ -1252,9 +1371,9 @@ test("searchByText should ignore locationBias if locationRestriction was also sp
     expect(places.length).toStrictEqual(1);
     const firstResult = places[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
@@ -1285,9 +1404,9 @@ test("searchByText should accept bounds as a literal", (done) => {
     expect(places.length).toStrictEqual(1);
     const firstResult = places[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.FilterBBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
@@ -1312,9 +1431,9 @@ test("searchByText should accept location bias if there is no bounds specified",
     expect(places.length).toStrictEqual(1);
     const firstResult = places[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.FilterBBox).toBeUndefined();
@@ -1340,9 +1459,9 @@ test("searchByText should only return the specified fields", (done) => {
     expect(places.length).toStrictEqual(1);
     const firstResult = places[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.Language).toStrictEqual("en");
@@ -1369,9 +1488,9 @@ test("searchByText should accept language", (done) => {
     expect(places.length).toStrictEqual(1);
     const firstResult = places[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.Language).toStrictEqual("en");
@@ -1397,9 +1516,9 @@ test("searchByText should accept maxResultCount", (done) => {
     expect(places.length).toStrictEqual(1);
     const firstResult = places[0];
 
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSend.mock.calls[0][0].input;
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.MaxResults).toStrictEqual(4);
@@ -1495,8 +1614,8 @@ test("fetchFields should return only specified fields", async () => {
     fields: ["formattedAddress", "location"],
   });
 
-  expect(mockedClientSend).toHaveBeenCalledTimes(1);
-  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+  expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+  expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
 
   // Properties for the requested fields on the newPlace instance should
   // be filled in after calling fetchFields
@@ -1527,8 +1646,8 @@ test("fetchFields should return all fields if specified", async () => {
     fields: ["*"],
   });
 
-  expect(mockedClientSend).toHaveBeenCalledTimes(1);
-  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+  expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+  expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
 
   // Properties for all fields on the newPlace instance should
   // be filled in after calling fetchFields
@@ -1554,9 +1673,9 @@ test("fetchFields should pass language if specified", async () => {
     fields: ["*"],
   });
 
-  expect(mockedClientSend).toHaveBeenCalledTimes(1);
-  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
-  const clientInput = mockedClientSend.mock.calls[0][0].input;
+  expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+  expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
+  const clientInput = mockedClientSendV1.mock.calls[0][0].input;
 
   expect(clientInput.Language).toStrictEqual("en");
 
