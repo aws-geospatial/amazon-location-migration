@@ -7,14 +7,14 @@ import {
 } from "@aws/amazon-location-for-maplibre-gl-geocoder";
 
 import {
-  GetPlaceCommand,
-  GetPlaceRequest,
+  GetPlaceCommand as GetPlaceCommandV1,
+  GetPlaceRequest as GetPlaceRequestV1,
   LocationClient,
-  SearchPlaceIndexForSuggestionsCommand,
-  SearchPlaceIndexForSuggestionsRequest,
   SearchPlaceIndexForTextCommand,
   SearchPlaceIndexForTextRequest,
 } from "@aws-sdk/client-location";
+
+import { GeoPlacesClient, SuggestCommand, SuggestRequest } from "@amzn/geoplaces-client";
 
 import {
   AddListenerResponse,
@@ -26,7 +26,6 @@ import {
   MigrationLatLng,
   MigrationLatLngBounds,
   PlacesServiceStatus,
-  QueryAutocompletePrediction,
 } from "./googleCommon";
 
 interface AutocompletePrediction {
@@ -34,8 +33,28 @@ interface AutocompletePrediction {
   place_id: string;
 }
 
+// FIXME: Temporarily add QueryAutocompletePrediction as a possible type until getPlacePredictions has been
+// re-implemented using the new Autocomplete API
 interface AutocompleteResponse {
-  predictions: AutocompletePrediction[];
+  predictions: AutocompletePrediction[] | QueryAutocompletePrediction[];
+}
+
+interface PredictionSubstring {
+  length: number;
+  offset: number;
+}
+
+interface PredictionTerm {
+  offset: number;
+  value: string;
+}
+
+interface QueryAutocompletePrediction {
+  description: string;
+  matched_substrings: PredictionSubstring[];
+  place_id?: string;
+  reference?: string;
+  terms: PredictionTerm[];
 }
 
 interface PlaceOptions {
@@ -192,8 +211,9 @@ const convertAmazonPlaceToGoogleNewPlace = (amazonPlaceObject, fields, googlePla
 };
 
 class MigrationPlacesService {
-  _client: LocationClient; // This will be populated by the top level module that creates our location client
+  _clientV1: LocationClient; // This will be populated by the top level module that creates our location client
   _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
 
   findPlaceFromQuery(request: FindPlaceFromQueryRequest, callback) {
     const query = request.query;
@@ -215,7 +235,7 @@ class MigrationPlacesService {
 
     const command = new SearchPlaceIndexForTextCommand(input);
 
-    this._client
+    this._clientV1
       .send(command)
       .then((response) => {
         const googleResults = [];
@@ -242,13 +262,13 @@ class MigrationPlacesService {
     const placeId = request.placeId;
     const fields = request.fields; // optional
 
-    const input: GetPlaceRequest = {
+    const input: GetPlaceRequestV1 = {
       IndexName: this._placeIndexName, // required
       PlaceId: placeId, // required
     };
 
-    const command = new GetPlaceCommand(input);
-    this._client
+    const command = new GetPlaceCommandV1(input);
+    this._clientV1
       .send(command)
       .then((response) => {
         const place = response.Place;
@@ -299,7 +319,7 @@ class MigrationPlacesService {
 
     const command = new SearchPlaceIndexForTextCommand(input);
 
-    this._client
+    this._clientV1
       .send(command)
       .then((response) => {
         const googleResults = [];
@@ -350,7 +370,7 @@ class MigrationPlace {
     const requestedLanguage = this.requestedLanguage;
     const fields = options.fields; // required
 
-    const input: GetPlaceRequest = {
+    const input: GetPlaceRequestV1 = {
       IndexName: MigrationPlace._placeIndexName, // required
       PlaceId: placeId, // required
     };
@@ -360,7 +380,7 @@ class MigrationPlace {
     }
 
     return new Promise((resolve, reject) => {
-      const command = new GetPlaceCommand(input);
+      const command = new GetPlaceCommandV1(input);
 
       MigrationPlace._client
         .send(command)
@@ -472,19 +492,19 @@ class MigrationPlace {
 }
 
 class MigrationAutocompleteService {
-  _client: LocationClient; // This will be populated by the top level module that creates our location client
-  _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
 
-  getQueryPredictions(request, callback) {
+  getQueryPredictions(request, callback: (a: QueryAutocompletePrediction[], b: PlacesServiceStatus) => void) {
     const query = request.input;
     const location = request.location; // optional
     const locationBias = request.locationBias; // optional
     const bounds = request.bounds || request.locationRestriction; // optional
+    const radius = request.radius; // optional
     const language = request.language; // optional
 
-    const input: SearchPlaceIndexForSuggestionsRequest = {
-      IndexName: this._placeIndexName,
-      Text: query, // required
+    const input: SuggestRequest = {
+      Query: query, // required
+      MaxResults: 5, // Google only returns a max of 5 results
     };
 
     // Handle location/bounds restrictions. bounds and location have been deprecated, and in some cases
@@ -492,6 +512,7 @@ class MigrationAutocompleteService {
     //   * locationBias is the top preferred field, and can be MigrationLatLng|LatLngLiteral|MigrationLatLngBounds|LatLngBoundsLiteral
     //   * bounds / locationRestriction is the next preferred field
     //   * location is the final field that is checked
+    //   * radius must be paired with a LatLng (locationBias / location) to specify a circle bias
     let inputBounds, inputLocation;
     if (locationBias) {
       // MigrationLatLng|LatLngLiteral
@@ -511,11 +532,20 @@ class MigrationAutocompleteService {
       const southWest = inputBounds.getSouthWest();
       const northEast = inputBounds.getNorthEast();
 
-      input.FilterBBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
+      input.FilterBoundingBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
     } else if (inputLocation) {
+      // If we have a location and a radius, then we will use a circle
+      // Otherwise, just the location will be used
       const lngLat = LatLngToLngLat(inputLocation);
       if (lngLat) {
-        input.BiasPosition = lngLat;
+        if (radius) {
+          input.FilterCircle = {
+            Center: lngLat,
+            Radius: radius,
+          };
+        } else {
+          input.BiasPosition = lngLat;
+        }
       }
     }
 
@@ -523,22 +553,81 @@ class MigrationAutocompleteService {
       input.Language = language;
     }
 
-    const command = new SearchPlaceIndexForSuggestionsCommand(input);
+    const command = new SuggestCommand(input);
 
     this._client
       .send(command)
       .then((response) => {
         const googlePredictions: QueryAutocompletePrediction[] = [];
 
-        const results = response.Results;
+        const results = response.ResultItems;
         if (results && results.length !== 0) {
           results.forEach(function (result) {
+            const matchedSubstrings = [];
+            const terms: PredictionTerm[] = [];
+            if (result.Query) {
+              if (result.Highlights) {
+                const highlights = result.Highlights.Title;
+                highlights.forEach((highlight) => {
+                  matchedSubstrings.push({
+                    length: highlight.EndIndex - highlight.StartIndex,
+                    offset: highlight.StartIndex,
+                  });
+                });
+              }
+
+              const title = result.Title;
+              terms.push({
+                offset: 0,
+                value: title,
+              });
+            } else {
+              if (result?.Highlights?.Address || result?.Highlights?.Title) {
+                // Highlights (if present), could be on the address or the title
+                const highlights = result.Highlights.Address
+                  ? result.Highlights.Address.Label
+                  : result.Highlights.Title;
+                highlights.forEach((highlight) => {
+                  matchedSubstrings.push({
+                    length: highlight.EndIndex - highlight.StartIndex,
+                    offset: highlight.StartIndex,
+                  });
+                });
+              }
+
+              const description = result.Place.Address.Label;
+              let offset = 0;
+              for (let index = 0; index < description.length; index++) {
+                if (description[index] == ",") {
+                  terms.push({
+                    offset: offset,
+                    value: description.substring(offset, index),
+                  });
+
+                  // The label parts are separated by a comma and a space, so advance the index and calculate
+                  // the next offset based on that the index will also be incremented after completing this iteration
+                  // of the loop
+                  index++;
+                  offset = index + 1;
+                }
+              }
+
+              terms.push({
+                offset: offset,
+                value: description.substring(offset),
+              });
+            }
+
             const prediction: QueryAutocompletePrediction = {
-              description: result.Text,
+              description: result.Query ? result.Title : result.Place.Address.Label,
+              matched_substrings: matchedSubstrings,
+              terms: terms,
             };
 
-            if (result.PlaceId) {
-              prediction.place_id = result.PlaceId;
+            if (result.Place) {
+              const placeId = result.Place.PlaceId;
+              prediction.place_id = placeId;
+              prediction.reference = placeId;
             }
 
             googlePredictions.push(prediction);

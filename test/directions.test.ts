@@ -207,7 +207,7 @@ distanceMatrixService._client = new LocationClient();
 
 // The DirectionsService and DistanceMatrixService also uses the PlacesService in cases where the route is specified with a query string
 // or PlaceId, so we need to set up a mocked one here.
-MigrationPlacesService.prototype._client = new LocationClient();
+MigrationPlacesService.prototype._clientV1 = new LocationClient();
 directionsService._placesService = new MigrationPlacesService();
 distanceMatrixService._placesService = new MigrationPlacesService();
 
