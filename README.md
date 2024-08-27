@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml)
 
-The Amazon Location Migration SDK provides a bridge for users to test migrating their Google Maps application to use [Amazon Location Service](https://aws.amazon.com/location/). The SDK replaces the import of the Google Maps client SDK, which allows the rest of the applications logic to remain untouched, while under the hood it will be making Amazon Location Service requests instead.
+The Amazon Location Migration SDK provides a bridge that allows you to migrate existing applications from Google Maps to [Amazon Location](https://aws.amazon.com/location/). The Migration SDK provides an option for your application built using the Google Maps SDK for JavaScript to use Amazon Location Service without needing to rewrite any of the application or business logic if Amazon Location supports the capabilities used. Customers can compare their current Google Maps API usage with the Migration SDK’s [list of supported APIs](documentation/supportedLibraries.md) to determine if the Migration SDK is right for them. The Migration SDK will receive updates as Amazon Location Service extends its Maps/Places/Routes feature set.
 
 ## Usage
 
@@ -37,7 +37,7 @@ If your application uses the [dynamic library import](https://developers.google.
 To use the migration SDK, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
 
 ```html
-<script src="https://www.unpkg.com/@aws/amazon-location-migration-sdk?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
+<script src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
 ```
 
 If there are any resources that your application doesn't use, you can omit those query parameters. Only the `region` and `apiKey` are required.
@@ -75,7 +75,7 @@ To use the migration SDK, you replace that line with the following (with your AW
 ```html
 <script
   async
-  src="https://www.unpkg.com/@aws/amazon-location-migration-sdk?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
+  src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
 ></script>
 ```
 
