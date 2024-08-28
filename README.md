@@ -1,6 +1,6 @@
 # Amazon Location Migration SDK
 
-[![Tests](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml)
+[![Version](https://img.shields.io/npm/v/@aws/amazon-location-migration-sdk?style=flat)](https://www.npmjs.com/package/@aws/amazon-location-migration-sdk) [![Tests](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml/badge.svg)](https://github.com/aws-geospatial/amazon-location-migration/actions/workflows/build.yml)
 
 The Amazon Location Migration SDK provides a bridge that allows you to migrate existing applications from Google Maps to [Amazon Location](https://aws.amazon.com/location/). The Migration SDK provides an option for your application built using the Google Maps SDK for JavaScript to use Amazon Location Service without needing to rewrite any of the application or business logic if Amazon Location supports the capabilities used. Customers can compare their current Google Maps API usage with the Migration SDK’s [list of supported APIs](documentation/supportedLibraries.md) to determine if the Migration SDK is right for them. The Migration SDK will receive updates as Amazon Location Service extends its Maps/Places/Routes feature set.
 
