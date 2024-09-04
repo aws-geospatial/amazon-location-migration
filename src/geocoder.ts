@@ -16,7 +16,7 @@ import {
   PlacesServiceStatus,
   MigrationLatLngBounds,
 } from "./googleCommon";
-import { convertAmazonPlaceToGoogle, FindPlaceFromQueryRequest, MigrationPlacesService } from "./places";
+import { convertAmazonPlaceToGoogleV1, FindPlaceFromQueryRequest, MigrationPlacesService } from "./places";
 
 interface GeocoderRequest {
   address?: string | null;
@@ -81,7 +81,7 @@ class MigrationGeocoder {
             const results = response.Results;
             if (results.length !== 0) {
               results.forEach(function (place) {
-                const newPlace = convertAmazonPlaceToGoogle(place, fields, false);
+                const newPlace = convertAmazonPlaceToGoogleV1(place, fields, false);
 
                 googleResults.push(newPlace);
               });

@@ -14,7 +14,20 @@ import {
   SearchPlaceIndexForTextRequest,
 } from "@aws-sdk/client-location";
 
-import { GeoPlacesClient, SuggestCommand, SuggestRequest } from "@amzn/geoplaces-client";
+import {
+  GeoPlacesClient,
+  GetPlaceCommand,
+  GetPlaceRequest,
+  GetPlaceResponse,
+  OpeningHours,
+  SuggestCommand,
+  SuggestRequest,
+  TimeZone,
+} from "@amzn/geoplaces-client";
+
+import parsePhoneNumber from "libphonenumber-js";
+
+import { OpenLocationCode } from "open-location-code";
 
 import {
   AddListenerResponse,
@@ -89,8 +102,715 @@ interface SearchByTextRequest {
   useStrictTypeFiltering?: boolean;
 }
 
+interface GeocoderAddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+interface PlaceGeometry {
+  location?: MigrationLatLng;
+  viewport?: MigrationLatLngBounds;
+}
+
+interface PlaceOpeningHours {
+  isOpen(date?: Date): boolean | undefined;
+  open_now?: boolean;
+  periods?: PlaceOpeningHoursPeriod[];
+  weekday_text?: string[];
+}
+
+interface PlaceOpeningHoursPeriod {
+  close?: PlaceOpeningHoursTime;
+  open: PlaceOpeningHoursTime;
+}
+
+interface PlaceOpeningHoursTime {
+  day: number;
+  hours: number;
+  minutes: number;
+  nextDate?: number;
+  time: string;
+}
+
+interface PlacePlusCode {
+  compound_code?: string;
+  global_code: string;
+}
+
+interface PlaceResult {
+  address_components?: GeocoderAddressComponent[];
+  adr_address?: string;
+  formatted_address?: string;
+  formatted_phone_number?: string;
+  geometry?: PlaceGeometry;
+  html_attributions?: string[];
+  icon?: string;
+  icon_background_color?: string;
+  icon_mask_base_uri?: string;
+  international_phone_number?: string;
+  name?: string;
+  opening_hours?: PlaceOpeningHours;
+  place_id?: string;
+  plus_code?: PlacePlusCode;
+  price_level?: number;
+  reference?: string;
+  types?: string[];
+  url?: string;
+  utc_offset?: number;
+  utc_offset_minutes?: number;
+  vicinity?: string;
+  website?: string;
+}
+
+const dayToIndexMap = {
+  SU: 0,
+  MO: 1,
+  TU: 2,
+  WE: 3,
+  TH: 4,
+  FR: 5,
+  SA: 6,
+};
+const dayIndexToString = {
+  0: "Sunday",
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
+};
+
+const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], timeZone?: TimeZone) => {
+  if (!openingHours || openingHours.length == 0) {
+    return null;
+  }
+
+  const openNow = openingHours[0].OpenNow;
+  const components = openingHours[0].Components;
+
+  const periods: PlaceOpeningHoursPeriod[] = [];
+
+  let open24Hours = false;
+  if (components) {
+    // Special-case handling for places that are open 24 hours
+    if (
+      components.length == 1 &&
+      components[0].OpenTime == "T000000" &&
+      components[0].OpenDuration == "PT24H00M" &&
+      components[0].Recurrence == "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR,SA,SU"
+    ) {
+      const period: PlaceOpeningHoursPeriod = {
+        open: {
+          day: 0,
+          time: "0000",
+          hours: 0,
+          minutes: 0,
+        },
+      };
+
+      periods.push(period);
+
+      // Keep track of this so we can handle special case for generating the weekday_text as well
+      open24Hours = true;
+    } else {
+      components.forEach((component) => {
+        // OpenTime is formatted as "THHMMSS"
+        const openTime = component.OpenTime;
+        const openHoursStr = openTime.substring(1, 3);
+        const openMinutesStr = openTime.substring(3, 5);
+
+        // Convert the open hours/minutes to integers so we can calculate the closing time
+        const openHours = parseInt(openHoursStr);
+        const openMinutes = parseInt(openMinutesStr);
+
+        // OpenDuration is formatted as PT01H23M
+        const openDuration = component.OpenDuration;
+        let closeHours: number, closeMinutes: number;
+        let closeHoursStr: string, closeMinutesStr: string;
+        let dayIndexOffset = 0;
+        if (openDuration) {
+          const durationHoursStr = openDuration.substring(2, 4);
+          const durationMinutesStr = openDuration.substring(5, 7);
+
+          // Convert the duration hours/minutes to integers so we can calculate the closing time
+          const durationHours = parseInt(durationHoursStr);
+          const durationMinutes = parseInt(durationMinutesStr);
+
+          closeHours = openHours + durationHours;
+          closeMinutes = openMinutes + durationMinutes;
+
+          // If the duration takes the closing hours past midnight (e.g. a night club/bar that closes at 2 AM),
+          // we need to clamp the hours value and keep track of a day index offset for when we set the
+          // close period later
+          if (closeHours >= 24) {
+            closeHours = closeHours % 24;
+            dayIndexOffset = 1;
+          }
+          closeHoursStr = closeHours.toString();
+          closeMinutesStr = closeMinutes.toString();
+        }
+
+        const recurrence = component.Recurrence;
+        const recurrencePrefix = "FREQ:DAILY;BYDAY:";
+        const recurrenceParts = recurrence.split(recurrencePrefix);
+        if (recurrenceParts.length == 2) {
+          const byDay = recurrenceParts[1];
+          const days = byDay.split(",");
+
+          const dayIndices = days.map((day) => {
+            if (day in dayToIndexMap) {
+              return dayToIndexMap[day];
+            }
+          });
+
+          dayIndices.forEach((dayIndex) => {
+            // The time field is formmated as "hhmm", so we need to pad the hours/minutes
+            // with a leading '0' for any numbers less than 10
+            const openPeriod: PlaceOpeningHoursTime = {
+              day: dayIndex,
+              hours: openHours,
+              minutes: openMinutes,
+              time: `${openHoursStr.padStart(2, "0")}${openMinutesStr.padStart(2, "0")}`,
+            };
+
+            const period: PlaceOpeningHoursPeriod = {
+              open: openPeriod,
+            };
+
+            if (openDuration) {
+              const closePeriod: PlaceOpeningHoursTime = {
+                day: (dayIndex + dayIndexOffset) % 7, // day index needs to wrap around to Sunday (if it was incremented for a Saturday)
+                hours: closeHours,
+                minutes: closeMinutes,
+                time: `${closeHoursStr.padStart(2, "0")}${closeMinutesStr.padStart(2, "0")}`,
+              };
+
+              period.close = closePeriod;
+            }
+
+            periods.push(period);
+          });
+        } else {
+          console.error(`Unsupported recurrence frequence: ${recurrence}`);
+        }
+      });
+    }
+  }
+
+  // Calculate timestamp (as milliseconds since the epoch) for the next time all of the open/close periods will occur
+  // This can only be calculated if we have a TimeZone offset for this place
+  if (timeZone && typeof timeZone.OffsetSeconds === "number") {
+    const currentDateTime = new Date();
+
+    periods.forEach((period) => {
+      [period.open, period.close].forEach((openingHoursTime) => {
+        if (!openingHoursTime) {
+          return;
+        }
+
+        const nextDate = new Date();
+        const offsetInMinutes = timeZone.OffsetSeconds / 60;
+        const timeZoneHoursOffset = offsetInMinutes / 60;
+        const timeZoneMinutesOffset = offsetInMinutes % 60;
+        nextDate.setUTCHours(openingHoursTime.hours - timeZoneHoursOffset);
+        nextDate.setUTCMinutes(openingHoursTime.minutes - timeZoneMinutesOffset);
+        nextDate.setSeconds(0); // Reset the seconds
+
+        // Calculate the calendar date (e.g. the 23rd) by using the current date (e.g. the 25th) and then
+        // subtracting the day index offset (e.g. current date's index is 2 for Tuesday, and the day we're
+        // trying to calculate for is 0 for Sunday)
+        const currentDate = nextDate.getDate();
+        nextDate.setDate(currentDate - (nextDate.getDay() - openingHoursTime.day));
+
+        // If this date has already passed, then just increment it to next week
+        if (currentDateTime > nextDate) {
+          nextDate.setDate(nextDate.getDate() + 7);
+        }
+
+        openingHoursTime.nextDate = nextDate.getTime();
+      });
+    });
+  }
+
+  // Sort the opening hour periods by the day index, since the components
+  // can be parsed out of order
+  periods.sort((a, b) => a.open.day - b.open.day);
+
+  // The weekday_text field is an array of user readable strings for the opening hours of each day
+  // e.g. Monday: 9:00 AM – 10:00 PM
+  const weekdayText = [];
+  for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+    const period = periods.find((element) => {
+      return element.open.day == dayIndex;
+    });
+
+    const dayString = dayIndexToString[dayIndex];
+
+    if (open24Hours) {
+      weekdayText.push(`${dayString}: Open 24 hours`);
+    } else if (period) {
+      const openTime = period.open;
+      const openHours = openTime.hours;
+      const openMinutes = openTime.minutes;
+      const openDateTime = new Date();
+      openDateTime.setHours(openHours);
+      openDateTime.setMinutes(openMinutes);
+
+      // Use the "short" timeStyle so that it omits seconds and doesn't 0-pad
+      // the hours to 2 digits
+      const openTimeStr = openDateTime.toLocaleTimeString([], { timeStyle: "short" });
+      let periodText = `${dayString}: ${openTimeStr}`;
+
+      const closeTime = period.close;
+      if (closeTime) {
+        const closeHours = closeTime.hours;
+        const closeMinutes = closeTime.minutes;
+        const closeDateTime = new Date();
+        closeDateTime.setHours(closeHours);
+        closeDateTime.setMinutes(closeMinutes);
+
+        const closeTimeStr = closeDateTime.toLocaleTimeString([], { timeStyle: "short" });
+        periodText += ` - ${closeTimeStr}`;
+      }
+
+      // If the times are both AM or both PM, then we only want to show AM/PM on the closing time
+      // e.g. 09:00 - 11:00 AM
+      const amCount = periodText.match(/AM/g)?.length;
+      const pmCount = periodText.match(/PM/g)?.length;
+      if (amCount == 2) {
+        periodText = periodText.replace("AM ", "");
+      } else if (pmCount == 2) {
+        periodText = periodText.replace("PM ", "");
+      }
+
+      weekdayText.push(periodText);
+    } else {
+      // If there's no period for the dayIndex, then its closed for that day
+      weekdayText.push(`${dayString}: Closed`);
+    }
+  }
+
+  // Move the first opening hours text (Sunday), to the end of the list
+  weekdayText.push(weekdayText.shift());
+
+  const placeOpeningHours: PlaceOpeningHours = {
+    open_now: openNow,
+    isOpen: (date?: Date) => {
+      // If no date was passed in, return if its open now
+      if (date == undefined) {
+        return openNow;
+      }
+
+      // Special-case if the place is open 24 hours
+      if (
+        periods.length == 1 &&
+        periods[0].open.day == 0 &&
+        periods[0].open.time == "0000" &&
+        periods[0].close == undefined
+      ) {
+        return true;
+      }
+
+      // If time zone is missing or we have no open/close periods, then we return undefined
+      if (!timeZone || periods.length == 0) {
+        return undefined;
+      }
+
+      const dayIndex = date.getUTCDay();
+      const fullYear = date.getUTCFullYear();
+      const month = date.getUTCMonth();
+      const currentDate = date.getUTCDate();
+      for (let i = 0; i < periods.length; i++) {
+        const period = periods[i];
+        const openHoursTime = period.open;
+        const closeHoursTime = period.close;
+        if (!closeHoursTime || !openHoursTime.nextDate || !closeHoursTime.nextDate) {
+          continue;
+        }
+
+        // Calculate the calendar date (e.g. the 23rd) by using the current date (e.g. the 25th) and then
+        // subtracting the day index offset (e.g. current date's index is 2 for Tuesday, and the day we're
+        // trying to calculate for is 0 for Sunday)
+        const openDateTime = new Date(openHoursTime.nextDate);
+        openDateTime.setUTCFullYear(fullYear);
+        openDateTime.setUTCMonth(month);
+        openDateTime.setUTCDate(currentDate - (dayIndex - openDateTime.getUTCDay()));
+
+        // If this opening date time is after the requested date, then keep looking
+        if (openDateTime > date) {
+          continue;
+        }
+
+        const closeDateTime = new Date(closeHoursTime.nextDate);
+        closeDateTime.setUTCFullYear(fullYear);
+        closeDateTime.setUTCMonth(month);
+        closeDateTime.setUTCDate(currentDate - (dayIndex - closeDateTime.getUTCDay()));
+
+        // If date time falls between open and close, then we found a match
+        if (date > openDateTime && date < closeDateTime) {
+          return true;
+        }
+      }
+
+      // The place isn't open if the datetime isn't during one of the open periods
+      return false;
+    },
+    periods: periods,
+    weekday_text: weekdayText,
+  };
+
+  return placeOpeningHours;
+};
+
+const convertAmazonCategoriesToGoogle = (place: GetPlaceResponse) => {
+  let googleTypes = [];
+  switch (place.PlaceType) {
+    case "Country":
+      googleTypes = ["country", "political"];
+      break;
+
+    case "Region":
+      googleTypes = ["administrative_area_level_1", "political"];
+      break;
+
+    case "SubRegion":
+      googleTypes = ["administrative_area_level_2", "political"];
+      break;
+
+    case "Locality":
+      googleTypes = ["locality", "political"];
+      break;
+
+    case "PostalCodeArea":
+      googleTypes = ["postal_code"];
+      break;
+
+    case "District":
+      googleTypes = ["neighborhood", "political"];
+      break;
+
+    case "Street":
+      googleTypes = ["route"];
+      break;
+
+    case "PointAddress":
+      googleTypes = ["premise"];
+      break;
+
+    case "PointOfInterest":
+      // TODO: Once we have a concrete list of possible Categories and FoodTypes, this will need
+      // to be updated to provide expanded mappings
+      if (place.Categories) {
+        googleTypes = place.Categories.map((category) => {
+          return category.Name;
+        });
+      }
+      break;
+  }
+
+  return googleTypes;
+};
+
+const convertAmazonPlaceToGoogle = (place: GetPlaceResponse, fields, includeDetailFields): PlaceResult => {
+  const googlePlace: PlaceResult = {};
+
+  // For findPlaceFromQuery, the fields are required.
+  // But for getDetails, they are optional, and if they aren't specified
+  // then it is the same as requesting all fields.
+  let includeAllFields = false;
+  if (!fields || fields.includes("ALL")) {
+    includeAllFields = true;
+  }
+
+  if (includeAllFields || fields.includes("formatted_address")) {
+    googlePlace.formatted_address = place.Address.Label;
+  }
+
+  if (
+    includeAllFields ||
+    fields.includes("geometry") ||
+    fields.includes("geometry.location") ||
+    fields.includes("geometry.viewport")
+  ) {
+    const point = place.Position;
+    googlePlace.geometry = {
+      location: new MigrationLatLng(point[1], point[0]),
+    };
+
+    // Parse the mapView as the viewport, but it's not always available
+    if (place.MapView) {
+      const mapView = place.MapView;
+      const southWest = new MigrationLatLng(mapView[1], mapView[0]);
+      const northEast = new MigrationLatLng(mapView[3], mapView[2]);
+
+      googlePlace.geometry.viewport = new MigrationLatLngBounds(southWest, northEast);
+    }
+  }
+
+  if (includeAllFields || fields.includes("name")) {
+    googlePlace.name = place.Title;
+  }
+
+  if (includeAllFields || fields.includes("opening_hours")) {
+    const openingHours = convertAmazonOpeningHoursToGoogle(place.OpeningHours, place.TimeZone);
+    if (openingHours) {
+      googlePlace.opening_hours = openingHours;
+    }
+  }
+
+  if (includeAllFields || fields.includes("place_id")) {
+    googlePlace.place_id = place.PlaceId;
+  }
+
+  if (includeAllFields || fields.includes("plus_code")) {
+    // Calculate the Open Location Code/plus code https://plus.codes/
+    const openLocationCode = new OpenLocationCode();
+    const point = place.Position;
+    const plusCode = openLocationCode.encode(point[1], point[0]);
+    googlePlace.plus_code = {
+      global_code: plusCode,
+    };
+
+    // If this POI has a locality, we will also included the shortened compound code
+    // The compound code has the format: "<SHORT CODE> <LOCALITY>, <REGION>"
+    if (place.Address && place.Address.Locality) {
+      const locality = place.Address.Locality;
+
+      // Remove the first 4 characters from the full plus code for the compound code
+      const shortCode = plusCode.substring(4);
+
+      // In the US, the region (state) is used, otherwise the country name is used
+      let region: string;
+      if (place.Address.Country.Code2 && place.Address.Country.Code2 == "US") {
+        region = place.Address.Region.Name;
+      } else {
+        region = place.Address.Country.Name;
+      }
+
+      const compoundCode = `${shortCode} ${locality}, ${region}`;
+      googlePlace.plus_code.compound_code = compoundCode;
+    }
+  }
+
+  if (includeAllFields || fields.includes("reference")) {
+    googlePlace.reference = place.PlaceId;
+  }
+
+  // Needed for MigrationDirectionsService.route method's response field "geocoded_waypoints"
+  // which needs DirectionsGeocodedWaypoint objects that have property "type" which is the
+  // equivalent of Amazon Location's "Categories" property
+  if (includeAllFields || fields.includes("types")) {
+    googlePlace.types = convertAmazonCategoriesToGoogle(place);
+  }
+
+  // Handle additional fields for getDetails request
+  if (includeDetailFields) {
+    if (includeAllFields || fields.includes("address_components")) {
+      const addressComponents: GeocoderAddressComponent[] = [];
+
+      if (place.Address?.AddressNumber) {
+        const addressNumber = place.Address.AddressNumber;
+        addressComponents.push({
+          long_name: addressNumber,
+          short_name: addressNumber,
+          types: ["street_number"],
+        });
+      }
+
+      if (place.Address?.Street) {
+        const streetName = place.Address.Street;
+        addressComponents.push({
+          long_name: streetName,
+          short_name: streetName,
+          types: ["route"],
+        });
+      }
+
+      if (place.Address?.District) {
+        const district = place.Address.District;
+        addressComponents.push({
+          long_name: district,
+          short_name: district,
+          types: ["neighborhood", "political"],
+        });
+      }
+
+      if (place.Address?.Locality) {
+        const locality = place.Address.Locality;
+        addressComponents.push({
+          long_name: locality,
+          short_name: locality,
+          types: ["locality", "political"],
+        });
+      }
+
+      // If SubRegion is valid, it will have either a Name or Code (or both), so need to handle all cases
+      if (place.Address?.SubRegion) {
+        const subRegion = place.Address.SubRegion;
+        addressComponents.push({
+          long_name: subRegion.Name ? subRegion.Name : subRegion.Code,
+          short_name: subRegion.Code ? subRegion.Code : subRegion.Name,
+          types: ["administrative_area_level_2", "political"],
+        });
+      }
+
+      // If Region is valid, it will have either a Name or Code (or both), so need to handle all cases
+      if (place.Address?.Region) {
+        const region = place.Address.Region;
+        addressComponents.push({
+          long_name: region.Name ? region.Name : region.Code,
+          short_name: region.Code ? region.Code : region.Name,
+          types: ["administrative_area_level_1", "political"],
+        });
+      }
+
+      // If Country is valid, it will have either a Name or Code2 (or both), so need to handle all cases
+      if (place.Address?.Country) {
+        const country = place.Address.Country;
+        addressComponents.push({
+          long_name: country.Name ? country.Name : country.Code2,
+          short_name: country.Code2 ? country.Code2 : country.Name,
+          types: ["country", "political"],
+        });
+      }
+
+      if (place.Address?.PostalCode) {
+        const postalCode = place.Address.PostalCode;
+        addressComponents.push({
+          long_name: postalCode,
+          short_name: postalCode,
+          types: ["postal_code"],
+        });
+      }
+
+      googlePlace.address_components = addressComponents;
+    }
+
+    // Representation of address in adr microformat (https://microformats.org/wiki/adr)
+    if (includeAllFields || fields.includes("adr_address")) {
+      const adrAddressParts: string[] = [];
+      const getAdrSpan = (className, value) => {
+        return `<span class="${className}">${value}</span>`;
+      };
+
+      if (place.Address?.Street) {
+        let streetAddress = place.Address.Street;
+
+        if (place.Address.AddressNumber) {
+          streetAddress = `${place.Address.AddressNumber} ${streetAddress}`;
+        }
+
+        adrAddressParts.push(getAdrSpan("street-address", streetAddress));
+      }
+
+      if (place.Address?.Locality) {
+        const locality = place.Address.Locality;
+
+        adrAddressParts.push(getAdrSpan("locality", locality));
+      }
+
+      if (place.Address?.Region) {
+        const region = place.Address.Region;
+
+        // Prefer region code (if there is one) over the full name
+        const regionName = region.Code ? region.Code : region.Name;
+
+        adrAddressParts.push(getAdrSpan("region", regionName));
+      }
+
+      if (place.Address?.PostalCode) {
+        const postalCode = place.Address.PostalCode;
+
+        adrAddressParts.push(getAdrSpan("postal-code", postalCode));
+      }
+
+      if (place.Address?.Country?.Name) {
+        let countryName = place.Address.Country.Name;
+
+        // If the country name has a space in it, use the Code3 instead (if there is one)
+        // since the adr microformat prefers the shorter representation
+        if (countryName.includes(" ") && place.Address.Country.Code3) {
+          countryName = place.Address.Country.Code3;
+        }
+
+        adrAddressParts.push(getAdrSpan("country-name", countryName));
+      }
+
+      googlePlace.adr_address = adrAddressParts.join(", ");
+    }
+
+    // Use libphonenumber-js for being able to format the phone number as local vs. international
+    if (place.Contacts?.Phones) {
+      const phoneNumbers = place.Contacts.Phones;
+      if (phoneNumbers.length > 0) {
+        const phoneNumberString = phoneNumbers[0].Value;
+        const phoneNumber = parsePhoneNumber(phoneNumberString, "US");
+
+        if (includeAllFields || fields.includes("formatted_phone_number")) {
+          googlePlace.formatted_phone_number = phoneNumber.formatNational();
+        }
+
+        if (includeAllFields || fields.includes("international_phone_number")) {
+          googlePlace.international_phone_number = phoneNumber.formatInternational();
+        }
+      }
+    }
+
+    // Our time zone offset is given in seconds, but Google's uses minutes
+    // Google's utc_offset field is deprecated in favor of utc_offset_minutes,
+    // but they still support it so we support both
+    let timeZoneOffsetInMinutes;
+    if (place.TimeZone) {
+      timeZoneOffsetInMinutes = place.TimeZone.OffsetSeconds / 60;
+    }
+    if (includeAllFields || fields.includes("utc_offset")) {
+      googlePlace.utc_offset = timeZoneOffsetInMinutes;
+    }
+    if (includeAllFields || fields.includes("utc_offset_minutes")) {
+      googlePlace.utc_offset_minutes = timeZoneOffsetInMinutes;
+    }
+
+    // vicinity is in the format of "AddressNumber Street, Locality",
+    // but street number or name might not be there depending on what was
+    // searched for (e.g. just a city name)
+    if (includeAllFields || fields.includes("vicinity")) {
+      if (place.Address.Locality) {
+        let vicinity = place.Address.Locality;
+        if (place.Address.Street) {
+          vicinity = `${place.Address.Street}, ${vicinity}`;
+        }
+        if (place.Address.AddressNumber) {
+          vicinity = `${place.Address.AddressNumber} ${vicinity}`;
+        }
+        googlePlace.vicinity = vicinity;
+      }
+    }
+
+    if (includeAllFields || fields.includes("website")) {
+      const websites = place.Contacts?.Websites;
+
+      // Pick the longest website URL, since the first one can often be just the generic
+      // website for the chain, instead of that specific location
+      if (websites) {
+        let website = "";
+        websites.forEach((url) => {
+          if (url.Value.length > website.length) {
+            website = url.Value;
+          }
+        });
+
+        googlePlace.website = website;
+      }
+    }
+  }
+
+  return googlePlace;
+};
+
 // This helper is for converting an Amazon Place object to the legacy Google Places object format
-const convertAmazonPlaceToGoogle = (placeObject, fields, includeDetailFields) => {
+const convertAmazonPlaceToGoogleV1 = (placeObject, fields, includeDetailFields) => {
   const place = placeObject.Place;
   const googlePlace = {};
 
@@ -243,7 +963,7 @@ class MigrationPlacesService {
         const results = response.Results;
         if (results.length !== 0) {
           results.forEach(function (place) {
-            const placeResponse = convertAmazonPlaceToGoogle(place, fields, false);
+            const placeResponse = convertAmazonPlaceToGoogleV1(place, fields, false);
 
             googleResults.push(placeResponse);
           });
@@ -262,17 +982,16 @@ class MigrationPlacesService {
     const placeId = request.placeId;
     const fields = request.fields; // optional
 
-    const input: GetPlaceRequestV1 = {
-      IndexName: this._placeIndexName, // required
+    const input: GetPlaceRequest = {
       PlaceId: placeId, // required
+      AdditionalFeatures: ["TimeZone"],
     };
 
-    const command = new GetPlaceCommandV1(input);
-    this._clientV1
+    const command = new GetPlaceCommand(input);
+    this._client
       .send(command)
       .then((response) => {
-        const place = response.Place;
-        const googlePlace = convertAmazonPlaceToGoogle({ Place: place, PlaceId: placeId }, fields, true);
+        const googlePlace = convertAmazonPlaceToGoogle(response, fields, true);
 
         callback(googlePlace, PlacesServiceStatus.OK);
       })
@@ -329,7 +1048,7 @@ class MigrationPlacesService {
           results.forEach(function (place) {
             // Include all supported fields as in findPlaceFromQuery,
             // but not the additional fields for getDetails
-            const placeResponse = convertAmazonPlaceToGoogle(place, ["ALL"], false);
+            const placeResponse = convertAmazonPlaceToGoogleV1(place, ["ALL"], false);
 
             googleResults.push(placeResponse);
           });
@@ -426,10 +1145,10 @@ class MigrationPlace {
 
   public static searchByText(request: SearchByTextRequest): Promise<{ places: MigrationPlace[] }> {
     const query = request.textQuery || request.query; // textQuery is the new preferred field, query is deprecated but still allowed
+    const fields = request.fields; // optional
     const locationBias = request.locationBias; // optional
     const bounds = request.locationRestriction; // optional
     const language = request.language; // optional
-    const fields = request.fields || ["*"]; // optional
     const maxResultCount = request.maxResultCount; // optional
 
     const input: SearchPlaceIndexForTextRequest = {
@@ -755,15 +1474,15 @@ class MigrationAutocomplete {
   setOptions(options) {
     // Read in strictBounds option first since it will determine how
     // the bounds option is consumed
-    if (typeof options?.strictBounds === "boolean") {
+    if (typeof options.strictBounds === "boolean") {
       this.#strictBounds = options.strictBounds;
     }
 
-    if (options?.bounds) {
+    if (options.bounds) {
       this.setBounds(options.bounds);
     }
 
-    if (options?.fields) {
+    if (options.fields) {
       this.#fields = options.fields;
     }
   }
@@ -776,7 +1495,7 @@ class MigrationAutocomplete {
           // The fields could be set later, so we need to query again before converting the place
           const fields = this.#fields || ["ALL"];
 
-          this.#place = convertAmazonPlaceToGoogle(results.place.properties, fields, true);
+          this.#place = convertAmazonPlaceToGoogleV1(results.place.properties, fields, true);
 
           // When the user picks a prediction, the geocoder displays the updated results
           // by default (e.g. drops down the single chosen prediction).
@@ -801,7 +1520,7 @@ class MigrationAutocomplete {
         // The fields could be set later, so we need to query again before converting the place
         const fields = this.#fields || ["ALL"];
 
-        this.#place = convertAmazonPlaceToGoogle(result.result.properties, fields, true);
+        this.#place = convertAmazonPlaceToGoogleV1(result.result.properties, fields, true);
 
         handler();
         if (listenerType == "once") {
@@ -896,10 +1615,10 @@ class MigrationSearchBox {
       const resultsWrappedHandler = (results) => {
         if (results.place || results.features?.length) {
           if (results.place) {
-            this.#places = [convertAmazonPlaceToGoogle(results.place.properties, ["ALL"], true)];
+            this.#places = [convertAmazonPlaceToGoogleV1(results.place.properties, ["ALL"], true)];
           } else {
             this.#places = results.features.map((result) => {
-              return convertAmazonPlaceToGoogle(result.properties, ["ALL"], true);
+              return convertAmazonPlaceToGoogleV1(result.properties, ["ALL"], true);
             });
           }
 
@@ -922,7 +1641,7 @@ class MigrationSearchBox {
 
       // This event is triggered if the user selects a place from a list of query suggestions
       const resultWrappedHandler = (result) => {
-        this.#places = [convertAmazonPlaceToGoogle(result.result.properties, ["ALL"], true)];
+        this.#places = [convertAmazonPlaceToGoogleV1(result.result.properties, ["ALL"], true)];
 
         handler();
         if (listenerType == "once") {
@@ -956,6 +1675,10 @@ export {
   MigrationPlace,
   MigrationPlacesService,
   MigrationSearchBox,
+  convertAmazonCategoriesToGoogle,
+  convertAmazonOpeningHoursToGoogle,
   convertAmazonPlaceToGoogle,
+  convertAmazonPlaceToGoogleV1,
   FindPlaceFromQueryRequest,
+  PlaceOpeningHours,
 };
