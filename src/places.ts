@@ -20,6 +20,9 @@ import {
   GetPlaceRequest,
   GetPlaceResponse,
   OpeningHours,
+  SearchTextCommand,
+  SearchTextRequest,
+  SearchTextResultItem,
   SuggestCommand,
   SuggestRequest,
   TimeZone,
@@ -100,6 +103,16 @@ interface SearchByTextRequest {
   region?: string;
   textQuery?: string;
   useStrictTypeFiltering?: boolean;
+}
+
+interface TextSearchRequest {
+  bounds?: LatLngBoundsLike;
+  language?: string | null;
+  location?: LatLngLike;
+  query?: string;
+  radius?: number;
+  region?: string | null;
+  type?: string;
 }
 
 interface GeocoderAddressComponent {
@@ -464,7 +477,7 @@ const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], timeZon
   return placeOpeningHours;
 };
 
-const convertAmazonCategoriesToGoogle = (place: GetPlaceResponse) => {
+const convertAmazonCategoriesToGoogle = (place: GetPlaceResponse | SearchTextResultItem) => {
   let googleTypes = [];
   switch (place.PlaceType) {
     case "Country":
@@ -513,7 +526,11 @@ const convertAmazonCategoriesToGoogle = (place: GetPlaceResponse) => {
   return googleTypes;
 };
 
-const convertAmazonPlaceToGoogle = (place: GetPlaceResponse, fields, includeDetailFields): PlaceResult => {
+const convertAmazonPlaceToGoogle = (
+  place: GetPlaceResponse | SearchTextResultItem,
+  fields,
+  includeDetailFields,
+): PlaceResult => {
   const googlePlace: PlaceResult = {};
 
   // For findPlaceFromQuery, the fields are required.
@@ -1002,16 +1019,16 @@ class MigrationPlacesService {
       });
   }
 
-  textSearch(request, callback) {
+  textSearch(request: TextSearchRequest, callback) {
     const query = request.query; // optional
     const locationBias = request.location; // optional
+    const radius = request.radius; // optional
     const bounds = request.bounds; // optional
     const language = request.language; // optional
     const region = request.region; // optional
 
-    const input: SearchPlaceIndexForTextRequest = {
-      IndexName: this._placeIndexName,
-      Text: query, // required
+    const input: SearchTextRequest = {
+      Query: query, // required
     };
 
     // If bounds is specified, then location bias is ignored
@@ -1020,11 +1037,20 @@ class MigrationPlacesService {
       const southWest = latLngBounds.getSouthWest();
       const northEast = latLngBounds.getNorthEast();
 
-      input.FilterBBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
+      input.FilterBoundingBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
     } else if (locationBias) {
+      // If we have a location and a radius, then we will use a circle
+      // Otherwise, just the location will be used
       const lngLat = LatLngToLngLat(locationBias);
       if (lngLat) {
-        input.BiasPosition = lngLat;
+        if (radius) {
+          input.FilterCircle = {
+            Center: lngLat,
+            Radius: radius,
+          };
+        } else {
+          input.BiasPosition = lngLat;
+        }
       }
     }
 
@@ -1036,19 +1062,19 @@ class MigrationPlacesService {
       input.FilterCountries = [region];
     }
 
-    const command = new SearchPlaceIndexForTextCommand(input);
+    const command = new SearchTextCommand(input);
 
-    this._clientV1
+    this._client
       .send(command)
       .then((response) => {
         const googleResults = [];
 
-        const results = response.Results;
+        const results = response.ResultItems;
         if (results.length !== 0) {
           results.forEach(function (place) {
             // Include all supported fields as in findPlaceFromQuery,
             // but not the additional fields for getDetails
-            const placeResponse = convertAmazonPlaceToGoogleV1(place, ["ALL"], false);
+            const placeResponse = convertAmazonPlaceToGoogle(place, ["ALL"], false);
 
             googleResults.push(placeResponse);
           });
