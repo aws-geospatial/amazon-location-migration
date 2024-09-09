@@ -4,15 +4,21 @@
 import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
   AddListenerResponse,
+  ColorScheme,
   GoogleMapEvent,
   GoogleMapMouseEvent,
   GoogleToMaplibreControlPosition,
   GoogleToMaplibreEvent,
   LatLngToLngLat,
+  MapTypeId,
   MigrationLatLng,
   MigrationLatLngBounds,
 } from "./googleCommon";
 import { PACKAGE_VERSION } from "./version";
+
+const systemIsDarkMode = () => {
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+};
 
 /*
   This migration map class is a thin wrapper replacement for google.maps.Map, which
@@ -25,13 +31,23 @@ import { PACKAGE_VERSION } from "./version";
 */
 class MigrationMap {
   #map: Map;
-  _styleUrl: string; // This will be populated by the top level module that is passed our API key
   #navigationControl: IControl;
+  #colorScheme = "Light";
+  #mapTypeId: MapTypeId = MapTypeId.ROADMAP;
+  #styleUrl: string;
 
-  constructor(containerElement, options) {
+  // These will be populated by the top level module that is passed our region and API key
+  _apiKey: string;
+  _region: string;
+
+  constructor(containerElement, options: google.maps.MapOptions) {
+    // Check for color scheme first, since it's used with the mapTypeId to construct the styleUrl
+    this.#setColorScheme(options.colorScheme);
+    this.setMapTypeId(options.mapTypeId);
+
     const maplibreOptions: MapOptions = {
       container: containerElement,
-      style: this._styleUrl,
+      style: this.#styleUrl,
     };
 
     if (options.center) {
@@ -65,33 +81,8 @@ class MigrationMap {
       maplibreOptions.pitch = options.tilt;
     }
 
-    // Retrieve the apiKey from the styleUrl so that we can append
-    // it as a query param to map tile requests below
-    // TODO: This and the extra transformRequest logic below can be replaced
-    // once the amazon-location-utilities-auth-helper-js has been updated
-    // to provide a transformRequest map option
-    let apiKey = "";
-    if (this._styleUrl) {
-      const styleUrl = new URL(this._styleUrl);
-      const styleParams = new URLSearchParams(styleUrl.search);
-      apiKey = styleParams.get("key");
-    }
-
     // Add our custom user agent header with our package version
     maplibreOptions.transformRequest = (url: string) => {
-      // Append apiKey if missing (see comment above)
-      if (url.match("https://maps.(geo|geo-fips).(.*).amazonaws.com")) {
-        const tempUrl = new URL(url);
-        const params = new URLSearchParams(tempUrl.search);
-
-        if (!params.has("key")) {
-          params.set("key", apiKey);
-
-          tempUrl.search = params.toString();
-          url = tempUrl.toString();
-        }
-      }
-
       return {
         url: url,
         headers: {
@@ -159,6 +150,10 @@ class MigrationMap {
     return this.#map.getBearing();
   }
 
+  getMapTypeId() {
+    return this.#mapTypeId;
+  }
+
   getTilt() {
     return this.#map.getPitch();
   }
@@ -212,6 +207,24 @@ class MigrationMap {
     this.#map.setBearing(heading);
   }
 
+  #setColorScheme(colorScheme) {
+    const googleColorScheme = colorScheme || ColorScheme.LIGHT;
+
+    switch (googleColorScheme) {
+      case ColorScheme.LIGHT:
+        this.#colorScheme = "Light";
+        break;
+
+      case ColorScheme.DARK:
+        this.#colorScheme = "Dark";
+        break;
+
+      case ColorScheme.FOLLOW_SYSTEM:
+        this.#colorScheme = systemIsDarkMode() ? "Dark" : "Light";
+        break;
+    }
+  }
+
   // not implemented by Google Maps, used as private helper method when setting maxZoom in setOptions
   #setMaxZoom(zoom) {
     this.#map.setMaxZoom(zoom);
@@ -220,6 +233,51 @@ class MigrationMap {
   // not implemented by Google Maps, used as private helper method when setting minZoom in setOptions
   #setMinZoom(zoom) {
     this.#map.setMinZoom(zoom);
+  }
+
+  setMapTypeId(mapTypeId) {
+    // Use ROADMAP type by default
+    this.#mapTypeId = mapTypeId || MapTypeId.ROADMAP;
+
+    let styleName;
+    switch (this.#mapTypeId) {
+      case MapTypeId.HYBRID:
+        styleName = "Hybrid";
+        break;
+
+      case MapTypeId.ROADMAP:
+        styleName = "Standard";
+        break;
+
+      case MapTypeId.SATELLITE:
+        styleName = "Satellite";
+        break;
+
+      case MapTypeId.TERRAIN:
+        console.error("Terrain mapTypeId not supported");
+        return;
+    }
+
+    // Construct our style URL
+    const styleUrl = new URL(
+      `https://maps.geo.${this._region}.amazonaws.com/v2/styles/${styleName}/descriptor?key=${this._apiKey}`,
+    );
+
+    // For Roadmap (Standard) type, we need to append the desired color-scheme as a query param
+    // If we appended this for other types, we would get a 4xx error
+    if (this.#mapTypeId == MapTypeId.ROADMAP) {
+      const params = new URLSearchParams(styleUrl.search);
+      params.set("color-scheme", this.#colorScheme);
+      styleUrl.search = params.toString();
+    }
+
+    this.#styleUrl = styleUrl.toString();
+
+    // On MigrationMap initial construction, #map isn't set yet, so we don't need to reset the style since
+    // it will be passed to the MapLibre Map at the end of MigrationMap constructor
+    if (this.#map) {
+      this.#map.setStyle(this.#styleUrl);
+    }
   }
 
   setOptions(options) {
@@ -234,6 +292,12 @@ class MigrationMap {
 
     if (options.zoom) {
       this.setZoom(options.zoom);
+    }
+
+    // NOTE: colorScheme is intentionally not parsed in setOptions because Google only
+    // reads on initial Map construction
+    if (options.mapTypeId) {
+      this.setMapTypeId(options.mapTypeId);
     }
 
     if (options.maxZoom) {

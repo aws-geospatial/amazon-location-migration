@@ -16,8 +16,10 @@ import {
 } from "./directions";
 import { MigrationGeocoder } from "./geocoder";
 import {
+  ColorScheme,
   DirectionsStatus,
   GeocoderStatus,
+  MapTypeId,
   MigrationControlPosition,
   MigrationLatLng,
   MigrationLatLngBounds,
@@ -75,15 +77,10 @@ const routeCalculatorName = urlParams.get("routeCalculator");
 // Optional, will invoke after migrationInit has finished executing
 const postMigrationCallback = urlParams.get("callback");
 
-// Optional, by default will use the "StandardLight" map style
-const styleName = urlParams.get("styleName") || "StandardLight";
-
-// Style URL is used by the Map for making requests
-const styleUrl = `https://maps.geo.${region}.amazonaws.com/v2/styles/${styleName}/descriptor?key=${apiKey}`;
-
 const migrationInit = async function () {
-  // Pass our style url (which includes the API key) to our Migration Map class
-  MigrationMap.prototype._styleUrl = styleUrl;
+  // Pass our region and API key to our Migration Map class so that it can build the style URL
+  MigrationMap.prototype._apiKey = apiKey;
+  MigrationMap.prototype._region = region;
 
   // Create an authentication helper instance using an API key
   const authHelper = await withAPIKey(apiKey);
@@ -141,7 +138,9 @@ const migrationInit = async function () {
       LatLng: MigrationLatLng,
       LatLngBounds: MigrationLatLngBounds,
 
+      ColorScheme: ColorScheme,
       Map: MigrationMap,
+      MapTypeId: MapTypeId,
       Marker: MigrationMarker,
       marker: {
         AdvancedMarkerElement: MigrationMarker,
@@ -182,6 +181,7 @@ const migrationInit = async function () {
           switch (library) {
             case "core":
               resolve({
+                ColorScheme: ColorScheme,
                 ControlPosition: MigrationControlPosition,
                 LatLng: MigrationLatLng,
                 LatLngBounds: MigrationLatLngBounds,
@@ -204,6 +204,7 @@ const migrationInit = async function () {
               resolve({
                 InfoWindow: MigrationInfoWindow,
                 Map: MigrationMap,
+                MapTypeId: MapTypeId,
               });
               break;
 
