@@ -895,7 +895,7 @@ test("should convert Country PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "Country",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -906,7 +906,7 @@ test("should convert Region PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "Region",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -917,7 +917,7 @@ test("should convert SubRegion PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "SubRegion",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -928,7 +928,7 @@ test("should convert Locality PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "Locality",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -939,7 +939,7 @@ test("should convert PostalCodeArea PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "PostalCodeArea",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -950,7 +950,7 @@ test("should convert District PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "District",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -961,7 +961,7 @@ test("should convert Street PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "Street",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -972,7 +972,7 @@ test("should convert PointAddress PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
     PlaceType: "PointAddress",
-    PricingTier: "",
+    PricingBucket: "",
     Title: "CoolPlace",
   });
 
@@ -993,7 +993,7 @@ test("plus_code for non-us countries should use country name instead of region",
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["plus_code"],
@@ -1010,7 +1010,7 @@ test("address_components should be empty if Address is missing from Place", () =
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["address_components"],
@@ -1046,7 +1046,7 @@ test("address_components SubRegion should use Code as long_name if no Name is gi
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["address_components"],
@@ -1085,7 +1085,7 @@ test("address_components Region should use Code as long_name if no Name is given
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["address_components"],
@@ -1124,7 +1124,7 @@ test("address_components Region should use Name as short_name if no Code is give
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["address_components"],
@@ -1161,7 +1161,7 @@ test("address_components Country should use Code as long_name if no Name is give
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["address_components"],
@@ -1198,7 +1198,7 @@ test("address_components Country should use Name as short_name if no Code2 is gi
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["address_components"],
@@ -1218,7 +1218,7 @@ test("adr_address should be empty if Address is missing from Place", () => {
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["adr_address"],
@@ -1240,7 +1240,7 @@ test("adr_address Region should use Name if Code is missing", () => {
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["adr_address"],
@@ -1263,7 +1263,7 @@ test("adr_address Country should use Code3 if there is a space in the Name", () 
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["adr_address"],
@@ -1286,7 +1286,7 @@ test("vicinity should be empty if Locality is missing", () => {
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["vicinity"],
@@ -1309,7 +1309,7 @@ test("website should be empty if Contacts.Websites is missing", () => {
       PlaceId: "TEST_PLACE_ID",
       PlaceType: "PointOfInterest",
       Position: [testLng, testLat],
-      PricingTier: "",
+      PricingBucket: "",
       Title: "CoolPlace",
     },
     ["website"],
@@ -1338,7 +1338,7 @@ test("textSearch should ignore location if bounds was also specified", (done) =>
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
     const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
@@ -1367,7 +1367,7 @@ test("textSearch should accept bounds as a literal", (done) => {
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
     const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
@@ -1393,7 +1393,7 @@ test("textSearch should accept location bias if there is no bounds specified", (
     const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
-    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
 
     expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
@@ -1415,9 +1415,9 @@ test("textSearch should bias towards a circle if both location and radius are sp
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
     const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toBeUndefined();
-    expect(clientInput.FilterCircle).toStrictEqual({
+    expect(clientInput.Filter?.Circle).toStrictEqual({
       Center: [testLng, testLat],
       Radius: 1337,
     });
@@ -1472,7 +1472,7 @@ test("textSearch should convert region to countries filter", (done) => {
     const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
-    expect(clientInput.FilterCountries).toStrictEqual(["us"]);
+    expect(clientInput.Filter?.IncludeCountries).toStrictEqual(["us"]);
 
     expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
@@ -1509,7 +1509,7 @@ test("getQueryPredictions should accept locationBias as LatLng", (done) => {
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
     expect(results.length).toStrictEqual(2);
@@ -1568,7 +1568,7 @@ test("getQueryPredictions should accept locationBias as LatLngLiteral", (done) =
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
     expect(results.length).toStrictEqual(2);
@@ -1594,7 +1594,7 @@ test("getQueryPredictions should accept locationBias as LatLngBounds", (done) =>
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
@@ -1620,7 +1620,7 @@ test("getQueryPredictions should accept locationBias as LatLngBoundsLiteral", (d
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
@@ -1647,7 +1647,7 @@ test("getQueryPredictions should ignore location if bounds was also specified", 
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
@@ -1673,7 +1673,7 @@ test("getQueryPredictions should accept bounds as a literal", (done) => {
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
     expect(clientInput.BiasPosition).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
@@ -1696,7 +1696,7 @@ test("getQueryPredictions should accept location if there is no bounds specified
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
-    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
 
     expect(results.length).toStrictEqual(2);
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
@@ -1718,9 +1718,9 @@ test("getQueryPredictions should bias towards a circle if both location and radi
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toBeUndefined();
-    expect(clientInput.FilterCircle).toStrictEqual({
+    expect(clientInput.Filter?.Circle).toStrictEqual({
       Center: [testLng, testLat],
       Radius: 1337,
     });
@@ -1787,7 +1787,7 @@ test("getPlacePredictions should only return result with place_id", (done) => {
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
     const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-    expect(clientInput.FilterBoundingBox).toBeUndefined();
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
     const predictions = response.predictions;
@@ -1823,7 +1823,7 @@ test("getPlacePredictions will also invoke the callback if specified", (done) =>
       expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
       const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
 
-      expect(clientInput.FilterBoundingBox).toBeUndefined();
+      expect(clientInput.Filter?.BoundingBox).toBeUndefined();
       expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
 
       const predictions = response.predictions;

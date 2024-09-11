@@ -1037,16 +1037,20 @@ class MigrationPlacesService {
       const southWest = latLngBounds.getSouthWest();
       const northEast = latLngBounds.getNorthEast();
 
-      input.FilterBoundingBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
+      input.Filter = {
+        BoundingBox: [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()],
+      };
     } else if (locationBias) {
       // If we have a location and a radius, then we will use a circle
       // Otherwise, just the location will be used
       const lngLat = LatLngToLngLat(locationBias);
       if (lngLat) {
         if (radius) {
-          input.FilterCircle = {
-            Center: lngLat,
-            Radius: radius,
+          input.Filter = {
+            Circle: {
+              Center: lngLat,
+              Radius: radius,
+            },
           };
         } else {
           input.BiasPosition = lngLat;
@@ -1059,7 +1063,9 @@ class MigrationPlacesService {
     }
 
     if (region) {
-      input.FilterCountries = [region];
+      input.Filter = {
+        IncludeCountries: [region],
+      };
     }
 
     const command = new SearchTextCommand(input);
@@ -1277,16 +1283,20 @@ class MigrationAutocompleteService {
       const southWest = inputBounds.getSouthWest();
       const northEast = inputBounds.getNorthEast();
 
-      input.FilterBoundingBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
+      input.Filter = {
+        BoundingBox: [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()],
+      };
     } else if (inputLocation) {
       // If we have a location and a radius, then we will use a circle
       // Otherwise, just the location will be used
       const lngLat = LatLngToLngLat(inputLocation);
       if (lngLat) {
         if (radius) {
-          input.FilterCircle = {
-            Center: lngLat,
-            Radius: radius,
+          input.Filter = {
+            Circle: {
+              Center: lngLat,
+              Radius: radius,
+            },
           };
         } else {
           input.BiasPosition = lngLat;

@@ -81,12 +81,15 @@
   },
   "dependencies": {
     "@amzn/geoplaces-client": "file:temp_clients/amzn-geoplaces-client-0.0.1.tgz",
-    "@aws-sdk/client-location": "^3.621.0",
+    "@aws-sdk/client-location": "^3.649.0",
     "@aws/amazon-location-for-maplibre-gl-geocoder": "^1.0.5",
     "@aws/amazon-location-utilities-auth-helper": "^1.0.7",
     "libphonenumber-js": "^1.11.7",
     "maplibre-gl": "^4.5.0",
     "open-location-code": "^1.0.3"
+  },
+  "overrides": {
+    "fast-xml-parser": "^4.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.21.8",
@@ -106,7 +109,7 @@
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^24.0.0",
-    "lint-staged": "^13.2.2",
+    "lint-staged": "^15.2.10",
     "mustache": "^4.2.0",
     "npm-run-all2": "^6.1.2",
     "prettier": "^2.8.7",
