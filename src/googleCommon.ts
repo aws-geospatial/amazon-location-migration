@@ -296,6 +296,19 @@ export enum GeocoderStatus {
   ZERO_RESULTS = "ZERO_RESULTS",
 }
 
+export enum MapTypeId {
+  HYBRID = "hybrid",
+  ROADMAP = "roadmap",
+  SATELLITE = "satellite",
+  TERRAIN = "terrain",
+}
+
+export enum ColorScheme {
+  DARK = "DARK",
+  FOLLOW_SYSTEM = "FOLLOW_SYSTEM",
+  LIGHT = "LIGHT",
+}
+
 // Migration version of google.maps.ControlPosition
 export const MigrationControlPosition = {
   TOP_LEFT: 1,

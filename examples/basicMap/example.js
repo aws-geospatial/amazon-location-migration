@@ -12,5 +12,7 @@ function initMap() {
   const map = new google.maps.Map(document.getElementById("map"), {
     center: austinCoords,
     zoom: 11,
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    colorScheme: google.maps.ColorScheme.FOLLOW_SYSTEM,
   });
 }

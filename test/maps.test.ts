@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationMap } from "../src/maps";
-import { MigrationControlPosition, MigrationLatLng, MigrationLatLngBounds } from "../src/googleCommon";
+import {
+  ColorScheme,
+  MapTypeId,
+  MigrationControlPosition,
+  MigrationLatLng,
+  MigrationLatLngBounds,
+} from "../src/googleCommon";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
@@ -27,6 +33,7 @@ const mockGetZoom = jest.fn();
 const mockSetZoom = jest.fn();
 const mockSetMinZoom = jest.fn();
 const mockSetMaxZoom = jest.fn();
+const mockSetStyle = jest.fn();
 
 jest.mock("maplibre-gl", () => ({
   ...jest.requireActual("maplibre-gl"),
@@ -57,16 +64,30 @@ jest.mock("maplibre-gl", () => ({
       setZoom: mockSetZoom,
       setMinZoom: mockSetMinZoom,
       setMaxZoom: mockSetMaxZoom,
+
+      setStyle: mockSetStyle,
     };
   }),
 }));
 
 import { LngLatBounds, Map, MapOptions, NavigationControl } from "maplibre-gl";
 
+MigrationMap.prototype._apiKey = "test-api-key";
+MigrationMap.prototype._region = "test-region";
+
 const testLat = 30.268193; // Austin, TX :)
 const testLng = -97.7457518;
 
 jest.spyOn(console, "error").mockImplementation(() => {});
+
+// Mock the window.matchMedia check for ColorScheme.FOLLOW_SYSTEM
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query) => ({
+    matches: true,
+    media: query,
+  })),
+});
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -88,7 +109,8 @@ test("should set migration map options", () => {
 
   const expectedMaplibreOptions: MapOptions = {
     container: null,
-    style: undefined,
+    style:
+      "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light",
     center: [testLng, testLat],
     zoom: 9,
     minZoom: 2,
@@ -115,7 +137,8 @@ test("should set migration map options with control position not available in Ma
 
   const expectedMaplibreOptions: MapOptions = {
     container: null,
-    style: undefined,
+    style:
+      "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light",
     center: [testLng, testLat],
     zoom: 9,
     transformRequest: expect.any(Function),
@@ -127,14 +150,99 @@ test("should set migration map options with control position not available in Ma
   expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
 });
 
+test("should set appropriate color-scheme for ColorScheme.DARK", () => {
+  const testMap = new MigrationMap(null, {
+    colorScheme: ColorScheme.DARK,
+  });
+
+  const expectedMaplibreOptions: MapOptions = {
+    container: null,
+    style:
+      "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark",
+    transformRequest: expect.any(Function),
+  };
+  expect(testMap).not.toBeNull();
+  expect(Map).toHaveBeenCalledTimes(1);
+  expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set appropriate color-scheme for ColorScheme.FOLLOW_SYSTEM", () => {
+  const testMap = new MigrationMap(null, {
+    colorScheme: ColorScheme.FOLLOW_SYSTEM,
+  });
+
+  const expectedMaplibreOptions: MapOptions = {
+    container: null,
+    style:
+      "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark",
+    transformRequest: expect.any(Function),
+  };
+  expect(testMap).not.toBeNull();
+  expect(Map).toHaveBeenCalledTimes(1);
+  expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should return correct mapTypeId after being modified", () => {
+  const testMap = new MigrationMap(null, {});
+
+  // Should be ROADMAP by default
+  // setStyle shouldn't have been called yet because it doesn't get called on initialization
+  expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.ROADMAP);
+  expect(mockSetStyle).toHaveBeenCalledTimes(0);
+
+  // Can set/get to HYBRID and style URL is updated
+  testMap.setMapTypeId(MapTypeId.HYBRID);
+  expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.HYBRID);
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key",
+  );
+
+  // Can set/get to SATELLITE and style URL is updated
+  testMap.setMapTypeId(MapTypeId.SATELLITE);
+  expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.SATELLITE);
+  expect(mockSetStyle).toHaveBeenCalledTimes(2);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key",
+  );
+});
+
+test("should throw error if trying to set mapTypeId to TERRAIN", () => {
+  const testMap = new MigrationMap(null, {});
+
+  testMap.setMapTypeId(MapTypeId.TERRAIN);
+  expect(mockSetStyle).toHaveBeenCalledTimes(0);
+  expect(console.error).toHaveBeenCalledTimes(1);
+  expect(console.error).toHaveBeenCalledWith("Terrain mapTypeId not supported");
+});
+
+test("should update mapTypeId through new options", () => {
+  const testMap = new MigrationMap(null, {});
+
+  // Should be ROADMAP by default
+  expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.ROADMAP);
+  expect(mockSetStyle).toHaveBeenCalledTimes(0);
+
+  testMap.setOptions({
+    mapTypeId: MapTypeId.HYBRID,
+  });
+
+  // mapTypeId should be updated from the setOptions call and new style URL set
+  expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.HYBRID);
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key",
+  );
+});
+
 test("should log error with invalid map option center", () => {
   const testMap = new MigrationMap(null, {
-    center: "THIS_IS_NOT_A_VALID_CENTER",
+    center: new MigrationLatLng(NaN, NaN),
   });
 
   expect(testMap).not.toBeNull();
   expect(console.error).toHaveBeenCalledTimes(1);
-  expect(console.error).toHaveBeenCalledWith("Unrecognized center option", "THIS_IS_NOT_A_VALID_CENTER");
+  expect(console.error).toHaveBeenCalledWith("Unrecognized center option", new MigrationLatLng(NaN, NaN));
 });
 
 test("should call setZoom from migration map", () => {

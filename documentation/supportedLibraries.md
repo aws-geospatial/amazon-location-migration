@@ -4,6 +4,7 @@
 
 | Interface                                                                                                                                              | Supported          | Notes               |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ------------------- |
+| [ColorScheme](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#ColorScheme)                              | :white_check_mark: |                     |
 | [ControlPosition](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/control#ControlPosition)                  | :white_check_mark: |                     |
 | [event](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/event#event)                                        | :white_check_mark: | [Details](event.md) |
 | [LatLng](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#LatLng)                                | :white_check_mark: |                     |
@@ -36,7 +37,7 @@
 | [KmlLayerStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/kml#KmlLayerStatus)               | :x:                |                          |
 | [Map](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#Map)                                     | :white_check_mark: | [Details](maps.md)       |
 | [MapTypeControlStyle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/control#MapTypeControlStyle) | :x:                |                          |
-| [MapTypeId](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#MapTypeId)                         | :x:                |                          |
+| [MapTypeId](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#MapTypeId)                         | :white_check_mark: |                          |
 | [MapTypeRegistry](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#MapTypeRegistry)             | :x:                |                          |
 | [MaxZoomService](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/max-zoom#MaxZoomService)          | :x:                |                          |
 | [MaxZoomStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/max-zoom#MaxZoomStatus)            | :x:                |                          |
