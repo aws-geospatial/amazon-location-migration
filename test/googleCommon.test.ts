@@ -195,6 +195,51 @@ test("bounds should extend to include LatLng", () => {
   expect(newBounds.getNorthEast().lng()).toStrictEqual(11);
 });
 
+test("should return true if bounds intersect", () => {
+  const sw = new MigrationLatLng(0, 0);
+  const ne = new MigrationLatLng(10, 10);
+  const bounds = new MigrationLatLngBounds(sw, ne);
+
+  const otherSw = new MigrationLatLng(5, 5);
+  const otherNe = new MigrationLatLng(15, 15);
+  const otherBounds = new MigrationLatLngBounds(otherSw, otherNe);
+
+  const intersects = bounds.intersects(otherBounds);
+
+  expect(intersects).toStrictEqual(true);
+});
+
+test("should return false if bounds do not intersect", () => {
+  const sw = new MigrationLatLng(0, 0);
+  const ne = new MigrationLatLng(10, 10);
+  const bounds = new MigrationLatLngBounds(sw, ne);
+
+  const otherSw = new MigrationLatLng(20, 20);
+  const otherNe = new MigrationLatLng(30, 30);
+  const otherBounds = new MigrationLatLngBounds(otherSw, otherNe);
+
+  const intersects = bounds.intersects(otherBounds);
+
+  expect(intersects).toStrictEqual(false);
+});
+
+test("intersect should accept LatLngBoundsLiteral", () => {
+  const sw = new MigrationLatLng(0, 0);
+  const ne = new MigrationLatLng(10, 10);
+  const bounds = new MigrationLatLngBounds(sw, ne);
+
+  const otherBounds = {
+    south: 5,
+    west: 5,
+    north: 15,
+    east: 15,
+  };
+
+  const intersects = bounds.intersects(otherBounds);
+
+  expect(intersects).toStrictEqual(true);
+});
+
 test("should return center of bounds", () => {
   const sw = new MigrationLatLng(0, 0);
   const ne = new MigrationLatLng(5, 6);

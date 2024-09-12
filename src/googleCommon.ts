@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { LngLatBounds } from "maplibre-gl";
+import * as turf from "@turf/turf";
 
 export interface LatLngLiteral {
   lat: number;
@@ -114,7 +115,7 @@ export class MigrationLatLng {
 }
 
 // Migration version of google.maps.LatLngBounds
-export class MigrationLatLngBounds {
+export class MigrationLatLngBounds implements google.maps.LatLngBounds {
   #lngLatBounds: LngLatBounds;
 
   constructor(
@@ -176,6 +177,27 @@ export class MigrationLatLngBounds {
     this.#lngLatBounds.extend(lngLat);
 
     return this;
+  }
+
+  intersects(other) {
+    const otherBounds = new MigrationLatLngBounds(other);
+
+    const bboxPolygon = turf.bboxPolygon([
+      this.#lngLatBounds.getWest(),
+      this.#lngLatBounds.getSouth(),
+      this.#lngLatBounds.getEast(),
+      this.#lngLatBounds.getNorth(),
+    ]);
+
+    const otherLngLatBounds = otherBounds._getBounds();
+    const otherBboxPolygon = turf.bboxPolygon([
+      otherLngLatBounds.getWest(),
+      otherLngLatBounds.getSouth(),
+      otherLngLatBounds.getEast(),
+      otherLngLatBounds.getNorth(),
+    ]);
+
+    return turf.booleanOverlap(bboxPolygon, otherBboxPolygon);
   }
 
   getCenter() {
