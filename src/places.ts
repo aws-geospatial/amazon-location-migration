@@ -35,9 +35,7 @@ import { OpenLocationCode } from "open-location-code";
 import {
   AddListenerResponse,
   LatLngBoundsLike,
-  LatLngBoundsLiteral,
   LatLngLike,
-  LatLngLiteral,
   LatLngToLngLat,
   MigrationLatLng,
   MigrationLatLngBounds,
@@ -95,8 +93,8 @@ interface SearchByTextRequest {
   includedType?: string;
   isOpenNow?: boolean;
   language?: string;
-  locationBias?: MigrationLatLng | LatLngLiteral | MigrationLatLngBounds | LatLngBoundsLiteral;
-  locationRestriction?: MigrationLatLngBounds | LatLngBoundsLiteral;
+  locationBias?: MigrationLatLng | google.maps.LatLngLiteral | MigrationLatLngBounds | google.maps.LatLngBoundsLiteral;
+  locationRestriction?: MigrationLatLngBounds | google.maps.LatLngBoundsLiteral;
   maxResultCount?: number;
   minRating?: number;
   query?: string;

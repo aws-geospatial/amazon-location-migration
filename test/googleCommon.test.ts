@@ -1,7 +1,19 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { MigrationLatLng, MigrationLatLngBounds } from "../src/googleCommon";
+import { MigrationCircle, MigrationLatLng, MigrationLatLngBounds, MigrationMVCObject } from "../src/googleCommon";
+
+// Spy on console.error so we can verify it gets called in error cases
+jest.spyOn(console, "error").mockImplementation(() => {});
+
+class TestMVCObject extends MigrationMVCObject {
+  testProperty: string;
+  otherProperty: string;
+
+  constructor() {
+    super();
+  }
+}
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -328,4 +340,202 @@ test("bounds should extend to include LatLngBounds", () => {
   expect(newBounds.getSouthWest().lng()).toStrictEqual(0);
   expect(newBounds.getNorthEast().lat()).toStrictEqual(5);
   expect(newBounds.getNorthEast().lng()).toStrictEqual(5);
+});
+
+test("unsupported MVCObject methods should log error", () => {
+  const mvcObject = new MigrationMVCObject();
+
+  mvcObject.addListener("test", null);
+  expect(console.error).toHaveBeenCalledTimes(1);
+
+  mvcObject.bindTo("test", new MigrationMVCObject());
+  expect(console.error).toHaveBeenCalledTimes(2);
+
+  mvcObject.notify("test");
+  expect(console.error).toHaveBeenCalledTimes(3);
+
+  mvcObject.unbind("test");
+  expect(console.error).toHaveBeenCalledTimes(4);
+
+  mvcObject.unbindAll();
+  expect(console.error).toHaveBeenCalledTimes(5);
+});
+
+test("can retrieve property from MVCObject", () => {
+  const testObject = new TestMVCObject();
+
+  const badProperty = testObject.get("testProperty");
+  expect(badProperty).toBeUndefined();
+
+  testObject.set("testProperty", "testValue");
+
+  const validProperty = testObject.get("testProperty");
+  expect(validProperty).toStrictEqual("testValue");
+});
+
+test("can set multiple key/value pairs at once in MVCObject", () => {
+  const testObject = new TestMVCObject();
+
+  const badProperty = testObject.get("testProperty");
+  const otherBadProperty = testObject.get("otherProperty");
+  expect(badProperty).toBeUndefined();
+  expect(otherBadProperty).toBeUndefined();
+
+  testObject.setValues({
+    testProperty: "testValue",
+    otherProperty: "anotherTestValue",
+  });
+
+  const validProperty = testObject.get("testProperty");
+  const otherValidProperty = testObject.get("otherProperty");
+  expect(validProperty).toStrictEqual("testValue");
+  expect(otherValidProperty).toStrictEqual("anotherTestValue");
+});
+
+test("can construct a Circle from a CircleLiteral", () => {
+  const newCircle = new MigrationCircle({
+    center: {
+      lat: 1,
+      lng: 2,
+    },
+    radius: 5,
+  });
+
+  expect(newCircle.getCenter()?.lat()).toStrictEqual(1);
+  expect(newCircle.getCenter()?.lng()).toStrictEqual(2);
+  expect(newCircle.getRadius()).toStrictEqual(5);
+});
+
+test("can construct a Circle from another Circle", () => {
+  const originalCircle = new MigrationCircle({
+    center: new MigrationLatLng(1, 2),
+    radius: 5,
+  });
+
+  const newCircle = new MigrationCircle(originalCircle);
+
+  expect(newCircle.getCenter()?.lat()).toStrictEqual(1);
+  expect(newCircle.getCenter()?.lng()).toStrictEqual(2);
+  expect(newCircle.getRadius()).toStrictEqual(5);
+});
+
+test("can modify if Circle is draggable", () => {
+  const newCircle = new MigrationCircle({
+    center: {
+      lat: 1,
+      lng: 2,
+    },
+    radius: 5,
+  });
+
+  expect(newCircle.getDraggable()).toStrictEqual(false);
+
+  newCircle.setDraggable(true);
+
+  expect(newCircle.getDraggable()).toStrictEqual(true);
+});
+
+test("can modify if Circle is editable", () => {
+  const newCircle = new MigrationCircle({
+    center: {
+      lat: 1,
+      lng: 2,
+    },
+    radius: 5,
+  });
+
+  expect(newCircle.getEditable()).toStrictEqual(false);
+
+  newCircle.setEditable(true);
+
+  expect(newCircle.getEditable()).toStrictEqual(true);
+});
+
+test("can modify if Circle is visible", () => {
+  const newCircle = new MigrationCircle({
+    center: {
+      lat: 1,
+      lng: 2,
+    },
+    radius: 5,
+  });
+
+  expect(newCircle.getVisible()).toStrictEqual(true);
+
+  newCircle.setVisible(false);
+
+  expect(newCircle.getVisible()).toStrictEqual(false);
+});
+
+test("can assign a null Map to a Circle", () => {
+  const newCircle = new MigrationCircle({
+    center: {
+      lat: 1,
+      lng: 2,
+    },
+    radius: 5,
+  });
+
+  expect(newCircle.getMap()).toBeUndefined();
+
+  newCircle.setMap(null);
+
+  expect(newCircle.getMap()).toBeNull();
+});
+
+test("Circle should return null for bounds if not valid", () => {
+  const newCircle = new MigrationCircle();
+
+  expect(newCircle.getBounds()).toBeNull();
+});
+
+test("can correctly calculate bounds for a Circle", () => {
+  const newCircle = new MigrationCircle({
+    center: {
+      lat: 1,
+      lng: 2,
+    },
+    radius: 5,
+  });
+
+  const numDigits = 6;
+  const bounds = newCircle.getBounds();
+  const boundsJSON = bounds?.toJSON();
+  expect(boundsJSON?.west).toBeCloseTo(1.9999550773938635, numDigits);
+  expect(boundsJSON?.south).toBeCloseTo(0.999955084235794, numDigits);
+  expect(boundsJSON?.east).toBeCloseTo(2.0000449226061363, numDigits);
+  expect(boundsJSON?.north).toBeCloseTo(1.000044915764206, numDigits);
+});
+
+test("Circle options can be set after being created", () => {
+  const newCircle = new MigrationCircle();
+
+  expect(newCircle.getCenter()).toBeUndefined();
+  expect(newCircle.getRadius()).toBeUndefined();
+
+  newCircle.setOptions({ center: { lat: 1, lng: 2 }, radius: 5 });
+
+  expect(newCircle.getCenter()?.lat()).toStrictEqual(1);
+  expect(newCircle.getCenter()?.lng()).toStrictEqual(2);
+  expect(newCircle.getRadius()).toStrictEqual(5);
+});
+
+test("Circle options should stay the same after setting with null options", () => {
+  const newCircle = new MigrationCircle({
+    center: {
+      lat: 1,
+      lng: 2,
+    },
+    radius: 5,
+  });
+
+  expect(newCircle.getCenter()?.lat()).toStrictEqual(1);
+  expect(newCircle.getCenter()?.lng()).toStrictEqual(2);
+  expect(newCircle.getRadius()).toStrictEqual(5);
+
+  newCircle.setOptions(null);
+
+  expect(newCircle.getCenter()?.lat()).toStrictEqual(1);
+  expect(newCircle.getCenter()?.lng()).toStrictEqual(2);
+  expect(newCircle.getRadius()).toStrictEqual(5);
 });

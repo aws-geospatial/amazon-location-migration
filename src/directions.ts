@@ -13,7 +13,6 @@ import {
 import {
   AddListenerResponse,
   DirectionsStatus,
-  LatLngLiteral,
   MigrationLatLng,
   MigrationLatLngBounds,
   PlacesServiceStatus,
@@ -48,7 +47,7 @@ interface DirectionsGeocodedWaypoint {
 }
 
 interface Place {
-  location?: MigrationLatLng | null | LatLngLiteral;
+  location?: MigrationLatLng | null | google.maps.LatLngLiteral;
   placeId?: string;
   query?: string;
 }
@@ -95,7 +94,7 @@ export enum TravelMode {
 }
 
 interface DirectionsWaypoint {
-  location?: string | MigrationLatLng | LatLngLiteral | Place;
+  location?: string | MigrationLatLng | google.maps.LatLngLiteral | Place;
   stopover?: boolean;
 }
 
@@ -103,11 +102,11 @@ interface DirectionsRequest {
   avoidFerries?: boolean;
   avoidHighways?: boolean;
   avoidTolls?: boolean;
-  destination: string | MigrationLatLng | Place | LatLngLiteral;
+  destination: string | MigrationLatLng | Place | google.maps.LatLngLiteral;
   drivingOptions?: DrivingOptions;
   language?: string | null;
   optimizeWaypoints?: boolean;
-  origin: string | MigrationLatLng | Place | LatLngLiteral;
+  origin: string | MigrationLatLng | Place | google.maps.LatLngLiteral;
   provideRouteAlternatives?: boolean;
   region?: string | null;
   travelMode: TravelMode;
@@ -149,8 +148,8 @@ interface DistanceMatrixResponseRow {
 }
 
 interface DistanceMatrixRequest {
-  destinations: (string | MigrationLatLng | Place | LatLngLiteral)[];
-  origins: (string | MigrationLatLng | Place | LatLngLiteral)[];
+  destinations: (string | MigrationLatLng | Place | google.maps.LatLngLiteral)[];
+  origins: (string | MigrationLatLng | Place | google.maps.LatLngLiteral)[];
   travelMode: TravelMode;
   avoidFerries?: boolean;
   avoidHighways?: boolean;
@@ -851,7 +850,7 @@ class MigrationDistanceMatrixService {
 }
 
 function parseOrFindLocations(
-  locationInputs: (string | MigrationLatLng | LatLngLiteral | Place)[],
+  locationInputs: (string | MigrationLatLng | google.maps.LatLngLiteral | Place)[],
   placesService: MigrationPlacesService,
   findPlaceFromQueryFields: string[],
 ) {
