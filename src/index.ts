@@ -20,9 +20,11 @@ import {
   DirectionsStatus,
   GeocoderStatus,
   MapTypeId,
+  MigrationCircle,
   MigrationControlPosition,
   MigrationLatLng,
   MigrationLatLngBounds,
+  MigrationMVCObject,
   PlacesServiceStatus,
 } from "./googleCommon";
 import { MigrationMap } from "./maps";
@@ -43,7 +45,7 @@ import { PACKAGE_VERSION } from "./version";
 // Also the MapLibre Geocoder input field won't function properly
 const maplibreStyle = document.createElement("link");
 maplibreStyle.setAttribute("rel", "stylesheet");
-maplibreStyle.setAttribute("href", "https://unpkg.com/maplibre-gl@3.x/dist/maplibre-gl.css");
+maplibreStyle.setAttribute("href", "https://unpkg.com/maplibre-gl@4.5.0/dist/maplibre-gl.css");
 document.head.appendChild(maplibreStyle);
 const maplibreGeocoderStyle = document.createElement("link");
 maplibreGeocoderStyle.setAttribute("rel", "stylesheet");
@@ -135,6 +137,7 @@ const migrationInit = async function () {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   (window as any).google = {
     maps: {
+      Circle: MigrationCircle,
       LatLng: MigrationLatLng,
       LatLngBounds: MigrationLatLngBounds,
 
@@ -159,6 +162,8 @@ const migrationInit = async function () {
 
       Geocoder: MigrationGeocoder,
       GeocoderStatus: GeocoderStatus,
+
+      MVCObject: MigrationMVCObject,
 
       places: {
         Autocomplete: MigrationAutocomplete,
@@ -185,6 +190,7 @@ const migrationInit = async function () {
                 ControlPosition: MigrationControlPosition,
                 LatLng: MigrationLatLng,
                 LatLngBounds: MigrationLatLngBounds,
+                MVCObject: MigrationMVCObject,
                 event: {
                   addListener: addListener,
                   addListenerOnce: addListenerOnce,
@@ -202,6 +208,7 @@ const migrationInit = async function () {
 
             case "maps":
               resolve({
+                Circle: MigrationCircle,
                 InfoWindow: MigrationInfoWindow,
                 Map: MigrationMap,
                 MapTypeId: MapTypeId,

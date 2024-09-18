@@ -36,10 +36,12 @@ test("importing the SDK should populate google.maps namespace for direct loading
   const google = (window as any).google;
 
   // Core classes
+  expect(google.maps).toHaveProperty("Circle");
   expect(google.maps).toHaveProperty("ColorScheme");
   expect(google.maps).toHaveProperty("ControlPosition");
   expect(google.maps).toHaveProperty("LatLng");
   expect(google.maps).toHaveProperty("LatLngBounds");
+  expect(google.maps).toHaveProperty("MVCObject");
   expect(google.maps).toHaveProperty("event");
 
   // Maps and controls (e.g. Markers)
@@ -77,12 +79,15 @@ test("can dynamically import core classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { ColorScheme, ControlPosition, LatLng, LatLngBounds, event } = await google.maps.importLibrary("core");
+  const { ColorScheme, ControlPosition, LatLng, LatLngBounds, MVCObject, event } = await google.maps.importLibrary(
+    "core",
+  );
 
   expect(ColorScheme).toBeDefined();
   expect(ControlPosition).toBeDefined();
   expect(LatLng).toBeDefined();
   expect(LatLngBounds).toBeDefined();
+  expect(MVCObject).toBeDefined();
   expect(event.addListener).toBeDefined();
   expect(event.addListenerOnce).toBeDefined();
   expect(event.removeListener).toBeDefined();
@@ -92,8 +97,9 @@ test("can dynamically import maps classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { InfoWindow, Map, MapTypeId } = await google.maps.importLibrary("maps");
+  const { Circle, InfoWindow, Map, MapTypeId } = await google.maps.importLibrary("maps");
 
+  expect(Circle).toBeDefined();
   expect(InfoWindow).toBeDefined();
   expect(Map).toBeDefined();
   expect(MapTypeId).toBeDefined();
