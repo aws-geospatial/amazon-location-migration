@@ -12,7 +12,7 @@ import {
   MigrationSearchBox,
   PlaceOpeningHours,
 } from "../src/places";
-import { MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
+import { MigrationCircle, MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
 
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});
@@ -398,13 +398,13 @@ test("findPlaceFromQuery should only return the requested fields", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
 
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
     expect(returnedLatLng.lng()).toStrictEqual(testLng);
-    expect(firstResult.name).toStrictEqual("Austin");
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     expect(firstResult.formatted_address).toBeUndefined();
@@ -427,17 +427,17 @@ test("findPlaceFromQuery should return all fields when ALL are requested", (done
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
 
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
     expect(returnedLatLng.lng()).toStrictEqual(testLng);
-    expect(firstResult.name).toStrictEqual("Austin");
-    expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     expect(firstResult.reference).toStrictEqual("KEEP_AUSTIN_WEIRD");
-    expect(firstResult.types).toStrictEqual(["City"]);
+    expect(firstResult.types).toStrictEqual(["Cool Place"]);
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -445,7 +445,34 @@ test("findPlaceFromQuery should return all fields when ALL are requested", (done
   });
 });
 
-test("findPlaceFromQuery should translate location bias", (done) => {
+test("findPlaceFromQuery should accept locationBias as google.maps.LatLng", (done) => {
+  const biasLat = 0;
+  const biasLng = 1;
+  const request = {
+    query: "Austin, TX",
+    fields: ["name"],
+    locationBias: new MigrationLatLng(biasLat, biasLng),
+  };
+
+  placesService.findPlaceFromQuery(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.BiasPosition?.[0]).toStrictEqual(biasLng);
+    expect(clientInput.BiasPosition?.[1]).toStrictEqual(biasLat);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromQuery should accept locationBias as google.maps.LatLngLiteral", (done) => {
   const biasLat = 0;
   const biasLng = 1;
   const request = {
@@ -461,13 +488,158 @@ test("findPlaceFromQuery should translate location bias", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
-    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
-    expect(clientInput.BiasPosition[0]).toStrictEqual(biasLng);
-    expect(clientInput.BiasPosition[1]).toStrictEqual(biasLat);
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.BiasPosition?.[0]).toStrictEqual(biasLng);
+    expect(clientInput.BiasPosition?.[1]).toStrictEqual(biasLat);
 
-    expect(firstResult.name).toStrictEqual("Austin");
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromQuery should accept locationBias as google.maps.LatLngBounds", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    query: "Austin, TX",
+    fields: ["name"],
+    locationBias: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
+  };
+
+  placesService.findPlaceFromQuery(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromQuery should accept locationBias as google.maps.LatLngBoundsLiteral", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request = {
+    query: "Austin, TX",
+    fields: ["name"],
+    locationBias: {
+      east: east,
+      north: north,
+      west: west,
+      south: south,
+    },
+  };
+
+  placesService.findPlaceFromQuery(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromQuery should accept locationBias as google.maps.Circle", (done) => {
+  const request = {
+    query: "Austin, TX",
+    fields: ["name"],
+    locationBias: new MigrationCircle({
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    }),
+  };
+
+  placesService.findPlaceFromQuery(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.Circle?.Center).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Filter?.Circle?.Radius).toStrictEqual(1337);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromQuery should accept locationBias as google.maps.CircleLiteral", (done) => {
+  const request = {
+    query: "Austin, TX",
+    fields: ["name"],
+    locationBias: {
+      center: {
+        lat: testLat,
+        lng: testLng,
+      },
+      radius: 1337,
+    },
+  };
+
+  placesService.findPlaceFromQuery(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.Circle?.Center).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Filter?.Circle?.Radius).toStrictEqual(1337);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromQuery should accept language", (done) => {
+  const request = {
+    query: "cool places in austin",
+    fields: ["name"],
+    language: "en",
+  };
+
+  placesService.findPlaceFromQuery(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.Language).toStrictEqual("en");
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete

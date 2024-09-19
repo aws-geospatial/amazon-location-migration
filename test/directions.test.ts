@@ -243,6 +243,51 @@ const mockedClientSend = jest.fn((command) => {
           Title: "1337 Cool Place Road",
         });
       }
+    } else if (command instanceof SearchTextCommand) {
+      if (command.input.Query == clientErrorQuery) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else if (command.input.Query == "cool place") {
+        resolve({
+          ResultItems: [
+            {
+              Address: {
+                Label: "cool place, austin, tx",
+              },
+              Categories: [
+                {
+                  Name: "City",
+                  LocalizedName: "City",
+                  Id: "city",
+                  Primary: true,
+                },
+              ],
+              Position: [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
+              PlaceId: "KEEP_AUSTIN_WEIRD",
+            },
+          ],
+        });
+      } else if (command.input.Query == "another cool place") {
+        resolve({
+          ResultItems: [
+            {
+              Address: {
+                Label: "another cool place, austin, tx",
+              },
+              Categories: [
+                {
+                  Name: "City",
+                  LocalizedName: "City",
+                  Id: "city",
+                  Primary: true,
+                },
+              ],
+              Position: [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
+              PlaceId: "ANOTHER_COOL_PLACE",
+            },
+          ],
+        });
+      }
     } else {
       reject();
     }
@@ -257,7 +302,7 @@ jest.mock("@amzn/geoplaces-client", () => ({
     };
   }),
 }));
-import { GeoPlacesClient, GetPlaceCommand } from "@amzn/geoplaces-client";
+import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@amzn/geoplaces-client";
 
 const directionsService = new MigrationDirectionsService();
 const distanceMatrixService = new MigrationDistanceMatrixService();
@@ -1100,9 +1145,10 @@ test("should return route with origin as string and destination as Place.query",
     // Since both origin and destination were query inputs, these will both trigger a
     // findPlaceFromQuery request to retrieve the location geometry, so there
     // will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for routes)
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(3);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
     expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+    expect(mockedClientSend).toHaveBeenCalledTimes(2);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
 
     const routes = response.routes;
 
@@ -1134,9 +1180,9 @@ test("should return route with origin as Place.placeId and destination as Place.
     // Since origin was a placeId and destination was a query input, these will trigger a
     // getDetails and findPlaceFromQuery request (respectively) to retrieve the location geometry,
     // so there will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for routes)
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(2);
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledTimes(2);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
     expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
 
@@ -1551,9 +1597,9 @@ test("should return getDistanceMatrix with origin as Place.placeId and destinati
     // Since origin was a placeId and destination was a query input, these will trigger a
     // getDetails and findPlaceFromQuery request (respectively) to retrieve the location geometry,
     // so there will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for distance matrix)
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(2);
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledTimes(2);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
     expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
     expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
 
@@ -1763,9 +1809,9 @@ test("getDistanceMatrix will invoke the callback if specified", (done) => {
 
   distanceMatrixService
     .getDistanceMatrix(request, (results, status) => {
-      expect(mockedClientSendV1).toHaveBeenCalledTimes(2);
-      expect(mockedClientSend).toHaveBeenCalledTimes(1);
-      expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+      expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+      expect(mockedClientSend).toHaveBeenCalledTimes(2);
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
       expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
       expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
 

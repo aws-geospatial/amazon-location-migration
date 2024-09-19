@@ -147,6 +147,81 @@ const mockedClientSend = jest.fn((command) => {
           Title: "1337 Cool Place Road",
         });
       }
+    } else if (command instanceof SearchTextCommand) {
+      if (command.input.Query == clientErrorQuery) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          ResultItems: [
+            {
+              Address: {
+                Label: testPlaceWithAddressLabel,
+                Country: {
+                  Code2: "US",
+                  Code3: "USA",
+                  Name: "United States",
+                },
+                Region: {
+                  Code: "TX",
+                  Name: "Texas",
+                },
+                SubRegion: {
+                  Name: "Cool SubRegion",
+                },
+                Locality: "Austin",
+                District: "Cool District",
+                PostalCode: "78704",
+                Street: "Cool Place Road",
+                AddressNumber: "1337",
+              },
+              Categories: [
+                {
+                  Name: "Cool Place",
+                  LocalizedName: "Cool Place",
+                  Id: "cool_place",
+                  Primary: true,
+                },
+              ],
+              Contacts: {
+                Phones: [
+                  {
+                    Value: "+15121234567",
+                  },
+                ],
+                Websites: [
+                  {
+                    Value: "https://coolwebsite.com",
+                  },
+                ],
+              },
+              MapView: [0, 1, 2, 3],
+              OpeningHours: [
+                {
+                  Display: ["Mon-Sun: 08:30 - 13:37"],
+                  OpenNow: true,
+                  Components: [
+                    {
+                      OpenTime: "T083000",
+                      OpenDuration: "PT05H07M",
+                      Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR,SA,SU",
+                    },
+                  ],
+                },
+              ],
+              PlaceId: "KEEP_AUSTIN_WEIRD",
+              PlaceType: "PointOfInterest",
+              Position: [testLng, testLat],
+              TimeZone: {
+                Name: "America/Chicago",
+                Offset: "-05:00",
+                OffsetSeconds: -18000,
+              },
+              Title: "1337 Cool Place Road",
+            },
+          ],
+        });
+      }
     } else {
       reject();
     }
@@ -161,7 +236,7 @@ jest.mock("@amzn/geoplaces-client", () => ({
     };
   }),
 }));
-import { GeoPlacesClient, GetPlaceCommand } from "@amzn/geoplaces-client";
+import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@amzn/geoplaces-client";
 
 const placesService = new MigrationPlacesService();
 placesService._clientV1 = new LocationClient();
@@ -400,7 +475,7 @@ test("geocoder should return result when address is specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
   const request: GeocoderRequest = {
-    address: testPlaceLabel,
+    address: testPlaceWithAddressLabel,
   };
 
   geocoder.geocode(request).then((response) => {
@@ -409,10 +484,10 @@ test("geocoder should return result when address is specified", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
 
-    expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -427,7 +502,7 @@ test("geocoder with address will also invoke the callback if specified", (done) 
   const geocoder = new MigrationGeocoder();
 
   const request: GeocoderRequest = {
-    address: testPlaceLabel,
+    address: testPlaceWithAddressLabel,
   };
 
   geocoder
@@ -435,7 +510,7 @@ test("geocoder with address will also invoke the callback if specified", (done) 
       expect(results.length).toStrictEqual(1);
       const firstResult = results[0];
 
-      expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+      expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
       expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
       const returnedLatLng = firstResult.geometry.location;
       expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -449,10 +524,10 @@ test("geocoder with address will also invoke the callback if specified", (done) 
       expect(results.length).toStrictEqual(1);
       const firstResult = results[0];
 
-      expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-      expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+      expect(mockedClientSend).toHaveBeenCalledTimes(1);
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
 
-      expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+      expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
       expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
       const returnedLatLng = firstResult.geometry.location;
       expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -467,7 +542,7 @@ test("geocoder with address should accept bounds when specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
   const request: GeocoderRequest = {
-    address: testPlaceLabel,
+    address: testPlaceWithAddressLabel,
     bounds: new MigrationLatLngBounds({ east: 0, north: 0, south: 4, west: 4 }),
   };
 
@@ -477,14 +552,14 @@ test("geocoder with address should accept bounds when specified", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForTextCommand));
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
 
-    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
+    const clientInput = mockedClientSend.mock.calls[0][0].input;
 
     expect(clientInput.BiasPosition).toStrictEqual([2, 2]);
 
-    expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
