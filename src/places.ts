@@ -37,6 +37,7 @@ import {
   LatLngBoundsLike,
   LatLngLike,
   LatLngToLngLat,
+  MigrationCircle,
   MigrationLatLng,
   MigrationLatLngBounds,
   PlacesServiceStatus,
@@ -75,13 +76,6 @@ interface PlaceOptions {
   id: string;
   requestedLanguage?: string | null;
   requestedRegion?: string | null;
-}
-
-interface FindPlaceFromQueryRequest {
-  fields: string[];
-  language?: string | null;
-  locationBias?: LatLngLike | LatLngBoundsLike | string;
-  query: string;
 }
 
 interface FetchFieldsRequest {
@@ -950,35 +944,88 @@ class MigrationPlacesService {
   _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
   _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
 
-  findPlaceFromQuery(request: FindPlaceFromQueryRequest, callback) {
+  findPlaceFromQuery(request: google.maps.places.FindPlaceFromQueryRequest, callback) {
     const query = request.query;
     const fields = request.fields;
     const locationBias = request.locationBias; // optional
+    const language = request.language; // optional
 
-    const input: SearchPlaceIndexForTextRequest = {
-      IndexName: this._placeIndexName,
-      Text: query, // required
+    const input: SearchTextRequest = {
+      Query: query, // required
       MaxResults: 10, // findPlaceFromQuery usually returns a single result
     };
 
+    // Determine the locationBias, which can be passed in as:
+    // google.maps.LatLng
+    // | google.maps.LatLngLiteral
+    // | google.maps.LatLngBounds
+    // | google.maps.LatLngBoundsLiteral
+    // | google.maps.Circle
+    // | google.maps.CircleLiteral
     if (locationBias) {
-      const lngLat = LatLngToLngLat(locationBias);
-      if (lngLat) {
-        input.BiasPosition = lngLat;
+      if (
+        locationBias instanceof MigrationLatLng ||
+        (Object.prototype.hasOwnProperty.call(locationBias, "lat") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "lng"))
+      ) {
+        const lngLat = LatLngToLngLat(locationBias);
+        if (lngLat) {
+          input.BiasPosition = lngLat;
+        }
+      } else if (
+        locationBias instanceof MigrationLatLngBounds ||
+        (Object.prototype.hasOwnProperty.call(locationBias, "west") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "south") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "east") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "north"))
+      ) {
+        const latLngBounds = new MigrationLatLngBounds(
+          locationBias as google.maps.LatLngBounds | google.maps.LatLngBoundsLiteral,
+        );
+        const southWest = latLngBounds.getSouthWest();
+        const northEast = latLngBounds.getNorthEast();
+
+        input.Filter = {
+          BoundingBox: [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()],
+        };
+      } else {
+        // Last case is google.maps.Circle | google.maps.CircleLiteral
+        const circle = new MigrationCircle(locationBias as google.maps.Circle | google.maps.CircleLiteral);
+
+        const lngLat = LatLngToLngLat(circle.getCenter());
+        if (lngLat) {
+          input.Filter = {
+            Circle: {
+              Center: lngLat,
+              Radius: circle.getRadius(),
+            },
+          };
+        }
       }
+    } else {
+      // SearchTextCommand expects either a BiasPosition or Filter, so if no locationBias is specified,
+      // then we use a world bounding box as a filter.
+      // TODO: The default should be IP_BIAS, but this isn't currently supported
+      input.Filter = {
+        BoundingBox: [-180, -90, 180, 90],
+      };
     }
 
-    const command = new SearchPlaceIndexForTextCommand(input);
+    if (language) {
+      input.Language = language;
+    }
 
-    this._clientV1
+    const command = new SearchTextCommand(input);
+
+    this._client
       .send(command)
       .then((response) => {
         const googleResults = [];
 
-        const results = response.Results;
+        const results = response.ResultItems;
         if (results.length !== 0) {
           results.forEach(function (place) {
-            const placeResponse = convertAmazonPlaceToGoogleV1(place, fields, false);
+            const placeResponse = convertAmazonPlaceToGoogle(place, fields, false);
 
             googleResults.push(placeResponse);
           });
@@ -1054,6 +1101,13 @@ class MigrationPlacesService {
           input.BiasPosition = lngLat;
         }
       }
+    } else {
+      // SearchTextCommand expects either a BiasPosition or Filter, so if no locationBias is specified,
+      // then we use a world bounding box as a filter.
+      // TODO: The default should be IP_BIAS, but this isn't currently supported
+      input.Filter = {
+        BoundingBox: [-180, -90, 180, 90],
+      };
     }
 
     if (language) {
@@ -1713,6 +1767,5 @@ export {
   convertAmazonOpeningHoursToGoogle,
   convertAmazonPlaceToGoogle,
   convertAmazonPlaceToGoogleV1,
-  FindPlaceFromQueryRequest,
   PlaceOpeningHours,
 };

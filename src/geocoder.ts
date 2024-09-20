@@ -16,7 +16,7 @@ import {
   PlacesServiceStatus,
   MigrationLatLngBounds,
 } from "./googleCommon";
-import { convertAmazonPlaceToGoogleV1, FindPlaceFromQueryRequest, MigrationPlacesService } from "./places";
+import { convertAmazonPlaceToGoogleV1, MigrationPlacesService } from "./places";
 
 interface GeocoderRequest {
   address?: string | null;
@@ -138,7 +138,7 @@ class MigrationGeocoder {
       });
     } else if (address) {
       return new Promise((resolve, reject) => {
-        const request: FindPlaceFromQueryRequest = {
+        const request: google.maps.places.FindPlaceFromQueryRequest = {
           query: address,
           fields: fields,
         };

@@ -2,10 +2,10 @@
 
 ### [Place class](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place)
 
-| [Static Methods](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place-Static-Methods) | Supported          | Notes                                                                                                        |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| [searchByText](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place.searchByText)     | :white_check_mark: | `Place` properties are limited, noted below. Also, if using Esri as your data provider `id` will be missing. |
-| [searchNearby](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place.searchNearby)     | :x:                |                                                                                                              |
+| [Static Methods](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place-Static-Methods) | Supported          | Notes                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | -------------------------------------------- |
+| [searchByText](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place.searchByText)     | :white_check_mark: | `Place` properties are limited, noted below. |
+| [searchNearby](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place.searchNearby)     | :x:                |                                              |
 
 | [Methods](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place-Methods)                       | Supported          | Notes                                       |
 | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------- |
