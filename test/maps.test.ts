@@ -118,6 +118,7 @@ test("should set migration map options", () => {
     pitch: 45,
     bearing: 90,
     transformRequest: expect.any(Function),
+    validateStyle: false,
   };
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
@@ -142,6 +143,7 @@ test("should set migration map options with control position not available in Ma
     center: [testLng, testLat],
     zoom: 9,
     transformRequest: expect.any(Function),
+    validateStyle: false,
   };
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
@@ -160,6 +162,7 @@ test("should set appropriate color-scheme for ColorScheme.DARK", () => {
     style:
       "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark",
     transformRequest: expect.any(Function),
+    validateStyle: false,
   };
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
@@ -176,6 +179,7 @@ test("should set appropriate color-scheme for ColorScheme.FOLLOW_SYSTEM", () => 
     style:
       "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark",
     transformRequest: expect.any(Function),
+    validateStyle: false,
   };
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);

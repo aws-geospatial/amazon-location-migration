@@ -23,10 +23,11 @@ import {
   SearchTextCommand,
   SearchTextRequest,
   SearchTextResultItem,
+  SuggestAdditionalFeature,
   SuggestCommand,
   SuggestRequest,
   TimeZone,
-} from "@amzn/geoplaces-client";
+} from "@aws-sdk/client-geo-places";
 
 import parsePhoneNumber from "libphonenumber-js";
 
@@ -488,7 +489,7 @@ const convertAmazonCategoriesToGoogle = (place: GetPlaceResponse | SearchTextRes
       googleTypes = ["locality", "political"];
       break;
 
-    case "PostalCodeArea":
+    case "PostalCode":
       googleTypes = ["postal_code"];
       break;
 
@@ -951,7 +952,7 @@ class MigrationPlacesService {
     const language = request.language; // optional
 
     const input: SearchTextRequest = {
-      Query: query, // required
+      QueryText: query, // required
       MaxResults: 10, // findPlaceFromQuery usually returns a single result
     };
 
@@ -1073,7 +1074,7 @@ class MigrationPlacesService {
     const region = request.region; // optional
 
     const input: SearchTextRequest = {
-      Query: query, // required
+      QueryText: query, // required
     };
 
     // If bounds is specified, then location bias is ignored
@@ -1306,8 +1307,9 @@ class MigrationAutocompleteService {
     const language = request.language; // optional
 
     const input: SuggestRequest = {
-      Query: query, // required
+      QueryText: query, // required
       MaxResults: 5, // Google only returns a max of 5 results
+      AdditionalFeatures: [SuggestAdditionalFeature.CORE], // Without this, only the ID and Title will be returned
     };
 
     // Handle location/bounds restrictions. bounds and location have been deprecated, and in some cases
@@ -1389,9 +1391,9 @@ class MigrationAutocompleteService {
                 value: title,
               });
             } else {
-              if (result?.Highlights?.Address || result?.Highlights?.Title) {
+              if (result.Highlights?.Address?.Label || result.Highlights?.Title) {
                 // Highlights (if present), could be on the address or the title
-                const highlights = result.Highlights.Address
+                const highlights = result.Highlights.Address.Label
                   ? result.Highlights.Address.Label
                   : result.Highlights.Title;
                 highlights.forEach((highlight) => {

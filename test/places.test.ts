@@ -189,7 +189,7 @@ const mockedClientSend = jest.fn((command) => {
         });
       }
     } else if (command instanceof SuggestCommand) {
-      if (command.input.Query == clientErrorQuery) {
+      if (command.input.QueryText == clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
       } else {
@@ -276,7 +276,7 @@ const mockedClientSend = jest.fn((command) => {
         });
       }
     } else if (command instanceof SearchTextCommand) {
-      if (command.input.Query == clientErrorQuery) {
+      if (command.input.QueryText == clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
       } else {
@@ -356,8 +356,8 @@ const mockedClientSend = jest.fn((command) => {
   });
 });
 
-jest.mock("@amzn/geoplaces-client", () => ({
-  ...jest.requireActual("@amzn/geoplaces-client"),
+jest.mock("@aws-sdk/client-geo-places", () => ({
+  ...jest.requireActual("@aws-sdk/client-geo-places"),
   GeoPlacesClient: jest.fn().mockImplementation(() => {
     return {
       send: mockedClientSend,
@@ -371,7 +371,7 @@ import {
   SuggestRequest,
   SearchTextCommand,
   SearchTextRequest,
-} from "@amzn/geoplaces-client";
+} from "@aws-sdk/client-geo-places";
 
 const autocompleteService = new MigrationAutocompleteService();
 autocompleteService._client = new GeoPlacesClient();
@@ -1107,10 +1107,10 @@ test("should convert Locality PlaceType to correct types", () => {
   expect(googleTypes).toStrictEqual(["locality", "political"]);
 });
 
-test("should convert PostalCodeArea PlaceType to correct types", () => {
+test("should convert PostalCode PlaceType to correct types", () => {
   const googleTypes = convertAmazonCategoriesToGoogle({
     PlaceId: "TEST_PLACE_ID",
-    PlaceType: "PostalCodeArea",
+    PlaceType: "PostalCode",
     PricingBucket: "",
     Title: "CoolPlace",
   });

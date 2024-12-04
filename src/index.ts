@@ -3,7 +3,7 @@
 
 import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
-import { GeoPlacesClient } from "@amzn/geoplaces-client";
+import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
 
 import {
   MigrationDirectionsRenderer,
@@ -45,7 +45,7 @@ import { PACKAGE_VERSION } from "./version";
 // Also the MapLibre Geocoder input field won't function properly
 const maplibreStyle = document.createElement("link");
 maplibreStyle.setAttribute("rel", "stylesheet");
-maplibreStyle.setAttribute("href", "https://unpkg.com/maplibre-gl@4.5.0/dist/maplibre-gl.css");
+maplibreStyle.setAttribute("href", "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css");
 document.head.appendChild(maplibreStyle);
 const maplibreGeocoderStyle = document.createElement("link");
 maplibreGeocoderStyle.setAttribute("rel", "stylesheet");
@@ -93,14 +93,13 @@ const migrationInit = async function () {
   const clientV1 = new LocationClient({
     region: "us-west-2", // Region containing Amazon Location resource
     customUserAgent: `migration-sdk-${PACKAGE_VERSION}`, // Append tag with SDK version to the default user agent
-    ...authHelperV1.getLocationClientConfig(), // Configures the client to use API keys when making supported requests
+    ...authHelperV1.getClientConfig(), // Configures the client to use API keys when making supported requests
   });
 
   const client = new GeoPlacesClient({
     region: region, // Region containing Amazon Location resource
     customUserAgent: `migration-sdk-${PACKAGE_VERSION}`, // Append tag with SDK version to the default user agent
-    endpoint: "https://geo.eu-central-1.amazonaws.com/v2", // TODO: This is temporarily hard-coded to the beta endpoint
-    ...authHelper.getLocationClientConfig(), // Configures the client to use API keys when making supported requests
+    ...authHelper.getClientConfig(), // Configures the client to use API keys when making supported requests
   });
 
   // Pass our location client, and optionally place index and route calculator names

@@ -48,6 +48,7 @@ class MigrationMap {
     const maplibreOptions: MapOptions = {
       container: containerElement,
       style: this.#styleUrl,
+      validateStyle: false, // Disable style validation for faster map load
     };
 
     if (options.center) {

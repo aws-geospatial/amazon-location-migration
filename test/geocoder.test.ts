@@ -148,7 +148,7 @@ const mockedClientSend = jest.fn((command) => {
         });
       }
     } else if (command instanceof SearchTextCommand) {
-      if (command.input.Query == clientErrorQuery) {
+      if (command.input.QueryText == clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
       } else {
@@ -228,15 +228,15 @@ const mockedClientSend = jest.fn((command) => {
   });
 });
 
-jest.mock("@amzn/geoplaces-client", () => ({
-  ...jest.requireActual("@amzn/geoplaces-client"),
+jest.mock("@aws-sdk/client-geo-places", () => ({
+  ...jest.requireActual("@aws-sdk/client-geo-places"),
   GeoPlacesClient: jest.fn().mockImplementation(() => {
     return {
       send: mockedClientSend,
     };
   }),
 }));
-import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@amzn/geoplaces-client";
+import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@aws-sdk/client-geo-places";
 
 const placesService = new MigrationPlacesService();
 placesService._clientV1 = new LocationClient();

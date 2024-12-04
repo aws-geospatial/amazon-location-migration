@@ -244,10 +244,10 @@ const mockedClientSend = jest.fn((command) => {
         });
       }
     } else if (command instanceof SearchTextCommand) {
-      if (command.input.Query == clientErrorQuery) {
+      if (command.input.QueryText == clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
-      } else if (command.input.Query == "cool place") {
+      } else if (command.input.QueryText == "cool place") {
         resolve({
           ResultItems: [
             {
@@ -267,7 +267,7 @@ const mockedClientSend = jest.fn((command) => {
             },
           ],
         });
-      } else if (command.input.Query == "another cool place") {
+      } else if (command.input.QueryText == "another cool place") {
         resolve({
           ResultItems: [
             {
@@ -294,15 +294,15 @@ const mockedClientSend = jest.fn((command) => {
   });
 });
 
-jest.mock("@amzn/geoplaces-client", () => ({
-  ...jest.requireActual("@amzn/geoplaces-client"),
+jest.mock("@aws-sdk/client-geo-places", () => ({
+  ...jest.requireActual("@aws-sdk/client-geo-places"),
   GeoPlacesClient: jest.fn().mockImplementation(() => {
     return {
       send: mockedClientSend,
     };
   }),
 }));
-import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@amzn/geoplaces-client";
+import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@aws-sdk/client-geo-places";
 
 const directionsService = new MigrationDirectionsService();
 const distanceMatrixService = new MigrationDistanceMatrixService();
