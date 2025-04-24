@@ -12,7 +12,7 @@ import {
   DistanceMatrixStatus,
 } from "../src/directions";
 import { MigrationPlacesService } from "../src/places";
-import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../src/googleCommon";
+import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../src/common";
 
 const mockAddControl = jest.fn();
 const mockFitBounds = jest.fn();

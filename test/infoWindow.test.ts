@@ -4,7 +4,7 @@
 import { MigrationMap } from "../src/maps";
 import { MigrationMarker } from "../src/markers";
 import { MigrationInfoWindow } from "../src/infoWindow";
-import { MigrationLatLng } from "../src/googleCommon";
+import { MigrationLatLng } from "../src/common";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that

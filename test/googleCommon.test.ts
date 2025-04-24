@@ -1,7 +1,36 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { MigrationCircle, MigrationLatLng, MigrationLatLngBounds, MigrationMVCObject } from "../src/googleCommon";
+import * as turf from "@turf/turf";
+
+import { MigrationCircle, MigrationLatLng, MigrationLatLngBounds, MigrationMVCObject } from "../src/common";
+import { MigrationMap } from "../src/maps";
+
+const mockAddControl = jest.fn();
+const mockAddSource = jest.fn();
+const mockGetSource = jest.fn();
+const mockRemoveSource = jest.fn();
+const mockAddLayer = jest.fn();
+const mockGetLayer = jest.fn();
+const mockRemoveLayer = jest.fn();
+
+// Mock the source and layer methods for MapLibre Map so that we can test the circle drawing logic
+jest.mock("maplibre-gl", () => ({
+  ...jest.requireActual("maplibre-gl"),
+  Map: jest.fn().mockImplementation(() => {
+    return {
+      addControl: mockAddControl,
+      addSource: mockAddSource,
+      getSource: mockGetSource,
+      removeSource: mockRemoveSource,
+      addLayer: mockAddLayer,
+      getLayer: mockGetLayer,
+      removeLayer: mockRemoveLayer,
+
+      isStyleLoaded: () => true,
+    };
+  }),
+}));
 
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});
@@ -513,11 +542,20 @@ test("Circle options can be set after being created", () => {
   expect(newCircle.getCenter()).toBeUndefined();
   expect(newCircle.getRadius()).toBeUndefined();
 
-  newCircle.setOptions({ center: { lat: 1, lng: 2 }, radius: 5 });
+  newCircle.setOptions({
+    center: { lat: 1, lng: 2 },
+    draggable: false,
+    editable: true,
+    radius: 5,
+    visible: false,
+  });
 
   expect(newCircle.getCenter()?.lat()).toStrictEqual(1);
   expect(newCircle.getCenter()?.lng()).toStrictEqual(2);
+  expect(newCircle.getDraggable()).toStrictEqual(false);
+  expect(newCircle.getEditable()).toStrictEqual(true);
   expect(newCircle.getRadius()).toStrictEqual(5);
+  expect(newCircle.getVisible()).toStrictEqual(false);
 });
 
 test("Circle options should stay the same after setting with null options", () => {
@@ -538,4 +576,108 @@ test("Circle options should stay the same after setting with null options", () =
   expect(newCircle.getCenter()?.lat()).toStrictEqual(1);
   expect(newCircle.getCenter()?.lng()).toStrictEqual(2);
   expect(newCircle.getRadius()).toStrictEqual(5);
+});
+
+test("Circle should be drawn if map is specified", () => {
+  const testMap = new MigrationMap(null, {
+    center: { lat: 1, lng: 2 },
+    zoom: 9,
+  });
+
+  const testRadius = 10;
+  const testCircleLat = 3;
+  const testCircleLng = 4;
+  new MigrationCircle({
+    center: {
+      lat: testCircleLat,
+      lng: testCircleLng,
+    },
+    radius: testRadius,
+    strokeColor: "red",
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: "blue",
+    fillOpacity: 0.15,
+    // @ts-ignore This is needed for now until MigrationMap has been updated to implement google.maps.Map
+    map: testMap,
+  });
+
+  const radiusInKm = testRadius / 1000;
+  const centerArray = [testCircleLng, testCircleLat];
+  const circle = turf.circle(centerArray, radiusInKm);
+
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddSource).toHaveBeenCalledWith("circle-source-0", {
+    type: "geojson",
+    data: circle,
+  });
+
+  expect(mockAddLayer).toHaveBeenCalledTimes(2);
+  expect(mockAddLayer).toHaveBeenCalledWith({
+    id: "circle-fill-0",
+    type: "fill",
+    source: "circle-source-0",
+    layout: {
+      visibility: "visible",
+    },
+    paint: {
+      "fill-color": "blue",
+      "fill-opacity": 0.15,
+    },
+  });
+  expect(mockAddLayer).toHaveBeenCalledWith({
+    id: "circle-line-0",
+    type: "line",
+    source: "circle-source-0",
+    layout: {
+      visibility: "visible",
+    },
+    paint: {
+      "line-color": "red",
+      "line-opacity": 0.8,
+      "line-width": 2,
+    },
+  });
+});
+
+test("Circle should be removed from map if set to null", () => {
+  const testMap = new MigrationMap(null, {
+    center: { lat: 1, lng: 2 },
+    zoom: 9,
+  });
+
+  const testRadius = 10;
+  const testCircleLat = 3;
+  const testCircleLng = 4;
+  const testCircle = new MigrationCircle({
+    center: {
+      lat: testCircleLat,
+      lng: testCircleLng,
+    },
+    radius: testRadius,
+    strokeColor: "red",
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: "blue",
+    fillOpacity: 0.15,
+    // @ts-ignore This is needed for now until MigrationMap has been updated to implement google.maps.Map
+    map: testMap,
+  });
+
+  // Circle added to map
+  expect(mockAddSource).toHaveBeenCalledTimes(1);
+  expect(mockAddLayer).toHaveBeenCalledTimes(2);
+
+  // Have the getSource and getLayer method mocks return a fake value in order to trigger the cleanup logic
+  mockGetSource.mockReturnValue(true);
+  mockGetLayer.mockReturnValue(true);
+
+  // Remove circle from map
+  testCircle.setMap(null);
+
+  // Layers and source removed from map
+  expect(mockGetSource).toHaveBeenCalledTimes(2);
+  expect(mockGetLayer).toHaveBeenCalledTimes(2);
+  expect(mockRemoveLayer).toHaveBeenCalledTimes(2);
+  expect(mockRemoveSource).toHaveBeenCalledTimes(1);
 });

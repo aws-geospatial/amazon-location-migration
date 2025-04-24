@@ -312,107 +312,6 @@ export class MigrationMVCObject implements google.maps.MVCObject {
   }
 }
 
-export class MigrationCircle extends MigrationMVCObject implements google.maps.Circle {
-  center: MigrationLatLng;
-  radius: number;
-  map: google.maps.Map;
-  draggable = false;
-  editable = false;
-  visible = true;
-
-  constructor(
-    circleOrCircleOptions?: google.maps.Circle | null | google.maps.CircleLiteral | google.maps.CircleOptions,
-  ) {
-    super();
-
-    if (circleOrCircleOptions instanceof MigrationCircle) {
-      this.setCenter(circleOrCircleOptions.getCenter());
-      this.radius = circleOrCircleOptions.getRadius();
-    } else if (circleOrCircleOptions) {
-      // google.maps.CircleLiteral | google.maps.CircleOptions
-      this.setOptions(circleOrCircleOptions as google.maps.CircleOptions);
-    }
-  }
-
-  getBounds(): google.maps.LatLngBounds | null {
-    if (!this.center || !this.radius) {
-      return null;
-    }
-
-    // Google's radius is stored in meters, but turf.circle expects kilometers
-    const radiusInKm = this.radius / 1000;
-
-    const centerArray = [this.center.lng(), this.center.lat()];
-    const circle = turf.circle(centerArray, radiusInKm);
-    const bbox = turf.bbox(circle);
-
-    return new MigrationLatLngBounds({
-      west: bbox[0],
-      south: bbox[1],
-      east: bbox[2],
-      north: bbox[3],
-    });
-  }
-
-  getCenter(): google.maps.LatLng | null {
-    return this.center;
-  }
-
-  getDraggable(): boolean {
-    return this.draggable;
-  }
-
-  getEditable(): boolean {
-    return this.editable;
-  }
-
-  getMap(): google.maps.Map | null {
-    return this.map;
-  }
-
-  getRadius(): number {
-    return this.radius;
-  }
-
-  getVisible(): boolean {
-    return this.visible;
-  }
-
-  setCenter(center: google.maps.LatLng | null | google.maps.LatLngLiteral): void {
-    this.center = new MigrationLatLng(center);
-  }
-
-  setDraggable(draggable: boolean): void {
-    this.draggable = draggable;
-  }
-
-  setEditable(editable: boolean): void {
-    this.editable = editable;
-  }
-
-  setMap(map: google.maps.Map | null): void {
-    this.map = map;
-  }
-
-  setOptions(options: google.maps.CircleOptions | null): void {
-    if (options?.center) {
-      this.setCenter(options.center);
-    }
-
-    if (options?.radius) {
-      this.setRadius(options.radius);
-    }
-  }
-
-  setRadius(radius: number): void {
-    this.radius = radius;
-  }
-
-  setVisible(visible: boolean): void {
-    this.visible = visible;
-  }
-}
-
 // function that takes in a Google LatLng or LatLngLiteral and returns array containing a
 // longitude and latitude (valid MapLibre input), returns 'null' if 'coord' parameter
 // is not a Google LatLng or LatLngLiteral
@@ -530,6 +429,7 @@ export interface AddListenerResponse {
 
 // Migration version of Google's Events
 export const MigrationEvent = {
+  center_changed: "center_changed",
   click: "click",
   dblclick: "dblclick",
   contextmenu: "contextmenu",
@@ -549,6 +449,7 @@ export const MigrationEvent = {
 // Constant responsible for translating Google Event names to corresponding MapLibre Event names,
 // these Event names are passed into MapLibre's 'on' method
 export const GoogleToMaplibreEvent = {};
+GoogleToMaplibreEvent[MigrationEvent.center_changed] = "move";
 GoogleToMaplibreEvent[MigrationEvent.click] = "click";
 GoogleToMaplibreEvent[MigrationEvent.dblclick] = "dblclick";
 GoogleToMaplibreEvent[MigrationEvent.contextmenu] = "contextmenu";
@@ -576,6 +477,7 @@ export const GoogleMapMouseEvent = [
 
 // List of Google Map Events that do not have any parameters
 export const GoogleMapEvent = [
+  MigrationEvent.center_changed,
   MigrationEvent.tilesloaded,
   MigrationEvent.tilt_changed,
   MigrationEvent.zoom_changed,

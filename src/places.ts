@@ -42,7 +42,7 @@ import {
   MigrationLatLng,
   MigrationLatLngBounds,
   PlacesServiceStatus,
-} from "./googleCommon";
+} from "./common";
 
 interface AutocompletePrediction {
   description: string;

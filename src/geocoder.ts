@@ -15,7 +15,7 @@ import {
   MigrationLatLng,
   PlacesServiceStatus,
   MigrationLatLngBounds,
-} from "./googleCommon";
+} from "./common";
 import { convertAmazonPlaceToGoogleV1, MigrationPlacesService } from "./places";
 
 interface GeocoderRequest {

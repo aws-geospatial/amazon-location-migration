@@ -41,7 +41,7 @@
 | [Events](https://developers.google.com/maps/documentation/javascript/reference/map#Map-Events)                                                   | Supported          | Notes |
 | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ | ----- |
 | [bounds_changed](https://developers.google.com/maps/documentation/javascript/reference/map#Map.bounds_changed)                                   | :x:                |       |
-| [center_changed](https://developers.google.com/maps/documentation/javascript/reference/map#Map.center_changed)                                   | :x:                |       |
+| [center_changed](https://developers.google.com/maps/documentation/javascript/reference/map#Map.center_changed)                                   | :white_check_mark: |       |
 | [click](https://developers.google.com/maps/documentation/javascript/reference/map#Map.click)                                                     | :white_check_mark: |       |
 | [contextmenu](https://developers.google.com/maps/documentation/javascript/reference/map#Map.contextmenu)                                         | :white_check_mark: |       |
 | [dblclick](https://developers.google.com/maps/documentation/javascript/reference/map#Map.dblclick)                                               | :white_check_mark: |       |

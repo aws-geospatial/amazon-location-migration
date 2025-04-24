@@ -3,7 +3,7 @@
 
 import { MigrationPlacesService } from "../src/places";
 import { GeocoderRequest, MigrationGeocoder } from "../src/geocoder";
-import { GeocoderStatus, MigrationLatLngBounds } from "../src/googleCommon";
+import { GeocoderStatus, MigrationLatLngBounds } from "../src/common";
 
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});

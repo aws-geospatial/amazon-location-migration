@@ -8,7 +8,7 @@ import {
   MigrationControlPosition,
   MigrationLatLng,
   MigrationLatLngBounds,
-} from "../src/googleCommon";
+} from "../src/common";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that

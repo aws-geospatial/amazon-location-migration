@@ -10,7 +10,7 @@ import {
   MigrationEvent,
   GoogleMarkerMouseDOMEvent,
   GoogleMarkerMouseEvent,
-} from "./googleCommon";
+} from "./common";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationInfoWindow } from "./infoWindow";

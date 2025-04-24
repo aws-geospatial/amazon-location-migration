@@ -5,7 +5,7 @@ import { MigrationMap } from "../src/maps";
 import { MigrationMarker } from "../src/markers";
 import { MigrationInfoWindow } from "../src/infoWindow";
 import { MigrationDirectionsRenderer } from "../src/directions";
-import { MigrationLatLng } from "../src/googleCommon";
+import { MigrationLatLng } from "../src/common";
 import { MigrationSearchBox, MigrationAutocomplete } from "../src/places";
 import { addListener, addListenerOnce, removeListener } from "../src/events";
 
@@ -180,6 +180,42 @@ test("should call handler after tilesloaded when addListener", () => {
   addListener(migrationMap, "tilesloaded", handlerSpy);
 
   // Simulate mocked tilesloaded call
+  mockMap.on.mock.calls[0][1]();
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+});
+
+test("should call handler after center_changed when addListenerOnce", () => {
+  // mock map so that we can mock on so that we can mock center_changed
+  const mockMap = {
+    once: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  addListenerOnce(migrationMap, "center_changed", handlerSpy);
+
+  // Simulate mocked center_changed call
+  mockMap.once.mock.calls[0][1]();
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+});
+
+test("should call handler after center_changed when addListener", () => {
+  // mock map so that we can mock on so that we can mock center_changed
+  const mockMap = {
+    on: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  // add spy as handler
+  const handlerSpy = jest.fn();
+  addListener(migrationMap, "center_changed", handlerSpy);
+
+  // Simulate mocked center_changed call
   mockMap.on.mock.calls[0][1]();
 
   expect(handlerSpy).toHaveBeenCalledTimes(1);
@@ -611,6 +647,21 @@ test("should remove map tilesloaded listener", () => {
   migrationMap._setMap(mockMap);
 
   const listener = addListenerOnce(migrationMap, "tilesloaded", {});
+  removeListener(listener);
+
+  expect(mockMap.off).toHaveBeenCalledTimes(1);
+});
+
+test("should remove map center_changed listener", () => {
+  // mock map so that we can mock on so that we can mock center_changed
+  const mockMap = {
+    once: jest.fn(),
+    off: jest.fn(),
+  };
+  const migrationMap = new MigrationMap(null, {});
+  migrationMap._setMap(mockMap);
+
+  const listener = addListenerOnce(migrationMap, "center_changed", {});
   removeListener(listener);
 
   expect(mockMap.off).toHaveBeenCalledTimes(1);

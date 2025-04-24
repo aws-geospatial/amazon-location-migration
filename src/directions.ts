@@ -16,7 +16,7 @@ import {
   MigrationLatLng,
   MigrationLatLngBounds,
   PlacesServiceStatus,
-} from "./googleCommon";
+} from "./common";
 import { MigrationMap } from "./maps";
 import { MigrationMarker } from "./markers";
 import { MigrationPlacesService } from "./places";

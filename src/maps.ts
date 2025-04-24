@@ -13,7 +13,7 @@ import {
   MapTypeId,
   MigrationLatLng,
   MigrationLatLngBounds,
-} from "./googleCommon";
+} from "./common";
 import { PACKAGE_VERSION } from "./version";
 
 const systemIsDarkMode = () => {

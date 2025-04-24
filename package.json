@@ -58,7 +58,7 @@
       ".(js|ts)": "ts-jest"
     },
     "transformIgnorePatterns": [
-      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx|json)$",
+      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx|cjs|json)$",
       "package.json"
     ],
     "coverageReporters": [

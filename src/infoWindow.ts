@@ -3,14 +3,14 @@
 
 import { Popup, PopupOptions } from "maplibre-gl";
 import {
+  AddListenerResponse,
   GoogleInfoWindowEvent,
   GoogleToMaplibreEvent,
   LatLngToLngLat,
   MigrationEvent,
   MigrationLatLng,
-} from "./googleCommon";
+} from "./common";
 import { addListenerOnce } from "./events";
-import { AddListenerResponse } from "./googleCommon";
 
 const focusQuerySelector = [
   "a[href]",

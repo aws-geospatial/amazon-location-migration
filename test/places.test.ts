@@ -12,7 +12,7 @@ import {
   MigrationSearchBox,
   PlaceOpeningHours,
 } from "../src/places";
-import { MigrationCircle, MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/googleCommon";
+import { MigrationCircle, MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/common";
 
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});
