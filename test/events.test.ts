@@ -118,7 +118,7 @@ test("should call handler after closeclick when addListenerOnce", () => {
 });
 
 test("should call handler after click when addListenerOnce", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     once: jest.fn(),
   };
@@ -150,7 +150,7 @@ test("should call handler after click when addListenerOnce", () => {
 });
 
 test("should call handler after tilesloaded when addListenerOnce", () => {
-  // mock map so that we can mock on so that we can mock tilesloaded
+  // mock map so that we can mock tilesloaded
   const mockMap = {
     once: jest.fn(),
   };
@@ -168,7 +168,7 @@ test("should call handler after tilesloaded when addListenerOnce", () => {
 });
 
 test("should call handler after tilesloaded when addListener", () => {
-  // mock map so that we can mock on so that we can mock tilesloaded
+  // mock map so that we can mock tilesloaded
   const mockMap = {
     on: jest.fn(),
   };
@@ -186,7 +186,7 @@ test("should call handler after tilesloaded when addListener", () => {
 });
 
 test("should call handler after center_changed when addListenerOnce", () => {
-  // mock map so that we can mock on so that we can mock center_changed
+  // mock map so that we can mock center_changed
   const mockMap = {
     once: jest.fn(),
   };
@@ -204,7 +204,7 @@ test("should call handler after center_changed when addListenerOnce", () => {
 });
 
 test("should call handler after center_changed when addListener", () => {
-  // mock map so that we can mock on so that we can mock center_changed
+  // mock map so that we can mock center_changed
   const mockMap = {
     on: jest.fn(),
   };
@@ -623,7 +623,7 @@ test("should remove marker click listener", () => {
 });
 
 test("should remove map click listener", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     once: jest.fn(),
     off: jest.fn(),
@@ -638,7 +638,7 @@ test("should remove map click listener", () => {
 });
 
 test("should remove map tilesloaded listener", () => {
-  // mock map so that we can mock on so that we can mock tilesloaded
+  // mock map so that we can mock tilesloaded
   const mockMap = {
     once: jest.fn(),
     off: jest.fn(),
@@ -653,7 +653,7 @@ test("should remove map tilesloaded listener", () => {
 });
 
 test("should remove map center_changed listener", () => {
-  // mock map so that we can mock on so that we can mock center_changed
+  // mock map so that we can mock center_changed
   const mockMap = {
     once: jest.fn(),
     off: jest.fn(),

@@ -571,7 +571,7 @@ test("should call addListener from migration map", () => {
 });
 
 test("should call handler with translated MapMouseEvent after click", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     on: jest.fn(),
   };
@@ -603,7 +603,7 @@ test("should call handler with translated MapMouseEvent after click", () => {
 });
 
 test("should call handler with translated MapMouseEvent after dblclick", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     on: jest.fn(),
   };
@@ -635,7 +635,7 @@ test("should call handler with translated MapMouseEvent after dblclick", () => {
 });
 
 test("should call handler with translated MapMouseEvent after contextmenu", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     on: jest.fn(),
   };
@@ -667,7 +667,7 @@ test("should call handler with translated MapMouseEvent after contextmenu", () =
 });
 
 test("should call handler with translated MapMouseEvent after mousemove", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     on: jest.fn(),
   };
@@ -699,7 +699,7 @@ test("should call handler with translated MapMouseEvent after mousemove", () => 
 });
 
 test("should call handler with translated MapMouseEvent after mouseout", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     on: jest.fn(),
   };
@@ -731,7 +731,7 @@ test("should call handler with translated MapMouseEvent after mouseout", () => {
 });
 
 test("should call handler with translated MapMouseEvent after mouseover", () => {
-  // mock map so that we can mock on so that we can mock click
+  // mock map so that we can mock click
   const mockMap = {
     on: jest.fn(),
   };
@@ -763,7 +763,7 @@ test("should call handler with translated MapMouseEvent after mouseover", () => 
 });
 
 test("should call GoogleMapEvent handler after tilesloaded", () => {
-  // mock map so that we can mock on so that we can mock tilesloaded
+  // mock map so that we can mock tilesloaded
   const mockMap = {
     on: jest.fn(),
   };
