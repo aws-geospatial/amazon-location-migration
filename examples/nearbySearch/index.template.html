@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <title>Basic Map Example - Migration SDK</title>
+    <link rel="stylesheet" type="text/css" href="../common/style.css" />
+
+    <!-- Client logic example -->
+    <script type="text/javascript" src="./example.js"></script>
+  </head>
+  <body>
+    <!-- Map element -->
+    <div id="search-controls">
+      <select id="place-type">
+        <option value="restaurant">Restaurants</option>
+        <option value="cafe">Cafes</option>
+        <option value="store">Stores</option>
+        <option value="hospital">Hospitals</option>
+      </select>
+      <input type="range" id="radius" value="1500" min="100" max="5000" step="100" />
+      <span id="radius-value">1500m</span>
+      <button onclick="searchNearbyPlaces()">Search Nearby</button>
+    </div>
+    <div id="map"></div>
+
+    <!-- Migration script import -->
+    <script
+      async
+      defer
+      src="../../dist/amazonLocationMigrationSDK.js?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
+    ></script>
+  </body>
+</html>

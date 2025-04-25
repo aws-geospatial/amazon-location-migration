@@ -20,6 +20,8 @@ import {
   GetPlaceRequest,
   GetPlaceResponse,
   OpeningHours,
+  SearchNearbyCommand,
+  SearchNearbyRequest,
   SearchTextCommand,
   SearchTextRequest,
   SearchTextResultItem,
@@ -43,7 +45,7 @@ import {
   MigrationLatLngBounds,
   PlacesServiceStatus,
 } from "./common";
-import { convertAmazonPlaceTypeToGoogle } from "./places/index";
+import { convertAmazonPlaceTypeToGoogle, getAllAmazonPlaceTypesFromGoogle } from "./places/index";
 
 interface AutocompletePrediction {
   description: string;
@@ -958,7 +960,7 @@ class MigrationPlacesService {
     const input: SearchTextRequest = {
       QueryText: query, // required
       MaxResults: 10, // findPlaceFromQuery usually returns a single result
-      AdditionalFeatures: ["Contact", "TimeZone"], // Without this, contact, opening hours, and time zone data will be missing
+      AdditionalFeatures: ["Contact", "TimeZone"], // "Contact" is needed for contact details and opening hours, "TimeZone" is needed for place's time zone
     };
 
     // Determine the locationBias, which can be passed in as:
@@ -1052,7 +1054,7 @@ class MigrationPlacesService {
 
     const input: GetPlaceRequest = {
       PlaceId: placeId, // required
-      AdditionalFeatures: ["Contact", "TimeZone"], // Without this, contact, opening hours, and time zone data will be missing
+      AdditionalFeatures: ["Contact", "TimeZone"], // "Contact" is needed for contact details and opening hours, "TimeZone" is needed for place's time zone
     };
 
     const command = new GetPlaceCommand(input);
@@ -1070,6 +1072,94 @@ class MigrationPlacesService {
       });
   }
 
+  nearbySearch(request: google.maps.places.PlaceSearchRequest, callback) {
+    const bounds = request.bounds; // optional
+    const language = request.language; // optional
+    let locationBias = request.location; // optional
+    const openNow = request.openNow; // optional
+    const radius = request.radius; // optional
+    const type = request.type; // optional
+
+    // SearchNearbyRequest requires a QueryPosition, so if bounds was specified then we will use
+    // its center as the QueryPosition
+    let boundingBox;
+    if (bounds) {
+      const latLngBounds = new MigrationLatLngBounds(bounds);
+      const southWest = latLngBounds.getSouthWest();
+      const northEast = latLngBounds.getNorthEast();
+
+      locationBias = latLngBounds.getCenter();
+      boundingBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
+    }
+
+    // Convert our location into queryPosition [lng, lat]
+    let queryPosition;
+    if (locationBias) {
+      queryPosition = LatLngToLngLat(locationBias);
+    }
+
+    const input: SearchNearbyRequest = {
+      QueryPosition: queryPosition,
+      AdditionalFeatures: ["Contact"], // Without this, opening hours will be missing
+    };
+
+    // If bounds was specified, then the radius will be ignored
+    if (boundingBox) {
+      input.Filter = {
+        BoundingBox: boundingBox,
+      };
+    } else if (radius) {
+      input.QueryRadius = radius; // Radius is in meters for both Amazon and Google
+    }
+
+    // For the category place type filter, we use getAllAmazonPlaceTypesFromGoogle because there could be
+    // multiple Amazon place type matches for a single Google place type, e.g.
+    //      Google          Amazon
+    //      ----------      --------------------
+    //      campground      campground, campsite
+    //      restaurant      restaurant, casual_dining, fine_dining
+    if (type) {
+      // Create the Filter sub object only if it hadn't been created already from adding a BoundingBox
+      input.Filter ??= {};
+
+      input.Filter.IncludeCategories = getAllAmazonPlaceTypesFromGoogle(type);
+    }
+
+    if (language) {
+      input.Language = language;
+    }
+
+    const command = new SearchNearbyCommand(input);
+
+    this._client
+      .send(command)
+      .then((response) => {
+        const googleResults = [];
+
+        const results = response.ResultItems;
+        if (results.length !== 0) {
+          results.forEach(function (amazonPlace) {
+            // Include all supported fields, including detailed fields
+            const place = convertAmazonPlaceToGoogle(amazonPlace, ["ALL"], true);
+
+            // Omit any places that are currently closed if openNow was specified
+            if (openNow && place.opening_hours && !place.opening_hours?.open_now) {
+              return;
+            }
+
+            googleResults.push(place);
+          });
+        }
+
+        callback(googleResults, PlacesServiceStatus.OK);
+      })
+      .catch((error) => {
+        console.error(error);
+
+        callback([], PlacesServiceStatus.UNKNOWN_ERROR);
+      });
+  }
+
   textSearch(request: TextSearchRequest, callback) {
     const query = request.query; // optional
     const locationBias = request.location; // optional
@@ -1080,7 +1170,7 @@ class MigrationPlacesService {
 
     const input: SearchTextRequest = {
       QueryText: query, // required
-      AdditionalFeatures: ["Contact", "TimeZone"], // Without this, contact, opening hours, and time zone data will be missing
+      AdditionalFeatures: ["Contact", "TimeZone"], // "Contact" is needed for contact details and opening hours, "TimeZone" is needed for place's time zone
     };
 
     // If bounds is specified, then location bias is ignored

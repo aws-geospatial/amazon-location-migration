@@ -69,6 +69,18 @@ test("should set infowindow content option with string containing HTML", () => {
   expect(Popup.prototype.setHTML).toHaveBeenCalledWith(htmlString);
 });
 
+test("should set infowindow content option with string containing HTML and other text", () => {
+  const htmlString = "<h1>Hello World!</h1>Extra Text";
+  const testInfoWindow = new MigrationInfoWindow({
+    content: htmlString,
+  });
+
+  expect(testInfoWindow).not.toBeNull();
+  expect(Popup).toHaveBeenCalledTimes(1);
+  expect(Popup.prototype.setHTML).toHaveBeenCalledTimes(1);
+  expect(Popup.prototype.setHTML).toHaveBeenCalledWith(htmlString);
+});
+
 test("should set infowindow content option with HTML elements", () => {
   const h1Element = document.createElement("h1");
   h1Element.textContent = "Hello World!";

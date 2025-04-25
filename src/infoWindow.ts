@@ -170,7 +170,7 @@ class MigrationInfoWindow {
 
   setContent(content?) {
     if (typeof content === "string") {
-      if (this._containsOnlyHTMLElements(content)) {
+      if (this._containsHTMLElements(content)) {
         this.#popup.setHTML(content);
       } else {
         this.#popup.setText(content);
@@ -246,16 +246,14 @@ class MigrationInfoWindow {
   }
 
   // Internal method for checking if a string contains valid HTML
-  _containsOnlyHTMLElements(str: string): boolean {
+  _containsHTMLElements(str: string): boolean {
     // Regular expression to match complete HTML elements (opening and closing tags with content)
     const htmlElementRegex = /<([a-z][a-z0-9]*)\b[^>]*>(.*?)<\/\1>/gi;
 
     // Check if the string contains any complete HTML elements
     const hasHTMLElements = str.match(htmlElementRegex) !== null;
 
-    // Check if the string contains any text outside of HTML elements
-    const textOutsideElements = str.replace(htmlElementRegex, "").trim();
-    return hasHTMLElements && textOutsideElements.length === 0;
+    return hasHTMLElements;
   }
 }
 

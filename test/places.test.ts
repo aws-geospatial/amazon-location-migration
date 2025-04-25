@@ -280,6 +280,81 @@ const mockedClientSend = jest.fn((command) => {
           ],
         });
       }
+    } else if (command instanceof SearchNearbyCommand) {
+      if (command.input.Language == clientErrorQuery) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          ResultItems: [
+            {
+              Address: {
+                Label: testPlaceWithAddressLabel,
+                Country: {
+                  Code2: "US",
+                  Code3: "USA",
+                  Name: "United States",
+                },
+                Region: {
+                  Code: "TX",
+                  Name: "Texas",
+                },
+                SubRegion: {
+                  Name: "Cool SubRegion",
+                },
+                Locality: "Austin",
+                District: "Cool District",
+                PostalCode: "78704",
+                Street: "Cool Place Road",
+                AddressNumber: "1337",
+              },
+              Categories: [
+                {
+                  Name: "Aquarium",
+                  LocalizedName: "Aquarium",
+                  Id: "aquarium",
+                  Primary: true,
+                },
+              ],
+              Contacts: {
+                Phones: [
+                  {
+                    Value: "+15121234567",
+                  },
+                ],
+                Websites: [
+                  {
+                    Value: "https://coolwebsite.com",
+                  },
+                ],
+              },
+              MapView: [0, 1, 2, 3],
+              OpeningHours: [
+                {
+                  Display: ["Mon-Sun: 08:30 - 13:37"],
+                  OpenNow: false,
+                  Components: [
+                    {
+                      OpenTime: "T083000",
+                      OpenDuration: "PT05H07M",
+                      Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR,SA,SU",
+                    },
+                  ],
+                },
+              ],
+              PlaceId: "KEEP_AUSTIN_WEIRD",
+              PlaceType: "PointOfInterest",
+              Position: [testLng, testLat],
+              TimeZone: {
+                Name: "America/Chicago",
+                Offset: "-05:00",
+                OffsetSeconds: -18000,
+              },
+              Title: "1337 Cool Place Road",
+            },
+          ],
+        });
+      }
     } else if (command instanceof SearchTextCommand) {
       if (command.input.QueryText == clientErrorQuery) {
         // Return an empty object that will throw an error
@@ -374,6 +449,8 @@ import {
   GetPlaceCommand,
   SuggestCommand,
   SuggestRequest,
+  SearchNearbyCommand,
+  SearchNearbyRequest,
   SearchTextCommand,
   SearchTextRequest,
 } from "@aws-sdk/client-geo-places";
@@ -1494,6 +1571,181 @@ test("website should be empty if Contacts.Websites is missing", () => {
   );
 
   expect(googlePlace.website).toBeUndefined();
+});
+
+test("nearbySearch should use radius if no bounds is set", (done) => {
+  const request: google.maps.places.PlaceSearchRequest = {
+    location: new MigrationLatLng(testLat, testLng),
+    radius: 1337,
+    type: "aquarium",
+  };
+
+  placesService.nearbySearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.QueryRadius).toStrictEqual(1337);
+    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
+
+    const returnedLatLng: MigrationLatLng = firstResult.geometry.location;
+    expect(returnedLatLng.lat()).toStrictEqual(testLat);
+    expect(returnedLatLng.lng()).toStrictEqual(testLng);
+    const returnedViewport: MigrationLatLngBounds = firstResult.geometry.viewport;
+    expect(returnedViewport.toJSON()).toStrictEqual({
+      east: 2,
+      north: 3,
+      west: 0,
+      south: 1,
+    });
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
+    expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(firstResult.reference).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(firstResult.plus_code.global_code).toStrictEqual("86247793+7M");
+    expect(firstResult.plus_code.compound_code).toStrictEqual("7793+7M Austin, Texas");
+    expect(firstResult.adr_address).toStrictEqual(
+      '<span class="street-address">1337 Cool Place Road</span>, <span class="locality">Austin</span>, <span class="region">TX</span>, <span class="postal-code">78704</span>, <span class="country-name">USA</span>',
+    );
+    expect(firstResult.types).toStrictEqual(["point_of_interest", "aquarium"]);
+    expect(firstResult.formatted_phone_number).toStrictEqual("(512) 123-4567");
+    expect(firstResult.international_phone_number).toStrictEqual("+1 512 123 4567");
+    expect(firstResult.utc_offset).toStrictEqual(-300);
+    expect(firstResult.utc_offset_minutes).toStrictEqual(-300);
+    expect(firstResult.vicinity).toStrictEqual("1337 Cool Place Road, Austin");
+    expect(firstResult.website).toStrictEqual("https://coolwebsite.com");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("nearbySearch should accept bounds as a literal", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request: google.maps.places.PlaceSearchRequest = {
+    bounds: { east: east, north: north, south: south, west: west },
+    type: "aquarium",
+  };
+
+  placesService.nearbySearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.QueryRadius).toBeUndefined();
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("nearbySearch should ignore radius if bounds was also specified", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const testBounds = new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east));
+  const request: google.maps.places.PlaceSearchRequest = {
+    location: new MigrationLatLng(testLat, testLng),
+    radius: 1337,
+    type: "aquarium",
+    bounds: testBounds,
+  };
+
+  placesService.nearbySearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    const testBoundsCenter = testBounds.getCenter();
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
+    expect(clientInput.QueryPosition).toStrictEqual([testBoundsCenter.lng(), testBoundsCenter.lat()]);
+    expect(clientInput.QueryRadius).toBeUndefined();
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("nearbySearch should accept language", (done) => {
+  const request: google.maps.places.PlaceSearchRequest = {
+    location: new MigrationLatLng(testLat, testLng),
+    radius: 1337,
+    type: "aquarium",
+    language: "en",
+  };
+
+  placesService.nearbySearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Language).toStrictEqual("en");
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("nearbySearch should omit places that are closed if openNow is specified", (done) => {
+  const request: google.maps.places.PlaceSearchRequest = {
+    location: new MigrationLatLng(testLat, testLng),
+    radius: 1337,
+    type: "aquarium",
+    openNow: true,
+  };
+
+  placesService.nearbySearch(request, (results, status) => {
+    expect(results.length).toStrictEqual(0);
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("nearbySearch should handle client error", (done) => {
+  const request: google.maps.places.PlaceSearchRequest = {
+    language: clientErrorQuery,
+  };
+
+  placesService.nearbySearch(request, (results, status) => {
+    expect(results).toHaveLength(0);
+    expect(status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+
+    expect(console.error).toHaveBeenCalledTimes(1);
+
+    // Signal the unit test is complete
+    done();
+  });
 });
 
 test("textSearch should ignore location if bounds was also specified", (done) => {
