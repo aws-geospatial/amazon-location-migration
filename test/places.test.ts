@@ -12,6 +12,11 @@ import {
   MigrationSearchBox,
   PlaceOpeningHours,
 } from "../src/places";
+import {
+  convertAmazonPlaceTypeToGoogle,
+  convertGooglePlaceTypeToAmazon,
+  getAllAmazonPlaceTypesFromGoogle,
+} from "../src/places/index";
 import { MigrationCircle, MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../src/common";
 
 // Spy on console.error so we can verify it gets called in error cases
@@ -145,9 +150,9 @@ const mockedClientSend = jest.fn((command) => {
           },
           Categories: [
             {
-              Name: "Cool Place",
-              LocalizedName: "Cool Place",
-              Id: "cool_place",
+              Name: "Aquarium",
+              LocalizedName: "Aquarium",
+              Id: "aquarium",
               Primary: true,
             },
           ],
@@ -305,9 +310,9 @@ const mockedClientSend = jest.fn((command) => {
               },
               Categories: [
                 {
-                  Name: "Cool Place",
-                  LocalizedName: "Cool Place",
-                  Id: "cool_place",
+                  Name: "Aquarium",
+                  LocalizedName: "Aquarium",
+                  Id: "aquarium",
                   Primary: true,
                 },
               ],
@@ -437,7 +442,7 @@ test("findPlaceFromQuery should return all fields when ALL are requested", (done
     expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     expect(firstResult.reference).toStrictEqual("KEEP_AUSTIN_WEIRD");
-    expect(firstResult.types).toStrictEqual(["Cool Place"]);
+    expect(firstResult.types).toStrictEqual(["point_of_interest", "aquarium"]);
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -692,7 +697,7 @@ test("getDetails should return all fields by default", (done) => {
     expect(result.adr_address).toStrictEqual(
       '<span class="street-address">1337 Cool Place Road</span>, <span class="locality">Austin</span>, <span class="region">TX</span>, <span class="postal-code">78704</span>, <span class="country-name">USA</span>',
     );
-    expect(result.types).toStrictEqual(["Cool Place"]);
+    expect(result.types).toStrictEqual(["point_of_interest", "aquarium"]);
     expect(result.formatted_phone_number).toStrictEqual("(512) 123-4567");
     expect(result.international_phone_number).toStrictEqual("+1 512 123 4567");
     expect(result.utc_offset).toStrictEqual(-300);
@@ -2806,4 +2811,58 @@ test("fetchFields should handle client error", (done) => {
       // Signal the unit test is complete
       done();
     });
+});
+
+test("convertGooglePlaceTypeToAmazon should return corresponding Amazon place type for direct mapping", () => {
+  const placeType = convertGooglePlaceTypeToAmazon("aquarium");
+
+  expect(placeType).toStrictEqual("aquarium");
+});
+
+test("convertGooglePlaceTypeToAmazon should return corresponding Amazon place type for ambiguous mapping", () => {
+  const placeType = convertGooglePlaceTypeToAmazon("airport");
+
+  expect(placeType).toStrictEqual("airport");
+});
+
+test("convertGooglePlaceTypeToAmazon should return null if there is no corresponding Amazon place type", () => {
+  const placeType = convertGooglePlaceTypeToAmazon("UNKNOWN_PLACE_TYPE");
+
+  expect(placeType).toBeNull();
+});
+
+test("getAllAmazonPlaceTypesFromGoogle should return single corresponding Amazon place type for direct mapping", () => {
+  const placeTypes = getAllAmazonPlaceTypesFromGoogle("aquarium");
+
+  expect(placeTypes).toStrictEqual(["aquarium"]);
+});
+
+test("getAllAmazonPlaceTypesFromGoogle should return all corresponding Amazon place type for ambiguous mapping", () => {
+  const placeTypes = getAllAmazonPlaceTypesFromGoogle("airport");
+
+  expect(placeTypes).toStrictEqual(["airport", "airport_cargo", "airport_terminal"]);
+});
+
+test("getAllAmazonPlaceTypesFromGoogle should return null if there is no corresponding Amazon place type", () => {
+  const placeTypes = getAllAmazonPlaceTypesFromGoogle("UNKNOWN_PLACE_TYPE");
+
+  expect(placeTypes).toBeNull();
+});
+
+test("convertAmazonPlaceTypeToGoogle should return corresponding Google place type for direct mapping", () => {
+  const placeType = convertAmazonPlaceTypeToGoogle("aquarium");
+
+  expect(placeType).toStrictEqual("aquarium");
+});
+
+test("convertAmazonPlaceTypeToGoogle should return corresponding Google place type for ambiguous mapping", () => {
+  const placeType = convertAmazonPlaceTypeToGoogle("airport_terminal");
+
+  expect(placeType).toStrictEqual("airport");
+});
+
+test("convertAmazonPlaceTypeToGoogle should return null if there is no corresponding Google place type", () => {
+  const placeType = convertAmazonPlaceTypeToGoogle("UNKNOWN_PLACE_TYPE");
+
+  expect(placeType).toBeNull();
 });

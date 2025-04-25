@@ -43,6 +43,7 @@ import {
   MigrationLatLngBounds,
   PlacesServiceStatus,
 } from "./common";
+import { convertAmazonPlaceTypeToGoogle } from "./places/index";
 
 interface AutocompletePrediction {
   description: string;
@@ -506,11 +507,14 @@ const convertAmazonCategoriesToGoogle = (place: GetPlaceResponse | SearchTextRes
       break;
 
     case "PointOfInterest":
-      // TODO: Once we have a concrete list of possible Categories and FoodTypes, this will need
-      // to be updated to provide expanded mappings
       if (place.Categories) {
-        googleTypes = place.Categories.map((category) => {
-          return category.Name;
+        googleTypes = ["point_of_interest"];
+
+        place.Categories.forEach((category) => {
+          const googleType = convertAmazonPlaceTypeToGoogle(category.Id);
+          if (googleType) {
+            googleTypes.push(googleType);
+          }
         });
       }
       break;
@@ -954,6 +958,7 @@ class MigrationPlacesService {
     const input: SearchTextRequest = {
       QueryText: query, // required
       MaxResults: 10, // findPlaceFromQuery usually returns a single result
+      AdditionalFeatures: ["Contact", "TimeZone"], // Without this, contact, opening hours, and time zone data will be missing
     };
 
     // Determine the locationBias, which can be passed in as:
@@ -1047,7 +1052,7 @@ class MigrationPlacesService {
 
     const input: GetPlaceRequest = {
       PlaceId: placeId, // required
-      AdditionalFeatures: ["TimeZone"],
+      AdditionalFeatures: ["Contact", "TimeZone"], // Without this, contact, opening hours, and time zone data will be missing
     };
 
     const command = new GetPlaceCommand(input);
@@ -1075,6 +1080,7 @@ class MigrationPlacesService {
 
     const input: SearchTextRequest = {
       QueryText: query, // required
+      AdditionalFeatures: ["Contact", "TimeZone"], // Without this, contact, opening hours, and time zone data will be missing
     };
 
     // If bounds is specified, then location bias is ignored
