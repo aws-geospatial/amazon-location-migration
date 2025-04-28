@@ -37,8 +37,6 @@ import { OpenLocationCode } from "open-location-code";
 
 import {
   AddListenerResponse,
-  LatLngBoundsLike,
-  LatLngLike,
   LatLngToLngLat,
   MigrationCircle,
   MigrationLatLng,
@@ -47,121 +45,41 @@ import {
 } from "./common";
 import { convertAmazonPlaceTypeToGoogle, getAllAmazonPlaceTypesFromGoogle } from "./places/index";
 
+// FIXME: Temporarily add QueryAutocompletePrediction as a possible type until getPlacePredictions has been
+// re-implemented using the new Autocomplete API. All of these Autocomplete/Query predicition types can be
+// removed once we complete this work.
+interface AutocompleteResponse {
+  predictions: AutocompletePrediction[] | QueryAutocompletePrediction[];
+}
 interface AutocompletePrediction {
   description: string;
   place_id: string;
 }
-
-// FIXME: Temporarily add QueryAutocompletePrediction as a possible type until getPlacePredictions has been
-// re-implemented using the new Autocomplete API
-interface AutocompleteResponse {
-  predictions: AutocompletePrediction[] | QueryAutocompletePrediction[];
-}
-
-interface PredictionSubstring {
-  length: number;
-  offset: number;
-}
-
-interface PredictionTerm {
-  offset: number;
-  value: string;
-}
-
 interface QueryAutocompletePrediction {
   description: string;
-  matched_substrings: PredictionSubstring[];
+  matched_substrings: google.maps.places.PredictionSubstring[];
   place_id?: string;
   reference?: string;
-  terms: PredictionTerm[];
+  terms: google.maps.places.PredictionTerm[];
 }
 
-interface PlaceOptions {
-  id: string;
-  requestedLanguage?: string | null;
-  requestedRegion?: string | null;
-}
-
-interface FetchFieldsRequest {
-  fields: string[];
-}
-
-interface SearchByTextRequest {
-  fields: string[];
-  includedType?: string;
-  isOpenNow?: boolean;
-  language?: string;
-  locationBias?: MigrationLatLng | google.maps.LatLngLiteral | MigrationLatLngBounds | google.maps.LatLngBoundsLiteral;
-  locationRestriction?: MigrationLatLngBounds | google.maps.LatLngBoundsLiteral;
-  maxResultCount?: number;
-  minRating?: number;
-  query?: string;
-  region?: string;
-  textQuery?: string;
-  useStrictTypeFiltering?: boolean;
-}
-
-interface TextSearchRequest {
-  bounds?: LatLngBoundsLike;
-  language?: string | null;
-  location?: LatLngLike;
-  query?: string;
-  radius?: number;
-  region?: string | null;
-  type?: string;
-}
-
-interface GeocoderAddressComponent {
-  long_name: string;
-  short_name: string;
-  types: string[];
-}
-
-interface PlaceGeometry {
-  location?: MigrationLatLng;
-  viewport?: MigrationLatLngBounds;
-}
-
-interface PlaceOpeningHours {
-  isOpen(date?: Date): boolean | undefined;
-  open_now?: boolean;
-  periods?: PlaceOpeningHoursPeriod[];
-  weekday_text?: string[];
-}
-
-interface PlaceOpeningHoursPeriod {
-  close?: PlaceOpeningHoursTime;
-  open: PlaceOpeningHoursTime;
-}
-
-interface PlaceOpeningHoursTime {
-  day: number;
-  hours: number;
-  minutes: number;
-  nextDate?: number;
-  time: string;
-}
-
-interface PlacePlusCode {
-  compound_code?: string;
-  global_code: string;
-}
-
+// We keep our own interface of this to remain backwards comaptabile
+// with older Google Maps APIs (e.g. the reference field was removed in later versions after being deprecated)
 interface PlaceResult {
-  address_components?: GeocoderAddressComponent[];
+  address_components?: google.maps.GeocoderAddressComponent[];
   adr_address?: string;
   formatted_address?: string;
   formatted_phone_number?: string;
-  geometry?: PlaceGeometry;
+  geometry?: google.maps.places.PlaceGeometry;
   html_attributions?: string[];
   icon?: string;
   icon_background_color?: string;
   icon_mask_base_uri?: string;
   international_phone_number?: string;
   name?: string;
-  opening_hours?: PlaceOpeningHours;
+  opening_hours?: google.maps.places.PlaceOpeningHours;
   place_id?: string;
-  plus_code?: PlacePlusCode;
+  plus_code?: google.maps.places.PlacePlusCode;
   price_level?: number;
   reference?: string;
   types?: string[];
@@ -199,7 +117,7 @@ const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], timeZon
   const openNow = openingHours[0].OpenNow;
   const components = openingHours[0].Components;
 
-  const periods: PlaceOpeningHoursPeriod[] = [];
+  const periods: google.maps.places.PlaceOpeningHoursPeriod[] = [];
 
   let open24Hours = false;
   if (components) {
@@ -210,7 +128,7 @@ const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], timeZon
       components[0].OpenDuration == "PT24H00M" &&
       components[0].Recurrence == "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR,SA,SU"
     ) {
-      const period: PlaceOpeningHoursPeriod = {
+      const period: google.maps.places.PlaceOpeningHoursPeriod = {
         open: {
           day: 0,
           time: "0000",
@@ -277,19 +195,19 @@ const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], timeZon
           dayIndices.forEach((dayIndex) => {
             // The time field is formmated as "hhmm", so we need to pad the hours/minutes
             // with a leading '0' for any numbers less than 10
-            const openPeriod: PlaceOpeningHoursTime = {
+            const openPeriod: google.maps.places.PlaceOpeningHoursTime = {
               day: dayIndex,
               hours: openHours,
               minutes: openMinutes,
               time: `${openHoursStr.padStart(2, "0")}${openMinutesStr.padStart(2, "0")}`,
             };
 
-            const period: PlaceOpeningHoursPeriod = {
+            const period: google.maps.places.PlaceOpeningHoursPeriod = {
               open: openPeriod,
             };
 
             if (openDuration) {
-              const closePeriod: PlaceOpeningHoursTime = {
+              const closePeriod: google.maps.places.PlaceOpeningHoursTime = {
                 day: (dayIndex + dayIndexOffset) % 7, // day index needs to wrap around to Sunday (if it was incremented for a Saturday)
                 hours: closeHours,
                 minutes: closeMinutes,
@@ -404,7 +322,7 @@ const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], timeZon
   // Move the first opening hours text (Sunday), to the end of the list
   weekdayText.push(weekdayText.shift());
 
-  const placeOpeningHours: PlaceOpeningHours = {
+  const placeOpeningHours: google.maps.places.PlaceOpeningHours = {
     open_now: openNow,
     isOpen: (date?: Date) => {
       // If no date was passed in, return if its open now
@@ -624,7 +542,7 @@ const convertAmazonPlaceToGoogle = (
   // Handle additional fields for getDetails request
   if (includeDetailFields) {
     if (includeAllFields || fields.includes("address_components")) {
-      const addressComponents: GeocoderAddressComponent[] = [];
+      const addressComponents: google.maps.GeocoderAddressComponent[] = [];
 
       if (place.Address?.AddressNumber) {
         const addressNumber = place.Address.AddressNumber;
@@ -1160,7 +1078,7 @@ class MigrationPlacesService {
       });
   }
 
-  textSearch(request: TextSearchRequest, callback) {
+  textSearch(request: google.maps.places.TextSearchRequest, callback) {
     const query = request.query; // optional
     const locationBias = request.location; // optional
     const radius = request.radius; // optional
@@ -1257,7 +1175,7 @@ class MigrationPlace {
   requestedRegion?: string | null;
   utcOffsetMinutes?: number | null;
 
-  constructor(options: PlaceOptions) {
+  constructor(options: google.maps.places.PlaceOptions) {
     this.id = options.id;
 
     if (options.requestedLanguage) {
@@ -1265,7 +1183,7 @@ class MigrationPlace {
     }
   }
 
-  fetchFields(options: FetchFieldsRequest): Promise<{ place: MigrationPlace }> {
+  fetchFields(options: google.maps.places.FetchFieldsRequest): Promise<{ place: MigrationPlace }> {
     const placeId = this.id;
     const requestedLanguage = this.requestedLanguage;
     const fields = options.fields; // required
@@ -1324,7 +1242,7 @@ class MigrationPlace {
     return jsonObject;
   }
 
-  public static searchByText(request: SearchByTextRequest): Promise<{ places: MigrationPlace[] }> {
+  public static searchByText(request: google.maps.places.SearchByTextRequest): Promise<{ places: MigrationPlace[] }> {
     const query = request.textQuery || request.query; // textQuery is the new preferred field, query is deprecated but still allowed
     const fields = request.fields; // optional
     const locationBias = request.locationBias; // optional
@@ -1469,7 +1387,7 @@ class MigrationAutocompleteService {
         if (results && results.length !== 0) {
           results.forEach(function (result) {
             const matchedSubstrings = [];
-            const terms: PredictionTerm[] = [];
+            const terms: google.maps.places.PredictionTerm[] = [];
             if (result.Query) {
               if (result.Highlights) {
                 const highlights = result.Highlights.Title;
@@ -1865,5 +1783,4 @@ export {
   convertAmazonOpeningHoursToGoogle,
   convertAmazonPlaceToGoogle,
   convertAmazonPlaceToGoogleV1,
-  PlaceOpeningHours,
 };

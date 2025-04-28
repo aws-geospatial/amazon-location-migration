@@ -10,7 +10,6 @@ import {
   MigrationPlace,
   MigrationPlacesService,
   MigrationSearchBox,
-  PlaceOpeningHours,
 } from "../src/places";
 import {
   convertAmazonPlaceTypeToGoogle,
@@ -811,7 +810,7 @@ test("getDetails should return all fields by default", (done) => {
     expect(addressComponents[7].types).toStrictEqual(["postal_code"]);
 
     // Opening hours
-    const openingHours: PlaceOpeningHours = result.opening_hours;
+    const openingHours: google.maps.places.PlaceOpeningHours = result.opening_hours;
     const periods = openingHours.periods;
 
     expect(periods).toBeDefined();

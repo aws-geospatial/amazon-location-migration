@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationPlacesService } from "../src/places";
-import { GeocoderRequest, MigrationGeocoder } from "../src/geocoder";
+import { MigrationGeocoder } from "../src/geocoder";
 import { GeocoderStatus, MigrationLatLngBounds } from "../src/common";
 
 // Spy on console.error so we can verify it gets called in error cases
@@ -251,7 +251,7 @@ afterEach(() => {
 test("geocoder should return result when location is specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     location: {
       lat: testLat,
       lng: testLng,
@@ -281,7 +281,7 @@ test("geocoder should return result when location is specified", (done) => {
 test("geocoder should accept language when specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     location: {
       lat: testLat,
       lng: testLng,
@@ -316,7 +316,7 @@ test("geocoder should accept language when specified", (done) => {
 test("geocoder with location will also invoke the callback if specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     location: {
       lat: testLat,
       lng: testLng,
@@ -360,7 +360,7 @@ test("geocoder with location should handle client error", (done) => {
   const geocoder = new MigrationGeocoder();
 
   // [-1, -1] is mocked to cause a client error
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     location: {
       lat: -1,
       lng: -1,
@@ -385,7 +385,7 @@ test("geocoder with location should handle client error", (done) => {
 test("geocoder should return result when placeId is specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     placeId: "KEEP_AUSTIN_WEIRD",
   };
 
@@ -412,7 +412,7 @@ test("geocoder should return result when placeId is specified", (done) => {
 test("geocoder with placeId will also invoke the callback if specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     placeId: "KEEP_AUSTIN_WEIRD",
   };
 
@@ -452,7 +452,7 @@ test("geocoder with placeId will also invoke the callback if specified", (done) 
 test("geocoder with placeId should handle client error", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     placeId: clientErrorQuery,
   };
 
@@ -474,7 +474,7 @@ test("geocoder with placeId should handle client error", (done) => {
 test("geocoder should return result when address is specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     address: testPlaceWithAddressLabel,
   };
 
@@ -501,7 +501,7 @@ test("geocoder should return result when address is specified", (done) => {
 test("geocoder with address will also invoke the callback if specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     address: testPlaceWithAddressLabel,
   };
 
@@ -541,7 +541,7 @@ test("geocoder with address will also invoke the callback if specified", (done) 
 test("geocoder with address should accept bounds when specified", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     address: testPlaceWithAddressLabel,
     bounds: new MigrationLatLngBounds({ east: 0, north: 0, south: 4, west: 4 }),
   };
@@ -573,7 +573,7 @@ test("geocoder with address should accept bounds when specified", (done) => {
 test("geocoder with address should handle client error", (done) => {
   const geocoder = new MigrationGeocoder();
 
-  const request: GeocoderRequest = {
+  const request: google.maps.GeocoderRequest = {
     address: clientErrorQuery,
   };
 

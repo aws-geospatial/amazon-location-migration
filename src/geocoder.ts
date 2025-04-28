@@ -7,39 +7,8 @@ import {
   SearchPlaceIndexForPositionRequest,
 } from "@aws-sdk/client-location";
 
-import {
-  GeocoderStatus,
-  LatLngLike,
-  LatLngBoundsLike,
-  LatLngToLngLat,
-  MigrationLatLng,
-  PlacesServiceStatus,
-  MigrationLatLngBounds,
-} from "./common";
+import { GeocoderStatus, LatLngToLngLat, PlacesServiceStatus, MigrationLatLngBounds } from "./common";
 import { convertAmazonPlaceToGoogleV1, MigrationPlacesService } from "./places";
-
-interface GeocoderRequest {
-  address?: string | null;
-  bounds?: LatLngBoundsLike | null;
-  language?: string | null;
-  location?: LatLngLike | null;
-  placeId?: string | null;
-}
-
-interface GeocoderResponse {
-  results: GeocoderResult[];
-}
-
-interface GeocoderResult {
-  formatted_address: string;
-  geometry: GeocoderGeometry;
-  place_id: string;
-}
-
-interface GeocoderGeometry {
-  bounds?: MigrationLatLngBounds;
-  location: MigrationLatLng;
-}
 
 class MigrationGeocoder {
   _client: LocationClient; // This will be populated by the top level module that creates our location client
@@ -49,7 +18,7 @@ class MigrationGeocoder {
   // been configured with our place index name
   _placesService: MigrationPlacesService;
 
-  geocode(request: GeocoderRequest, callback?): Promise<GeocoderResponse> {
+  geocode(request: google.maps.GeocoderRequest, callback?): Promise<google.maps.GeocoderResponse> {
     const bounds = request.bounds;
     const language = request.language;
     const location = request.location;
@@ -174,4 +143,4 @@ class MigrationGeocoder {
   }
 }
 
-export { GeocoderRequest, MigrationGeocoder };
+export { MigrationGeocoder };

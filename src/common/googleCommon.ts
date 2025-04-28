@@ -4,9 +4,6 @@
 import { LngLatBounds } from "maplibre-gl";
 import * as turf from "@turf/turf";
 
-export type LatLngLike = google.maps.LatLngLiteral | google.maps.LatLng;
-export type LatLngBoundsLike = google.maps.LatLngBoundsLiteral | google.maps.LatLngBounds;
-
 // Migration version of google.maps.LatLng
 export class MigrationLatLng implements google.maps.LatLng {
   #lat: number;
@@ -123,7 +120,7 @@ export class MigrationLatLngBounds implements google.maps.LatLngBounds {
     } else {
       let southWest, northEast;
       if (ne) {
-        southWest = new MigrationLatLng(swOrLatLngBounds as LatLngLike);
+        southWest = new MigrationLatLng(swOrLatLngBounds as google.maps.LatLngLiteral | google.maps.LatLng);
         northEast = new MigrationLatLng(ne);
 
         west = southWest.lng();

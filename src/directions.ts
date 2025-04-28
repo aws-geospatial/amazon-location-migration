@@ -26,60 +26,6 @@ interface ParseOrFindLocationResponse {
   position: [number, number];
 }
 
-interface Distance {
-  text: string;
-  value: number;
-}
-
-interface Duration {
-  text: string;
-  value: number;
-}
-
-interface DrivingOptions {
-  departureTime: Date;
-}
-
-interface DirectionsGeocodedWaypoint {
-  partial_match?: boolean;
-  place_id?: string;
-  types?: string[];
-}
-
-interface Place {
-  location?: MigrationLatLng | null | google.maps.LatLngLiteral;
-  placeId?: string;
-  query?: string;
-}
-
-interface DirectionsStep {
-  distance?: Distance;
-  duration?: Duration;
-  encoded_lat_lngs?: string;
-  end_location: MigrationLatLng;
-  instructions?: string;
-  maneuver?: string;
-  path?: MigrationLatLng[];
-  start_location: MigrationLatLng;
-  steps?: DirectionsStep[];
-  travel_mode: TravelMode;
-}
-
-interface DirectionsLeg {
-  distance?: Distance;
-  duration?: Duration;
-  end_address: string;
-  end_location: MigrationLatLng;
-  start_address: string;
-  start_location: MigrationLatLng;
-  steps: DirectionsStep[];
-}
-
-interface DirectionsRoute {
-  bounds: MigrationLatLngBounds;
-  legs: DirectionsLeg[];
-}
-
 export enum UnitSystem {
   IMPERIAL = 0.0,
   METRIC = 1.0,
@@ -90,35 +36,6 @@ export enum TravelMode {
   WALKING = "WALKING",
   BICYCLING = "BICYCLING",
   TRANSIT = "TRANSIT",
-  TWO_WHEELER = "TWO_WHEELER",
-}
-
-interface DirectionsWaypoint {
-  location?: string | MigrationLatLng | google.maps.LatLngLiteral | Place;
-  stopover?: boolean;
-}
-
-interface DirectionsRequest {
-  avoidFerries?: boolean;
-  avoidHighways?: boolean;
-  avoidTolls?: boolean;
-  destination: string | MigrationLatLng | Place | google.maps.LatLngLiteral;
-  drivingOptions?: DrivingOptions;
-  language?: string | null;
-  optimizeWaypoints?: boolean;
-  origin: string | MigrationLatLng | Place | google.maps.LatLngLiteral;
-  provideRouteAlternatives?: boolean;
-  region?: string | null;
-  travelMode: TravelMode;
-  unitSystem?: UnitSystem;
-  waypoints?: DirectionsWaypoint[];
-}
-
-interface DirectionsResult {
-  geocoded_waypoints?: DirectionsGeocodedWaypoint[];
-  request: DirectionsRequest;
-  routes: DirectionsRoute[];
-  status: DirectionsStatus;
 }
 
 export enum DistanceMatrixStatus {
@@ -135,35 +52,6 @@ export enum DistanceMatrixElementStatus {
   OK = "OK",
   ZERO_RESULTS = "ZERO_RESULTS",
   NOT_FOUND = "NOT_FOUND",
-}
-
-interface DistanceMatrixResponseElement {
-  distance: Distance;
-  duration: Duration;
-  status: DistanceMatrixElementStatus;
-}
-
-interface DistanceMatrixResponseRow {
-  elements: DistanceMatrixResponseElement[];
-}
-
-interface DistanceMatrixRequest {
-  destinations: (string | MigrationLatLng | Place | google.maps.LatLngLiteral)[];
-  origins: (string | MigrationLatLng | Place | google.maps.LatLngLiteral)[];
-  travelMode: TravelMode;
-  avoidFerries?: boolean;
-  avoidHighways?: boolean;
-  avoidTolls?: boolean;
-  drivingOptions?: DrivingOptions;
-  language?: string | null;
-  region?: string | null;
-  unitSystem?: UnitSystem;
-}
-
-interface DistanceMatrixResponse {
-  destinationAddresses: string[];
-  originAddresses: string[];
-  rows: DistanceMatrixResponseRow[];
 }
 
 const ASCII_CODE_A = 65;
@@ -188,8 +76,8 @@ class MigrationDirectionsService {
   // been configured with our place index name
   _placesService: MigrationPlacesService;
 
-  route(options: DirectionsRequest, callback?) {
-    return new Promise<DirectionsResult>((resolve, reject) => {
+  route(options: google.maps.DirectionsRequest, callback?) {
+    return new Promise<google.maps.DirectionsResult>((resolve, reject) => {
       parseOrFindLocation(options.origin, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
         .then((originResponse: ParseOrFindLocationResponse) => {
           const departurePosition = originResponse.position;
@@ -337,8 +225,10 @@ class MigrationDirectionsService {
     const googleLegs = [];
     // using "(leg) =>" instead of "function(leg)" to allow us to access 'this'
     response.Legs.forEach((leg) => {
-      const steps: DirectionsStep[] = [];
+      const steps: google.maps.DirectionsStep[] = [];
       leg.Steps.forEach((step) => {
+        const startLocation = new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]);
+        const endLocation = new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]);
         steps.push({
           distance: {
             // we do not support Google's behavior of using the unit system of the country of origin and so we will use
@@ -350,9 +240,17 @@ class MigrationDirectionsService {
             text: formatSecondsAsGoogleDurationText(step.DurationSeconds),
             value: step.DurationSeconds,
           },
-          start_location: new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]),
-          end_location: new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]),
+          start_location: startLocation,
+          start_point: startLocation,
+          end_location: endLocation,
+          end_point: endLocation,
           travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
+          // TODO: These are not currently supported, but are required in the response
+          encoded_lat_lngs: "",
+          instructions: "",
+          maneuver: "",
+          path: [],
+          lat_lngs: [],
         });
       });
 
@@ -376,7 +274,7 @@ class MigrationDirectionsService {
       });
     });
 
-    const googleRoute: DirectionsRoute = {
+    const googleRoute: google.maps.DirectionsRoute = {
       bounds: new MigrationLatLngBounds(
         {
           lng: bounds[0],
@@ -388,12 +286,18 @@ class MigrationDirectionsService {
         },
       ),
       legs: googleLegs,
+      // TODO: These are not currently supported, but are required in the response
+      copyrights: "",
+      overview_path: [],
+      overview_polyline: "",
+      summary: "",
+      warnings: [],
+      waypoint_order: [],
     };
 
-    const googleResponse: DirectionsResult = {
+    const googleResponse: google.maps.DirectionsResult = {
       request: options,
       routes: [googleRoute],
-      status: DirectionsStatus.OK,
     };
 
     // add geocoded waypoints if the data is available
@@ -412,7 +316,7 @@ class MigrationDirectionsService {
     originResponse,
     destinationResponse,
     waypointResponses?,
-  ): DirectionsGeocodedWaypoint[] {
+  ): google.maps.DirectionsGeocodedWaypoint[] {
     const geocodedWaypoints = [];
 
     // add origin geocoded waypoint
@@ -546,6 +450,7 @@ class MigrationDirectionsRenderer {
       // leg.geometry is a new field we've added, because Google doesn't provide the polyline
       // for the leg as a whole, only for the individual steps, but our API (currently) only provides
       // a polyline for the entire leg.
+      // TODO: Once we've removed this, we can change the input param of setDirections to be typed (directions: google.maps.DirectionsResult | null)
       const geometry = leg.geometry;
 
       // TODO: Detect geometry type instead of just doing LineString
@@ -719,8 +624,8 @@ class MigrationDistanceMatrixService {
   // been configured with our place index name
   _placesService: MigrationPlacesService;
 
-  getDistanceMatrix(request: DistanceMatrixRequest, callback?) {
-    return new Promise<DistanceMatrixResponse>((resolve, reject) => {
+  getDistanceMatrix(request: google.maps.DistanceMatrixRequest, callback?) {
+    return new Promise<google.maps.DistanceMatrixResponse>((resolve, reject) => {
       parseOrFindLocations(request.origins, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
         .then((originsResponse) => {
           parseOrFindLocations(request.destinations, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
@@ -814,7 +719,7 @@ class MigrationDistanceMatrixService {
     originsResponse,
     destinationsResponse,
     request,
-  ): DistanceMatrixResponse {
+  ): google.maps.DistanceMatrixResponse {
     const distanceMatrixResponseRows = [];
     calculateRouteMatrixResponse.RouteMatrix.forEach((row) => {
       const distanceMatrixResponseRow = {
@@ -850,7 +755,7 @@ class MigrationDistanceMatrixService {
 }
 
 function parseOrFindLocations(
-  locationInputs: (string | MigrationLatLng | google.maps.LatLngLiteral | Place)[],
+  locationInputs: (string | google.maps.LatLng | MigrationLatLng | google.maps.LatLngLiteral | google.maps.Place)[],
   placesService: MigrationPlacesService,
   findPlaceFromQueryFields: string[],
 ) {
