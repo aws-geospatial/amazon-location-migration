@@ -3,7 +3,9 @@
 
 import * as turf from "@turf/turf";
 
-import { MigrationLatLng, MigrationLatLngBounds, MigrationMVCObject } from "./googleCommon";
+import { MigrationLatLng } from "./lat_lng";
+import { MigrationLatLngBounds } from "./lat_lng_bounds";
+import { MigrationMVCObject } from "./mvc_object";
 import { MigrationMap } from "../maps";
 import { GeoJSONSource } from "maplibre-gl";
 
