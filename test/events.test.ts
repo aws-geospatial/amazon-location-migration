@@ -1,9 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { MigrationMap } from "../src/maps";
-import { MigrationMarker } from "../src/markers";
-import { MigrationInfoWindow } from "../src/infoWindow";
+import { MigrationInfoWindow, MigrationMap, MigrationMarker } from "../src/maps";
 import { MigrationDirectionsRenderer } from "../src/directions";
 import { MigrationLatLng } from "../src/common";
 import { MigrationSearchBox, MigrationAutocomplete } from "../src/places";

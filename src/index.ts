@@ -27,8 +27,7 @@ import {
   MigrationMVCObject,
   PlacesServiceStatus,
 } from "./common";
-import { MigrationMap } from "./maps";
-import { MigrationMarker } from "./markers";
+import { MigrationInfoWindow, MigrationMap, MigrationMarker } from "./maps";
 import {
   MigrationAutocomplete,
   MigrationAutocompleteService,
@@ -36,7 +35,6 @@ import {
   MigrationPlacesService,
   MigrationSearchBox,
 } from "./places";
-import { MigrationInfoWindow } from "./infoWindow";
 import { addListener, addListenerOnce, removeListener } from "./events";
 import { PACKAGE_VERSION } from "./version";
 

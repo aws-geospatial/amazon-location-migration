@@ -11,9 +11,7 @@ import {
   GoogleMarkerMouseDOMEvent,
   GoogleMarkerMouseEvent,
 } from "./common";
-import { MigrationMap } from "./maps";
-import { MigrationMarker } from "./markers";
-import { MigrationInfoWindow } from "./infoWindow";
+import { MigrationInfoWindow, MigrationMap, MigrationMarker } from "./maps";
 import { MigrationAutocomplete, MigrationSearchBox } from "./places";
 import { MigrationDirectionsRenderer } from "./directions";
 

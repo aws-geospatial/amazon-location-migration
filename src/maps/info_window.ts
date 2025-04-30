@@ -9,8 +9,8 @@ import {
   LatLngToLngLat,
   MigrationEvent,
   MigrationLatLng,
-} from "./common";
-import { addListenerOnce } from "./events";
+} from "../common";
+import { addListenerOnce } from "../events";
 
 const focusQuerySelector = [
   "a[href]",

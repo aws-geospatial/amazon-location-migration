@@ -10,7 +10,7 @@ import {
   LatLngToLngLat,
   MigrationEvent,
   MigrationLatLng,
-} from "./common";
+} from "../common";
 
 class MigrationMarker {
   #marker: Marker;

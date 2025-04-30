@@ -1,8 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { MigrationMap } from "../src/maps";
-import { MigrationMarker } from "../src/markers";
+import { MigrationMap, MigrationMarker } from "../src/maps";
 import { MigrationLatLng } from "../src/common";
 
 // Mock maplibre because it requires a valid DOM container to create a Map

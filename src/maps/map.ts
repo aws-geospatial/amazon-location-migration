@@ -13,8 +13,8 @@ import {
   MapTypeId,
   MigrationLatLng,
   MigrationLatLngBounds,
-} from "./common";
-import { PACKAGE_VERSION } from "./version";
+} from "../common";
+import { PACKAGE_VERSION } from "../version";
 
 const systemIsDarkMode = () => {
   return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
