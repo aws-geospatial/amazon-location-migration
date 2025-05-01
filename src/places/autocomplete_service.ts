@@ -1,32 +1,82 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { GeoPlacesClient, SuggestAdditionalFeature, SuggestCommand, SuggestRequest } from "@aws-sdk/client-geo-places";
+import {
+  AutocompleteCommand,
+  AutocompleteRequest,
+  GeoPlacesClient,
+  SuggestAdditionalFeature,
+  SuggestCommand,
+  SuggestRequest,
+} from "@aws-sdk/client-geo-places";
 
 import { LatLngToLngLat, MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../common";
 
-// FIXME: Temporarily add QueryAutocompletePrediction as a possible type until getPlacePredictions has been
-// re-implemented using the new Autocomplete API. All of these Autocomplete/Query predicition types can be
-// removed once we complete this work.
-interface AutocompleteResponse {
-  predictions: AutocompletePrediction[] | QueryAutocompletePrediction[];
-}
-interface AutocompletePrediction {
-  description: string;
-  place_id: string;
-}
-interface QueryAutocompletePrediction {
-  description: string;
-  matched_substrings: google.maps.places.PredictionSubstring[];
-  place_id?: string;
-  reference?: string;
-  terms: google.maps.places.PredictionTerm[];
-}
+// Handle location/bounds restrictions. bounds and location have been deprecated, and in some cases
+// have actually been removed (although still mentioned in the documentation as only deprecated).
+//   * locationBias is the top preferred field, and can be MigrationLatLng|LatLngLiteral|MigrationLatLngBounds|LatLngBoundsLiteral
+//   * bounds / locationRestriction is the next preferred field
+//   * location is the final field that is checked
+//   * radius must be paired with a LatLng (locationBias / location) to specify a circle bias
+// This logic can be shared between both getQueryPredictions and getPlacePredictions
+const setRequestLocationBias = (
+  input: AutocompleteRequest | SuggestRequest,
+  location,
+  locationBias,
+  bounds,
+  radius,
+) => {
+  let inputBounds, inputLocation;
+  if (locationBias) {
+    // MigrationLatLng|LatLngLiteral
+    if (locationBias.lat !== undefined && locationBias.lng !== undefined) {
+      inputLocation = new MigrationLatLng(locationBias);
+    } /* MigrationLatLngBounds|LatLngBoundsLiteral */ else {
+      inputBounds = new MigrationLatLngBounds(locationBias);
+    }
+  } else if (bounds) {
+    inputBounds = new MigrationLatLngBounds(bounds);
+  } else if (location) {
+    inputLocation = new MigrationLatLng(location);
+  }
 
+  // If bounds was found, then location is ignored
+  if (inputBounds) {
+    const southWest = inputBounds.getSouthWest();
+    const northEast = inputBounds.getNorthEast();
+
+    input.Filter = {
+      BoundingBox: [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()],
+    };
+  } else if (inputLocation) {
+    // If we have a location and a radius, then we will use a circle
+    // Otherwise, just the location will be used
+    const lngLat = LatLngToLngLat(inputLocation);
+    if (lngLat) {
+      if (radius) {
+        input.Filter = {
+          Circle: {
+            Center: lngLat,
+            Radius: radius,
+          },
+        };
+      } else {
+        input.BiasPosition = lngLat;
+      }
+    }
+  }
+};
+
+// Migration class for google.maps.places.AutocompleteService
+// https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService
 export class MigrationAutocompleteService {
   _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
 
-  getQueryPredictions(request, callback: (a: QueryAutocompletePrediction[], b: PlacesServiceStatus) => void) {
+  // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getQueryPredictions
+  getQueryPredictions(
+    request,
+    callback: (a: google.maps.places.QueryAutocompletePrediction[], b: PlacesServiceStatus) => void,
+  ) {
     const query = request.input;
     const location = request.location; // optional
     const locationBias = request.locationBias; // optional
@@ -40,51 +90,8 @@ export class MigrationAutocompleteService {
       AdditionalFeatures: [SuggestAdditionalFeature.CORE], // Without this, only the ID and Title will be returned
     };
 
-    // Handle location/bounds restrictions. bounds and location have been deprecated, and in some cases
-    // have actually been removed (although still mentioned in the documentation as only deprecated).
-    //   * locationBias is the top preferred field, and can be MigrationLatLng|LatLngLiteral|MigrationLatLngBounds|LatLngBoundsLiteral
-    //   * bounds / locationRestriction is the next preferred field
-    //   * location is the final field that is checked
-    //   * radius must be paired with a LatLng (locationBias / location) to specify a circle bias
-    let inputBounds, inputLocation;
-    if (locationBias) {
-      // MigrationLatLng|LatLngLiteral
-      if (locationBias.lat !== undefined && locationBias.lng !== undefined) {
-        inputLocation = new MigrationLatLng(locationBias);
-      } /* MigrationLatLngBounds|LatLngBoundsLiteral */ else {
-        inputBounds = new MigrationLatLngBounds(locationBias);
-      }
-    } else if (bounds) {
-      inputBounds = new MigrationLatLngBounds(bounds);
-    } else if (location) {
-      inputLocation = new MigrationLatLng(location);
-    }
-
-    // If bounds was found, then location is ignored
-    if (inputBounds) {
-      const southWest = inputBounds.getSouthWest();
-      const northEast = inputBounds.getNorthEast();
-
-      input.Filter = {
-        BoundingBox: [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()],
-      };
-    } else if (inputLocation) {
-      // If we have a location and a radius, then we will use a circle
-      // Otherwise, just the location will be used
-      const lngLat = LatLngToLngLat(inputLocation);
-      if (lngLat) {
-        if (radius) {
-          input.Filter = {
-            Circle: {
-              Center: lngLat,
-              Radius: radius,
-            },
-          };
-        } else {
-          input.BiasPosition = lngLat;
-        }
-      }
-    }
+    // Set the appropriate location bias on our request input
+    setRequestLocationBias(input, location, locationBias, bounds, radius);
 
     if (language) {
       input.Language = language;
@@ -95,7 +102,7 @@ export class MigrationAutocompleteService {
     this._client
       .send(command)
       .then((response) => {
-        const googlePredictions: QueryAutocompletePrediction[] = [];
+        const googlePredictions: google.maps.places.QueryAutocompletePrediction[] = [];
 
         const results = response.ResultItems;
         if (results && results.length !== 0) {
@@ -155,7 +162,7 @@ export class MigrationAutocompleteService {
               });
             }
 
-            const prediction: QueryAutocompletePrediction = {
+            const prediction: google.maps.places.QueryAutocompletePrediction = {
               description: result.Query ? result.Title : result.Place.Address.Label,
               matched_substrings: matchedSubstrings,
               terms: terms,
@@ -164,7 +171,6 @@ export class MigrationAutocompleteService {
             if (result.Place) {
               const placeId = result.Place.PlaceId;
               prediction.place_id = placeId;
-              prediction.reference = placeId;
             }
 
             googlePredictions.push(prediction);
@@ -182,23 +188,117 @@ export class MigrationAutocompleteService {
 
   // getPlacePredictions has a similar behavior as getQueryPredictions, except it omits query predictions,
   // so it only returns predictions that have a place_id
-  getPlacePredictions(request, callback?): Promise<AutocompleteResponse> {
-    return new Promise((resolve) => {
-      this.getQueryPredictions(request, (predictions, status) => {
-        // Filter out predictions that don't have a place_id
-        const filteredPredictions = predictions.filter((prediction) => {
-          return prediction.place_id;
-        });
+  // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getPlacePredictions
+  getPlacePredictions(request, callback?): Promise<google.maps.places.AutocompleteResponse> {
+    return new Promise((resolve, reject) => {
+      const query = request.input;
+      const location = request.location; // optional
+      const locationBias = request.locationBias; // optional
+      const bounds = request.bounds || request.locationRestriction; // optional
+      const radius = request.radius; // optional
+      const language = request.language; // optional
 
-        // If a callback was given, invoke it before resolving the promise
-        if (callback) {
-          callback(filteredPredictions, status);
-        }
+      const input: AutocompleteRequest = {
+        QueryText: query, // required
+        MaxResults: 5, // Google only returns a max of 5 results
+        AdditionalFeatures: [SuggestAdditionalFeature.CORE], // Without this, only the ID and Title will be returned
+      };
 
-        resolve({
-          predictions: filteredPredictions,
+      // Set the appropriate location bias on our request input
+      setRequestLocationBias(input, location, locationBias, bounds, radius);
+
+      if (language) {
+        input.Language = language;
+      }
+
+      const command = new AutocompleteCommand(input);
+
+      this._client
+        .send(command)
+        .then((response) => {
+          const googlePredictions: google.maps.places.AutocompletePrediction[] = [];
+
+          const results = response.ResultItems;
+          if (results && results.length !== 0) {
+            results.forEach(function (result) {
+              const matchedSubstrings = [];
+              const addressHighlights = result.Highlights?.Address;
+              if (addressHighlights) {
+                Object.keys(addressHighlights).forEach((key) => {
+                  const highlights = addressHighlights[key];
+                  if (Array.isArray(highlights)) {
+                    highlights.forEach((highlight) => {
+                      matchedSubstrings.push({
+                        length: highlight.EndIndex - highlight.StartIndex,
+                        offset: highlight.StartIndex,
+                      });
+                    });
+                  }
+                });
+              }
+
+              const terms: google.maps.places.PredictionTerm[] = [];
+              const description = result.Address.Label;
+              let offset = 0;
+              for (let index = 0; index < description.length; index++) {
+                if (description[index] == ",") {
+                  terms.push({
+                    offset: offset,
+                    value: description.substring(offset, index),
+                  });
+
+                  // The label parts are separated by a comma and a space, so advance the index and calculate
+                  // the next offset based on that the index will also be incremented after completing this iteration
+                  // of the loop
+                  index++;
+                  offset = index + 1;
+                }
+              }
+
+              terms.push({
+                offset: offset,
+                value: description.substring(offset),
+              });
+
+              const prediction: google.maps.places.AutocompletePrediction = {
+                description: result.Address.Label,
+                matched_substrings: matchedSubstrings,
+                place_id: result.PlaceId,
+                terms: terms,
+                structured_formatting: {
+                  main_text: result.Address.Label,
+                  main_text_matched_substrings: matchedSubstrings,
+                  secondary_text: result.Address.Locality,
+                },
+                // These are not currently supported, but are required in the response
+                types: [],
+              };
+
+              googlePredictions.push(prediction);
+            });
+          }
+
+          // If a callback was given, invoke it before resolving the promise
+          if (callback) {
+            callback(googlePredictions, PlacesServiceStatus.OK);
+          }
+
+          resolve({
+            predictions: googlePredictions,
+          });
+        })
+        .catch((error) => {
+          console.error(error);
+
+          // If a callback was given, invoke it before rejecting the promise
+          if (callback) {
+            callback([], PlacesServiceStatus.UNKNOWN_ERROR);
+          }
+
+          reject({
+            status: PlacesServiceStatus.UNKNOWN_ERROR,
+          });
         });
-      });
     });
   }
 }

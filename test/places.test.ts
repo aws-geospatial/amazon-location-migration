@@ -121,7 +121,75 @@ import {
 
 const mockedClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
-    if (command instanceof GetPlaceCommand) {
+    if (command instanceof AutocompleteCommand) {
+      if (command.input.QueryText == clientErrorQuery) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          ResultItems: [
+            {
+              Highlights: {
+                Title: [
+                  {
+                    StartIndex: 0,
+                    EndIndex: 3,
+                  },
+                ],
+                Address: {
+                  Label: [
+                    {
+                      StartIndex: 0,
+                      EndIndex: 3,
+                    },
+                  ],
+                },
+              },
+              Address: {
+                Label: "123 Cool Place Way, Austin, TX, United States",
+                Country: {
+                  Code2: "US",
+                  Code3: "USA",
+                  Name: "United States",
+                },
+                Region: {
+                  Code: "TX",
+                  Name: "Texas",
+                },
+                SubRegion: {
+                  Name: "Travis",
+                },
+                Locality: "Austin",
+                District: "Fun",
+                PostalCode: "78704-1144",
+                Street: "Cool Place Way",
+                StreetComponents: [
+                  {
+                    BaseName: "Cool Place",
+                    Type: "Way",
+                    TypePlacement: "AfterBaseName",
+                    TypeSeparator: " ",
+                    Language: "en",
+                  },
+                ],
+                AddressNumber: "123",
+              },
+              Distance: 1337,
+              FoodTypes: [
+                {
+                  LocalizedName: "Burgers",
+                  Primary: true,
+                },
+              ],
+              PlaceId: "COOL_PLACE_1",
+              PlaceType: "PointOfInterest",
+              Position: [testLng, testLat],
+              Title: "123 Cool Place Way",
+            },
+          ],
+        });
+      }
+    } else if (command instanceof GetPlaceCommand) {
       if (command.input.PlaceId === undefined || command.input.PlaceId === clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
@@ -444,6 +512,8 @@ jest.mock("@aws-sdk/client-geo-places", () => ({
   }),
 }));
 import {
+  AutocompleteCommand,
+  AutocompleteRequest,
   GeoPlacesClient,
   GetPlaceCommand,
   SuggestCommand,
@@ -1945,7 +2015,6 @@ test("getQueryPredictions should accept locationBias as LatLng", (done) => {
     const firstResult = results[0];
     expect(firstResult.description).toStrictEqual("cool places near austin");
     expect(firstResult.place_id).toBeUndefined();
-    expect(firstResult.reference).toBeUndefined();
 
     const firstTerms = firstResult.terms;
     expect(firstTerms.length).toStrictEqual(1);
@@ -1960,7 +2029,6 @@ test("getQueryPredictions should accept locationBias as LatLng", (done) => {
     const secondResult = results[1];
     expect(secondResult.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
     expect(secondResult.place_id).toStrictEqual("COOL_PLACE_1");
-    expect(secondResult.reference).toStrictEqual("COOL_PLACE_1");
 
     const secondTerms = secondResult.terms;
     expect(secondTerms.length).toStrictEqual(4);
@@ -2200,36 +2268,6 @@ test("getQueryPredictions should handle client error", (done) => {
   });
 });
 
-test("getPlacePredictions should only return result with place_id", (done) => {
-  // The mockedClientSend returns two results: one with a place_id, and one without
-  // Since getPlacePredictions and getQueryPredictions both end up being
-  // a SearchPlaceIndexForSuggestionsCommand, we need to verify that
-  // getPlacePredictions will filter out the result without a place_id
-  const request = {
-    input: "cool place",
-    locationBias: new MigrationLatLng(testLat, testLng),
-  };
-
-  autocompleteService.getPlacePredictions(request).then((response) => {
-    expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
-    const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
-
-    expect(clientInput.Filter?.BoundingBox).toBeUndefined();
-    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
-
-    const predictions = response.predictions;
-    expect(predictions.length).toStrictEqual(1);
-
-    const prediction = predictions[0];
-    expect(prediction.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
-    expect(prediction.place_id).toStrictEqual("COOL_PLACE_1");
-
-    // Signal the unit test is complete
-    done();
-  });
-});
-
 test("getPlacePredictions will also invoke the callback if specified", (done) => {
   const request = {
     input: "cool place",
@@ -2248,8 +2286,8 @@ test("getPlacePredictions will also invoke the callback if specified", (done) =>
     })
     .then((response) => {
       expect(mockedClientSend).toHaveBeenCalledTimes(1);
-      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SuggestCommand));
-      const clientInput: SuggestRequest = mockedClientSend.mock.calls[0][0].input;
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(AutocompleteCommand));
+      const clientInput: AutocompleteRequest = mockedClientSend.mock.calls[0][0].input;
 
       expect(clientInput.Filter?.BoundingBox).toBeUndefined();
       expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
@@ -2260,6 +2298,49 @@ test("getPlacePredictions will also invoke the callback if specified", (done) =>
       const prediction = predictions[0];
       expect(prediction.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
       expect(prediction.place_id).toStrictEqual("COOL_PLACE_1");
+
+      // Signal the unit test is complete
+      done();
+    });
+});
+
+test("getPlacePredictions should accept language", (done) => {
+  const request = {
+    input: "cool place",
+    location: new MigrationLatLng(testLat, testLng),
+    language: "fr",
+  };
+
+  autocompleteService.getPlacePredictions(request, (results, status) => {
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(AutocompleteCommand));
+    const clientInput: AutocompleteRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Language).toStrictEqual("fr");
+
+    expect(results.length).toStrictEqual(1);
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("getPlacePredictions should handle client error", (done) => {
+  const request = {
+    input: clientErrorQuery,
+  };
+
+  autocompleteService
+    .getPlacePredictions(request, (results, status) => {
+      expect(results).toHaveLength(0);
+      expect(status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+    })
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(1);
 
       // Signal the unit test is complete
       done();
