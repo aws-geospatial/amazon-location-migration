@@ -12,8 +12,34 @@ import {
 
 import { LatLngToLngLat, MigrationLatLng, MigrationLatLngBounds, PlacesServiceStatus } from "../common";
 
-// Handle location/bounds restrictions. bounds and location have been deprecated, and in some cases
-// have actually been removed (although still mentioned in the documentation as only deprecated).
+// We override/extend the base provided types for QueryAutocompletionRequest and AutocompletionRequest,
+// because of various inconsistencies in Google's documentation vs. implementation:
+//    * Fields that are only marked deprecated, but actually no longer appear in the published types, but can still be passed to the API
+//    * Old fields that have been documented as removed, but still function
+//    * Fields that are documented to only accept a single sub-type but actually accept more
+//
+interface QueryAutocompletionRequest extends Omit<google.maps.places.QueryAutocompletionRequest, "location"> {
+  location?: google.maps.LatLng | google.maps.LatLngLiteral | null;
+  locationBias?:
+    | google.maps.LatLng
+    | google.maps.LatLngLiteral
+    | google.maps.LatLngBounds
+    | google.maps.LatLngBoundsLiteral
+    | null;
+  locationRestriction?: google.maps.LatLngBounds | google.maps.LatLngBoundsLiteral | null;
+  language?: string;
+}
+interface AutocompletionRequest extends google.maps.places.AutocompletionRequest {
+  locationBias?:
+    | google.maps.LatLng
+    | google.maps.LatLngLiteral
+    | google.maps.LatLngBounds
+    | google.maps.LatLngBoundsLiteral
+    | null;
+}
+
+// Handle setting the appropriate location bias on our Amazon Location requests based on
+// which fields were provided from the corresponding Google request.
 //   * locationBias is the top preferred field, and can be MigrationLatLng|LatLngLiteral|MigrationLatLngBounds|LatLngBoundsLiteral
 //   * bounds / locationRestriction is the next preferred field
 //   * location is the final field that is checked
@@ -21,15 +47,20 @@ import { LatLngToLngLat, MigrationLatLng, MigrationLatLngBounds, PlacesServiceSt
 // This logic can be shared between both getQueryPredictions and getPlacePredictions
 const setRequestLocationBias = (
   input: AutocompleteRequest | SuggestRequest,
-  location,
-  locationBias,
-  bounds,
-  radius,
+  location: google.maps.LatLng | google.maps.LatLngLiteral | null,
+  locationBias:
+    | google.maps.LatLng
+    | google.maps.LatLngLiteral
+    | google.maps.LatLngBounds
+    | google.maps.LatLngBoundsLiteral
+    | null,
+  bounds: google.maps.LatLngBounds | google.maps.LatLngBoundsLiteral | null,
+  radius: number | null,
 ) => {
   let inputBounds, inputLocation;
   if (locationBias) {
     // MigrationLatLng|LatLngLiteral
-    if (locationBias.lat !== undefined && locationBias.lng !== undefined) {
+    if ("lat" in locationBias && "lng" in locationBias) {
       inputLocation = new MigrationLatLng(locationBias);
     } /* MigrationLatLngBounds|LatLngBoundsLiteral */ else {
       inputBounds = new MigrationLatLngBounds(locationBias);
@@ -74,8 +105,8 @@ export class MigrationAutocompleteService {
 
   // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getQueryPredictions
   getQueryPredictions(
-    request,
-    callback: (a: google.maps.places.QueryAutocompletePrediction[], b: PlacesServiceStatus) => void,
+    request: QueryAutocompletionRequest,
+    callback: (predictions: google.maps.places.QueryAutocompletePrediction[], status: PlacesServiceStatus) => void,
   ) {
     const query = request.input;
     const location = request.location; // optional
@@ -189,7 +220,13 @@ export class MigrationAutocompleteService {
   // getPlacePredictions has a similar behavior as getQueryPredictions, except it omits query predictions,
   // so it only returns predictions that have a place_id
   // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getPlacePredictions
-  getPlacePredictions(request, callback?): Promise<google.maps.places.AutocompleteResponse> {
+  getPlacePredictions(
+    request: AutocompletionRequest,
+    callback?: (
+      predictions: google.maps.places.AutocompletePrediction[] | null,
+      status: google.maps.places.PlacesServiceStatus,
+    ) => void,
+  ): Promise<google.maps.places.AutocompleteResponse> {
     return new Promise((resolve, reject) => {
       const query = request.input;
       const location = request.location; // optional
