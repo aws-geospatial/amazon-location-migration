@@ -11,7 +11,6 @@
 // and retain the same functionality when using the Amazon Location Migration SDK.
 
 let map;
-let service;
 let markers = [];
 let searchCircle;
 
@@ -23,8 +22,6 @@ function initMap() {
     zoom: 13,
     mapId: "DEMO_MAP_ID",
   });
-
-  service = new google.maps.places.PlacesService(map);
 
   // Initialize the circle
   searchCircle = new google.maps.Circle({
