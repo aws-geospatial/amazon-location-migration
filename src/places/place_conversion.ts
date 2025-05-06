@@ -8,6 +8,7 @@ import parsePhoneNumber from "libphonenumber-js";
 import { OpenLocationCode } from "open-location-code";
 
 import { MigrationLatLng, MigrationLatLngBounds } from "../common";
+import { AddressComponent, PlusCode } from "./defines";
 import { convertAmazonPlaceTypeToGoogle } from "./place_types";
 import { convertAmazonOpeningHoursToGoogle } from "./opening_hours";
 
@@ -37,6 +38,33 @@ interface PlaceResult {
   vicinity?: string;
   website?: string;
 }
+
+const convertGeocoderAddressComponentToAddressComponent = (
+  addressComponents: google.maps.GeocoderAddressComponent[] | null,
+): AddressComponent[] => {
+  if (!addressComponents) {
+    return [];
+  }
+
+  return addressComponents.map((addressComponent): AddressComponent => {
+    return {
+      longText: addressComponent.long_name,
+      shortText: addressComponent.short_name,
+      types: addressComponent.types,
+    };
+  });
+};
+
+const convertPlacePlusCodeToPlusCode = (plusCode: google.maps.places.PlacePlusCode | null): PlusCode | null => {
+  if (!plusCode) {
+    return null;
+  }
+
+  return {
+    compoundCode: plusCode.compound_code,
+    globalCode: plusCode.global_code,
+  };
+};
 
 const convertAmazonCategoriesToGoogle = (place: GetPlaceResponse | SearchTextResultItem) => {
   let googleTypes = [];
@@ -101,7 +129,7 @@ const convertAmazonPlaceToGoogle = (
   // But for getDetails, they are optional, and if they aren't specified
   // then it is the same as requesting all fields.
   let includeAllFields = false;
-  if (!fields || fields.includes("ALL")) {
+  if (!fields || fields.includes("ALL") || fields.includes("*")) {
     includeAllFields = true;
   }
 
@@ -467,4 +495,11 @@ const convertAmazonPlaceToGoogleV1 = (placeObject, fields, includeDetailFields) 
   return googlePlace;
 };
 
-export { convertAmazonCategoriesToGoogle, convertAmazonPlaceToGoogle, convertAmazonPlaceToGoogleV1 };
+export {
+  convertAmazonCategoriesToGoogle,
+  convertAmazonPlaceToGoogle,
+  convertAmazonPlaceToGoogleV1,
+  convertGeocoderAddressComponentToAddressComponent,
+  convertPlacePlusCodeToPlusCode,
+  PlaceResult,
+};

@@ -3,6 +3,7 @@
 
 export * from "./autocomplete_service";
 export * from "./autocomplete";
+export * from "./defines";
 export * from "./opening_hours";
 export * from "./place";
 export * from "./place_conversion";

@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>NearbySearch Example - Google</title>
+    <title>New Place NearbySearch - Migration SDK</title>
     <link rel="stylesheet" type="text/css" href="../common/style.css" />
 
     <!-- Client logic example -->
@@ -21,11 +21,11 @@
     </div>
     <div id="map"></div>
 
-    <!-- Google Maps API import -->
+    <!-- Migration script import -->
     <script
       async
       defer
-      src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_API_KEY}}&callback=initMap&libraries=places"
+      src="../../dist/amazonLocationMigrationSDK.js?callback=initMap&region={{REGION}}&map={{MAP_NAME}}&placeIndex={{PLACE_INDEX}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
     ></script>
   </body>
 </html>

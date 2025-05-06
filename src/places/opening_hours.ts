@@ -1,7 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { OpeningHours, TimeZone } from "@aws-sdk/client-geo-places";
+import { OpeningHours as AmazonOpeningHours, TimeZone } from "@aws-sdk/client-geo-places";
+
+import { OpeningHours, OpeningHoursPeriod, OpeningHoursPoint } from "./defines";
 
 const dayToIndexMap = {
   SU: 0,
@@ -22,7 +24,7 @@ const dayIndexToString = {
   6: "Saturday",
 };
 
-export const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], timeZone?: TimeZone) => {
+export const convertAmazonOpeningHoursToGoogle = (openingHours: AmazonOpeningHours[], timeZone?: TimeZone) => {
   if (!openingHours || openingHours.length == 0) {
     return null;
   }
@@ -302,4 +304,45 @@ export const convertAmazonOpeningHoursToGoogle = (openingHours: OpeningHours[], 
   };
 
   return placeOpeningHours;
+};
+
+// Helper to convert Google's original PlaceOpeningHours (https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#PlaceOpeningHours)
+// to their new Places OpeningHours class (https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#OpeningHours)
+export const convertPlaceOpeningHoursToOpeningHours = (
+  placeOpeningHours: google.maps.places.PlaceOpeningHours | null,
+) => {
+  if (!placeOpeningHours) {
+    return null;
+  }
+
+  const openingHours = new OpeningHours();
+  openingHours.weekdayDescriptions = placeOpeningHours.weekday_text;
+
+  if (placeOpeningHours.periods) {
+    openingHours.periods = placeOpeningHours.periods.map((period) => {
+      const newPeriod = new OpeningHoursPeriod();
+
+      // The opening time is required, so it will always be present on a time period
+      const open = period.open;
+      const openPoint = new OpeningHoursPoint();
+      openPoint.day = open.day;
+      openPoint.hour = open.hours;
+      openPoint.minute = open.minutes;
+      newPeriod.open = openPoint;
+
+      // The closing time is optional, so we need to check for it first
+      if (period.close) {
+        const close = period.close;
+        const closePoint = new OpeningHoursPoint();
+        closePoint.day = close.day;
+        closePoint.hour = close.hours;
+        closePoint.minute = close.minutes;
+        newPeriod.close = closePoint;
+      }
+
+      return newPeriod;
+    });
+  }
+
+  return openingHours;
 };

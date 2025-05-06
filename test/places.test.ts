@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  convertAmazonCategoriesToGoogle,
-  convertAmazonOpeningHoursToGoogle,
-  convertAmazonPlaceToGoogle,
   MigrationAutocomplete,
   MigrationAutocompleteService,
   MigrationPlace,
@@ -529,7 +526,8 @@ autocompleteService._client = new GeoPlacesClient();
 const placesService = new MigrationPlacesService();
 placesService._clientV1 = new LocationClient();
 placesService._client = new GeoPlacesClient();
-MigrationPlace._client = new LocationClient();
+MigrationPlace._clientV1 = new LocationClient();
+MigrationPlace._client = new GeoPlacesClient();
 MigrationSearchBox.prototype._client = new LocationClient();
 
 afterEach(() => {
@@ -969,677 +967,6 @@ test("getDetails should handle client error", (done) => {
     // Signal the unit test is complete
     done();
   });
-});
-
-test("should return null if opening hours is missing or empty", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([]);
-
-  expect(openingHours).toBeNull();
-});
-
-test("should log an error if opening hours has an unrecognized recurrence", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: ["Mon-Sun: 00:00 - 24:00"],
-      OpenNow: true,
-      Components: [
-        {
-          OpenTime: "T000000",
-          OpenDuration: "PT24H00M",
-          Recurrence: "UNKNOWN_RECURRENCE:MO,TU,WE,TH,FR,SA,SU",
-        },
-      ],
-    },
-  ]);
-
-  expect(openingHours?.periods).toHaveLength(0);
-  expect(console.error).toHaveBeenCalledTimes(1);
-});
-
-test("should truncate weekday_text AM if open and close times are both AM", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: ["Mon: 08:00 - 10:26"],
-      OpenNow: true,
-      Components: [
-        {
-          OpenTime: "T080000",
-          OpenDuration: "PT02H26M",
-          Recurrence: "FREQ:DAILY;BYDAY:MO",
-        },
-      ],
-    },
-  ]);
-
-  expect(openingHours?.weekday_text).toBeDefined();
-  if (openingHours?.weekday_text) {
-    const weekdayText = openingHours.weekday_text;
-    expect(weekdayText[0]).toStrictEqual("Monday: 8:00 - 10:26 AM");
-  }
-});
-
-test("should truncate weekday_text PM if open and close times are both PM", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: ["Mon: 13:00 - 13:37"],
-      OpenNow: true,
-      Components: [
-        {
-          OpenTime: "T130000",
-          OpenDuration: "PT00H37M",
-          Recurrence: "FREQ:DAILY;BYDAY:MO",
-        },
-      ],
-    },
-  ]);
-
-  expect(openingHours?.weekday_text).toBeDefined();
-  if (openingHours?.weekday_text) {
-    const weekdayText = openingHours.weekday_text;
-    expect(weekdayText[0]).toStrictEqual("Monday: 1:00 - 1:37 PM");
-  }
-});
-
-test("should have closed for weekday_text on days when closed", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: ["Mon: 08:00 - 10:26"],
-      OpenNow: true,
-      Components: [
-        {
-          OpenTime: "T080000",
-          OpenDuration: "PT02H26M",
-          Recurrence: "FREQ:DAILY;BYDAY:MO,TU,TH,SU",
-        },
-      ],
-    },
-  ]);
-
-  expect(openingHours?.weekday_text).toBeDefined();
-  if (openingHours?.weekday_text) {
-    const weekdayText = openingHours.weekday_text;
-    expect(weekdayText[0]).toStrictEqual("Monday: 8:00 - 10:26 AM");
-    expect(weekdayText[1]).toStrictEqual("Tuesday: 8:00 - 10:26 AM");
-    expect(weekdayText[2]).toStrictEqual("Wednesday: Closed");
-    expect(weekdayText[3]).toStrictEqual("Thursday: 8:00 - 10:26 AM");
-    expect(weekdayText[4]).toStrictEqual("Friday: Closed");
-    expect(weekdayText[5]).toStrictEqual("Saturday: Closed");
-    expect(weekdayText[6]).toStrictEqual("Sunday: 8:00 - 10:26 AM");
-  }
-});
-
-test("should handle open 24 hours special-case", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: ["Mon-Sun: 00:00 - 24:00"],
-      OpenNow: true,
-      Components: [
-        {
-          OpenTime: "T000000",
-          OpenDuration: "PT24H00M",
-          Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR,SA,SU",
-        },
-      ],
-    },
-  ]);
-
-  expect(openingHours?.periods).toHaveLength(1);
-  if (openingHours?.periods) {
-    const onlyPeriod = openingHours?.periods[0];
-    expect(onlyPeriod.open.day).toStrictEqual(0);
-    expect(onlyPeriod.open.hours).toStrictEqual(0);
-    expect(onlyPeriod.open.minutes).toStrictEqual(0);
-    expect(onlyPeriod.open.time).toStrictEqual("0000");
-
-    expect(onlyPeriod.close).toBeUndefined();
-  }
-
-  expect(openingHours?.weekday_text).toBeDefined();
-  if (openingHours?.weekday_text) {
-    const weekdayText = openingHours.weekday_text;
-    expect(weekdayText[0]).toStrictEqual("Monday: Open 24 hours");
-    expect(weekdayText[1]).toStrictEqual("Tuesday: Open 24 hours");
-    expect(weekdayText[2]).toStrictEqual("Wednesday: Open 24 hours");
-    expect(weekdayText[3]).toStrictEqual("Thursday: Open 24 hours");
-    expect(weekdayText[4]).toStrictEqual("Friday: Open 24 hours");
-    expect(weekdayText[5]).toStrictEqual("Saturday: Open 24 hours");
-    expect(weekdayText[6]).toStrictEqual("Sunday: Open 24 hours");
-  }
-});
-
-test("isOpen should return true if OpenNow is true", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: ["Mon: 08:00 - 10:26"],
-      OpenNow: true,
-      Components: [
-        {
-          OpenTime: "T080000",
-          OpenDuration: "PT02H26M",
-          Recurrence: "FREQ:DAILY;BYDAY:MO,TU,TH,SU",
-        },
-      ],
-    },
-  ]);
-
-  expect(openingHours?.isOpen()).toStrictEqual(true);
-});
-
-test("isOpen will always be true if the place is open 24 hours", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: ["Mon-Sun: 00:00 - 24:00"],
-      OpenNow: true,
-      Components: [
-        {
-          OpenTime: "T000000",
-          OpenDuration: "PT24H00M",
-          Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR,SA,SU",
-        },
-      ],
-    },
-  ]);
-
-  expect(openingHours?.isOpen(new Date("2024-01-01T10:00"))).toStrictEqual(true);
-  expect(openingHours?.isOpen(new Date("2024-01-01T15:00"))).toStrictEqual(true);
-  expect(openingHours?.isOpen(new Date("2024-01-01T23:00"))).toStrictEqual(true);
-});
-
-test("isOpen should be undefined if there are no opening hours periods", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle([
-    {
-      Display: [],
-      OpenNow: true,
-      Components: [],
-    },
-  ]);
-
-  expect(openingHours?.isOpen(new Date("2024-01-01T10:00"))).toBeUndefined();
-});
-
-test("isOpen should only return true on the correct day", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle(
-    [
-      {
-        Display: ["Wed: 08:00 - 10:26"],
-        OpenNow: true,
-        Components: [
-          {
-            OpenTime: "T080000",
-            OpenDuration: "PT02H26M",
-            Recurrence: "FREQ:DAILY;BYDAY:WE",
-          },
-        ],
-      },
-    ],
-    {
-      Name: "UTC",
-      Offset: "00:00",
-      OffsetSeconds: 0,
-    },
-  );
-
-  const testDate = new Date("2024-07-10T10:00:00.000Z"); // Wednesday
-  expect(openingHours?.isOpen(testDate)).toStrictEqual(true);
-
-  const badTestDate = new Date("2024-07-09T10:00:00.000Z"); // Tuesday
-  expect(openingHours?.isOpen(badTestDate)).toStrictEqual(false);
-});
-
-test("isOpen will return false if duration is missing because there will be no close times", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle(
-    [
-      {
-        Display: ["Wed: 08:00 - 10:26"],
-        OpenNow: true,
-        Components: [
-          {
-            OpenTime: "T080000",
-            Recurrence: "FREQ:DAILY;BYDAY:WE",
-          },
-        ],
-      },
-    ],
-    {
-      Name: "UTC",
-      Offset: "00:00",
-      OffsetSeconds: 0,
-    },
-  );
-
-  const badTestDate = new Date("2024-07-10T10:00:00.000Z"); // Wednesday
-  expect(openingHours?.isOpen(badTestDate)).toStrictEqual(false);
-
-  const alsoBadTestDate = new Date("2024-07-09T10:00:00.000Z"); // Tuesday
-  expect(openingHours?.isOpen(alsoBadTestDate)).toStrictEqual(false);
-});
-
-test("should convert Country PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "Country",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["country", "political"]);
-});
-
-test("should convert Region PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "Region",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["administrative_area_level_1", "political"]);
-});
-
-test("should convert SubRegion PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "SubRegion",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["administrative_area_level_2", "political"]);
-});
-
-test("should convert Locality PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "Locality",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["locality", "political"]);
-});
-
-test("should convert PostalCode PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "PostalCode",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["postal_code"]);
-});
-
-test("should convert District PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "District",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["neighborhood", "political"]);
-});
-
-test("should convert Street PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "Street",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["route"]);
-});
-
-test("should convert PointAddress PlaceType to correct types", () => {
-  const googleTypes = convertAmazonCategoriesToGoogle({
-    PlaceId: "TEST_PLACE_ID",
-    PlaceType: "PointAddress",
-    PricingBucket: "",
-    Title: "CoolPlace",
-  });
-
-  expect(googleTypes).toStrictEqual(["premise"]);
-});
-
-test("plus_code for non-us countries should use country name instead of region", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Country: {
-          Code2: "FR",
-          Code3: "FRA",
-          Name: "France",
-        },
-        Locality: "Cool Place",
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["plus_code"],
-    false,
-  );
-
-  expect(googlePlace.plus_code?.global_code).toStrictEqual("86247793+7M");
-  expect(googlePlace.plus_code?.compound_code).toStrictEqual("7793+7M Cool Place, France");
-});
-
-test("address_components should be empty if Address is missing from Place", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["address_components"],
-    true,
-  );
-
-  expect(googlePlace.address_components).toHaveLength(0);
-});
-
-test("address_components SubRegion should use Code as long_name if no Name is given", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Code2: "US",
-          Code3: "USA",
-          Name: "United States",
-        },
-        Region: {
-          Code: "TX",
-          Name: "Texas",
-        },
-        SubRegion: {
-          Code: "Cool Code",
-        },
-        Locality: "Austin",
-        District: "Cool District",
-        PostalCode: "78704",
-        Street: "Cool Place Road",
-        AddressNumber: "1337",
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["address_components"],
-    true,
-  );
-
-  expect(googlePlace.address_components).toHaveLength(8);
-  if (googlePlace.address_components) {
-    expect(googlePlace.address_components[4].long_name).toStrictEqual("Cool Code");
-    expect(googlePlace.address_components[4].short_name).toStrictEqual("Cool Code");
-  }
-});
-
-test("address_components Region should use Code as long_name if no Name is given", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Code2: "US",
-          Code3: "USA",
-          Name: "United States",
-        },
-        Region: {
-          Code: "TX",
-        },
-        SubRegion: {
-          Name: "Cool SubRegion",
-        },
-        Locality: "Austin",
-        District: "Cool District",
-        PostalCode: "78704",
-        Street: "Cool Place Road",
-        AddressNumber: "1337",
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["address_components"],
-    true,
-  );
-
-  expect(googlePlace.address_components).toHaveLength(8);
-  if (googlePlace.address_components) {
-    expect(googlePlace.address_components[5].long_name).toStrictEqual("TX");
-    expect(googlePlace.address_components[5].short_name).toStrictEqual("TX");
-  }
-});
-
-test("address_components Region should use Name as short_name if no Code is given", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Code2: "US",
-          Code3: "USA",
-          Name: "United States",
-        },
-        Region: {
-          Name: "Texas",
-        },
-        SubRegion: {
-          Name: "Cool SubRegion",
-        },
-        Locality: "Austin",
-        District: "Cool District",
-        PostalCode: "78704",
-        Street: "Cool Place Road",
-        AddressNumber: "1337",
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["address_components"],
-    true,
-  );
-
-  expect(googlePlace.address_components).toHaveLength(8);
-  if (googlePlace.address_components) {
-    expect(googlePlace.address_components[5].long_name).toStrictEqual("Texas");
-    expect(googlePlace.address_components[5].short_name).toStrictEqual("Texas");
-  }
-});
-
-test("address_components Country should use Code as long_name if no Name is given", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Code2: "US",
-        },
-        Region: {
-          Code: "TX",
-        },
-        SubRegion: {
-          Name: "Cool SubRegion",
-        },
-        Locality: "Austin",
-        District: "Cool District",
-        PostalCode: "78704",
-        Street: "Cool Place Road",
-        AddressNumber: "1337",
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["address_components"],
-    true,
-  );
-
-  expect(googlePlace.address_components).toHaveLength(8);
-  if (googlePlace.address_components) {
-    expect(googlePlace.address_components[6].long_name).toStrictEqual("US");
-    expect(googlePlace.address_components[6].short_name).toStrictEqual("US");
-  }
-});
-
-test("address_components Country should use Name as short_name if no Code2 is given", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Name: "United States",
-        },
-        Region: {
-          Code: "TX",
-        },
-        SubRegion: {
-          Name: "Cool SubRegion",
-        },
-        Locality: "Austin",
-        District: "Cool District",
-        PostalCode: "78704",
-        Street: "Cool Place Road",
-        AddressNumber: "1337",
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["address_components"],
-    true,
-  );
-
-  expect(googlePlace.address_components).toHaveLength(8);
-  if (googlePlace.address_components) {
-    expect(googlePlace.address_components[6].long_name).toStrictEqual("United States");
-    expect(googlePlace.address_components[6].short_name).toStrictEqual("United States");
-  }
-});
-
-test("adr_address should be empty if Address is missing from Place", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["adr_address"],
-    true,
-  );
-
-  expect(googlePlace.adr_address).toStrictEqual("");
-});
-
-test("adr_address Region should use Name if Code is missing", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Region: {
-          Name: "Texas",
-        },
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["adr_address"],
-    true,
-  );
-
-  expect(googlePlace.adr_address).toStrictEqual('<span class="region">Texas</span>');
-});
-
-test("adr_address Country should use Code3 if there is a space in the Name", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Code3: "USA",
-          Name: "United States",
-        },
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["adr_address"],
-    true,
-  );
-
-  expect(googlePlace.adr_address).toStrictEqual('<span class="country-name">USA</span>');
-});
-
-test("vicinity should be empty if Locality is missing", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Code3: "USA",
-          Name: "United States",
-        },
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["vicinity"],
-    true,
-  );
-
-  expect(googlePlace.vicinity).toBeUndefined();
-});
-
-test("website should be empty if Contacts.Websites is missing", () => {
-  const googlePlace = convertAmazonPlaceToGoogle(
-    {
-      Address: {
-        Label: testPlaceWithAddressLabel,
-        Country: {
-          Code3: "USA",
-          Name: "United States",
-        },
-      },
-      PlaceId: "TEST_PLACE_ID",
-      PlaceType: "PointOfInterest",
-      Position: [testLng, testLat],
-      PricingBucket: "",
-      Title: "CoolPlace",
-    },
-    ["website"],
-    true,
-  );
-
-  expect(googlePlace.website).toBeUndefined();
 });
 
 test("nearbySearch should use radius if no bounds is set", (done) => {
@@ -2276,9 +1603,9 @@ test("getPlacePredictions will also invoke the callback if specified", (done) =>
 
   autocompleteService
     .getPlacePredictions(request, (results, status) => {
-      expect(results.length).toStrictEqual(1);
+      expect(results!.length).toStrictEqual(1);
 
-      const firstResult = results[0];
+      const firstResult = results![0];
       expect(firstResult.description).toStrictEqual("123 Cool Place Way, Austin, TX, United States");
       expect(firstResult.place_id).toStrictEqual("COOL_PLACE_1");
 
@@ -2319,7 +1646,7 @@ test("getPlacePredictions should accept language", (done) => {
     expect(clientInput.BiasPosition).toStrictEqual([testLng, testLat]);
     expect(clientInput.Language).toStrictEqual("fr");
 
-    expect(results.length).toStrictEqual(1);
+    expect(results!.length).toStrictEqual(1);
     expect(status).toStrictEqual(PlacesServiceStatus.OK);
 
     // Signal the unit test is complete
@@ -3143,6 +2470,329 @@ test("fetchFields should handle client error", (done) => {
       // Signal the unit test is complete
       done();
     });
+});
+
+test("searchNearby should parse all fields when * is specified", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: new MigrationCircle({
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    }),
+    fields: ["*"],
+  };
+
+  MigrationPlace.searchNearby(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.QueryRadius).toStrictEqual(1337);
+
+    // Address components
+    const addressComponents = firstResult.addressComponents;
+    expect(addressComponents![0].longText).toStrictEqual("1337");
+    expect(addressComponents![0].shortText).toStrictEqual("1337");
+    expect(addressComponents![0].types).toStrictEqual(["street_number"]);
+    expect(addressComponents![1].longText).toStrictEqual("Cool Place Road");
+    expect(addressComponents![1].shortText).toStrictEqual("Cool Place Road");
+    expect(addressComponents![1].types).toStrictEqual(["route"]);
+    expect(addressComponents![2].longText).toStrictEqual("Cool District");
+    expect(addressComponents![2].shortText).toStrictEqual("Cool District");
+    expect(addressComponents![2].types).toStrictEqual(["neighborhood", "political"]);
+    expect(addressComponents![3].longText).toStrictEqual("Austin");
+    expect(addressComponents![3].shortText).toStrictEqual("Austin");
+    expect(addressComponents![3].types).toStrictEqual(["locality", "political"]);
+    expect(addressComponents![4].longText).toStrictEqual("Cool SubRegion");
+    expect(addressComponents![4].shortText).toStrictEqual("Cool SubRegion");
+    expect(addressComponents![4].types).toStrictEqual(["administrative_area_level_2", "political"]);
+    expect(addressComponents![5].longText).toStrictEqual("Texas");
+    expect(addressComponents![5].shortText).toStrictEqual("TX");
+    expect(addressComponents![5].types).toStrictEqual(["administrative_area_level_1", "political"]);
+    expect(addressComponents![6].longText).toStrictEqual("United States");
+    expect(addressComponents![6].shortText).toStrictEqual("US");
+    expect(addressComponents![6].types).toStrictEqual(["country", "political"]);
+    expect(addressComponents![7].longText).toStrictEqual("78704");
+    expect(addressComponents![7].shortText).toStrictEqual("78704");
+    expect(addressComponents![7].types).toStrictEqual(["postal_code"]);
+
+    // Opening hours
+    const openingHours = firstResult.regularOpeningHours;
+    const periods = openingHours?.periods;
+    expect(periods).toBeDefined();
+    if (periods) {
+      for (let index = 0; index < periods.length; index++) {
+        const period = periods[index];
+
+        expect(period.open.day).toStrictEqual(index);
+        expect(period.open.hour).toStrictEqual(8);
+        expect(period.open.minute).toStrictEqual(30);
+
+        expect(period.close?.day).toStrictEqual(index);
+        expect(period.close?.hour).toStrictEqual(13);
+      }
+    }
+    expect(openingHours?.weekdayDescriptions).toStrictEqual([
+      "Monday: 8:30 AM - 1:37 PM",
+      "Tuesday: 8:30 AM - 1:37 PM",
+      "Wednesday: 8:30 AM - 1:37 PM",
+      "Thursday: 8:30 AM - 1:37 PM",
+      "Friday: 8:30 AM - 1:37 PM",
+      "Saturday: 8:30 AM - 1:37 PM",
+      "Sunday: 8:30 AM - 1:37 PM",
+    ]);
+    expect(firstResult.regularOpeningHours).toStrictEqual(firstResult.openingHours);
+
+    expect(firstResult.adrFormatAddress).toStrictEqual(
+      '<span class="street-address">1337 Cool Place Road</span>, <span class="locality">Austin</span>, <span class="region">TX</span>, <span class="postal-code">78704</span>, <span class="country-name">USA</span>',
+    );
+    expect(firstResult.displayName).toStrictEqual("1337 Cool Place Road");
+    expect(firstResult.formattedAddress).toStrictEqual(testPlaceWithAddressLabel);
+    expect(firstResult.internationalPhoneNumber).toStrictEqual("+1 512 123 4567");
+    expect(firstResult.location?.lat()).toStrictEqual(testLat);
+    expect(firstResult.location?.lng()).toStrictEqual(testLng);
+    expect(firstResult.nationalPhoneNumber).toStrictEqual("(512) 123-4567");
+    expect(firstResult.plusCode?.globalCode).toStrictEqual("86247793+7M");
+    expect(firstResult.plusCode?.compoundCode).toStrictEqual("7793+7M Austin, Texas");
+    expect(firstResult.types).toStrictEqual(["point_of_interest", "aquarium"]);
+    expect(firstResult.utcOffsetMinutes).toStrictEqual(-300);
+    const returnedViewport = firstResult.viewport;
+    expect(returnedViewport?.toJSON()).toStrictEqual({
+      east: 2,
+      north: 3,
+      west: 0,
+      south: 1,
+    });
+    expect(firstResult.websiteURI).toStrictEqual("https://coolwebsite.com");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchNearby should accept locationRestriction as Circle literal", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: {
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    },
+    fields: ["*"],
+  };
+
+  MigrationPlace.searchNearby(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.QueryRadius).toStrictEqual(1337);
+
+    expect(firstResult.displayName).toStrictEqual("1337 Cool Place Road");
+    expect(firstResult.formattedAddress).toStrictEqual(testPlaceWithAddressLabel);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchNearby should accept language", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: {
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    },
+    fields: ["*"],
+    language: "fr",
+  };
+
+  MigrationPlace.searchNearby(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.QueryRadius).toStrictEqual(1337);
+    expect(clientInput.Language).toStrictEqual("fr");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchNearby should accept maxResultCount", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: {
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    },
+    fields: ["*"],
+    maxResultCount: 7,
+  };
+
+  MigrationPlace.searchNearby(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.QueryRadius).toStrictEqual(1337);
+    expect(clientInput.MaxResults).toStrictEqual(7);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchNearby results should have requestedRegion if specified", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: {
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    },
+    fields: ["*"],
+    region: "fr",
+  };
+
+  MigrationPlace.searchNearby(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+    const firstResult = places[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+
+    expect(firstResult.requestedRegion).toStrictEqual("fr");
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchNearby should accept includedTypes", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: {
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    },
+    fields: ["*"],
+    includedTypes: ["aquarium", "campground"],
+  };
+
+  MigrationPlace.searchNearby(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.QueryRadius).toStrictEqual(1337);
+    expect(clientInput.Filter?.IncludeCategories).toStrictEqual(["aquarium", "campground", "campsite"]);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchNearby should accept excludedTypes", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: {
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    },
+    fields: ["*"],
+    excludedTypes: ["lodging", "zoo"],
+  };
+
+  MigrationPlace.searchNearby(request).then((response) => {
+    const places = response.places;
+
+    expect(places.length).toStrictEqual(1);
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchNearbyCommand));
+    const clientInput: SearchNearbyRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.QueryPosition).toStrictEqual([testLng, testLat]);
+    expect(clientInput.QueryRadius).toStrictEqual(1337);
+    expect(clientInput.Filter?.ExcludeCategories).toStrictEqual(["lodging", "hotel", "hotel_or_motel", "motel", "zoo"]);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("searchNearby should handle client error", (done) => {
+  const request: google.maps.places.SearchNearbyRequest = {
+    locationRestriction: {
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    },
+    fields: ["*"],
+    language: clientErrorQuery,
+  };
+
+  MigrationPlace.searchNearby(request)
+    .then(() => {})
+    .catch((error) => {
+      expect(error.status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+      expect(console.error).toHaveBeenCalledTimes(1);
+
+      // Signal the unit test is complete
+      done();
+    });
+});
+
+test("new place should accept language and region", () => {
+  const newPlace = new MigrationPlace({
+    id: "1234",
+    requestedLanguage: "fr",
+    requestedRegion: "fr",
+  });
+
+  expect(newPlace.requestedLanguage).toStrictEqual("fr");
+  expect(newPlace.requestedRegion).toStrictEqual("fr");
+});
+
+// TODO: Update this test later once getNextOpeningTime support is added
+test("new place getNextOpeningTime returns undefined", () => {
+  const newPlace = new MigrationPlace({
+    id: "1234",
+  });
+
+  const nextOpeningTime = newPlace.getNextOpeningTime();
+  expect(nextOpeningTime).toBeUndefined();
+});
+
+// TODO: Update this test later once isOpen support is added
+test("new place isOpen returns undefined", () => {
+  const newPlace = new MigrationPlace({
+    id: "1234",
+  });
+
+  const isOpen = newPlace.isOpen();
+  expect(isOpen).toBeUndefined();
 });
 
 test("convertGooglePlaceTypeToAmazon should return corresponding Amazon place type for direct mapping", () => {

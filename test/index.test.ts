@@ -60,11 +60,16 @@ test("importing the SDK should populate google.maps namespace for direct loading
   expect(google.maps).toHaveProperty("DistanceMatrixStatus");
 
   // Places classes
+  expect(google.maps.places).toHaveProperty("AddressComponent");
   expect(google.maps.places).toHaveProperty("Autocomplete");
   expect(google.maps.places).toHaveProperty("AutocompleteService");
+  expect(google.maps.places).toHaveProperty("OpeningHours");
+  expect(google.maps.places).toHaveProperty("OpeningHoursPeriod");
+  expect(google.maps.places).toHaveProperty("OpeningHoursPoint");
   expect(google.maps.places).toHaveProperty("Place");
   expect(google.maps.places).toHaveProperty("PlacesService");
   expect(google.maps.places).toHaveProperty("PlacesServiceStatus");
+  expect(google.maps.places).toHaveProperty("PlusCode");
   expect(google.maps.places).toHaveProperty("SearchBox");
 
   // Geocoder classes
@@ -109,14 +114,30 @@ test("can dynamically import places classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { Autocomplete, AutocompleteService, Place, PlacesService, PlacesServiceStatus, SearchBox } =
-    await google.maps.importLibrary("places");
+  const {
+    AddressComponent,
+    Autocomplete,
+    AutocompleteService,
+    OpeningHours,
+    OpeningHoursPeriod,
+    OpeningHoursPoint,
+    Place,
+    PlacesService,
+    PlacesServiceStatus,
+    PlusCode,
+    SearchBox,
+  } = await google.maps.importLibrary("places");
 
+  expect(AddressComponent).toBeDefined();
   expect(Autocomplete).toBeDefined();
   expect(AutocompleteService).toBeDefined();
+  expect(OpeningHours).toBeDefined();
+  expect(OpeningHoursPeriod).toBeDefined();
+  expect(OpeningHoursPoint).toBeDefined();
   expect(Place).toBeDefined();
   expect(PlacesService).toBeDefined();
   expect(PlacesServiceStatus).toBeDefined();
+  expect(PlusCode).toBeDefined();
   expect(SearchBox).toBeDefined();
 });
 

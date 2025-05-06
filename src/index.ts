@@ -29,11 +29,16 @@ import {
 } from "./common";
 import { MigrationInfoWindow, MigrationMap, MigrationMarker } from "./maps";
 import {
+  AddressComponent,
   MigrationAutocomplete,
   MigrationAutocompleteService,
   MigrationPlace,
   MigrationPlacesService,
   MigrationSearchBox,
+  OpeningHours,
+  OpeningHoursPeriod,
+  OpeningHoursPoint,
+  PlusCode,
 } from "./places";
 import { addListener, addListenerOnce, removeListener } from "./events";
 import { PACKAGE_VERSION } from "./version";
@@ -86,7 +91,7 @@ const migrationInit = async function () {
   const authHelper = await withAPIKey(apiKey);
 
   // TODO: We still create a V1 client for now while we are in the process of converting all APIs to V2
-  const apiKeyV1 = "<V1_API_KEY>";
+  const apiKeyV1 = apiKey;
   const authHelperV1 = await withAPIKey(apiKeyV1);
   const clientV1 = new LocationClient({
     region: "us-west-2", // Region containing Amazon Location resource
@@ -107,8 +112,9 @@ const migrationInit = async function () {
   MigrationAutocompleteService.prototype._client = client;
   MigrationGeocoder.prototype._client = clientV1;
   MigrationGeocoder.prototype._placeIndexName = placeIndexName;
-  MigrationPlace._client = clientV1;
+  MigrationPlace._clientV1 = clientV1;
   MigrationPlace._placeIndexName = placeIndexName;
+  MigrationPlace._client = client;
   MigrationPlacesService.prototype._clientV1 = clientV1;
   MigrationPlacesService.prototype._client = client;
   MigrationPlacesService.prototype._placeIndexName = placeIndexName;
@@ -163,11 +169,16 @@ const migrationInit = async function () {
       MVCObject: MigrationMVCObject,
 
       places: {
+        AddressComponent: AddressComponent,
         Autocomplete: MigrationAutocomplete,
         AutocompleteService: MigrationAutocompleteService,
+        OpeningHours: OpeningHours,
+        OpeningHoursPeriod: OpeningHoursPeriod,
+        OpeningHoursPoint: OpeningHoursPoint,
         Place: MigrationPlace,
         PlacesService: MigrationPlacesService,
         PlacesServiceStatus: PlacesServiceStatus,
+        PlusCode: PlusCode,
         SearchBox: MigrationSearchBox,
       },
 
@@ -214,11 +225,16 @@ const migrationInit = async function () {
 
             case "places":
               resolve({
+                AddressComponent: AddressComponent,
                 Autocomplete: MigrationAutocomplete,
                 AutocompleteService: MigrationAutocompleteService,
                 Place: MigrationPlace,
                 PlacesService: MigrationPlacesService,
                 PlacesServiceStatus: PlacesServiceStatus,
+                OpeningHours: OpeningHours,
+                OpeningHoursPeriod: OpeningHoursPeriod,
+                OpeningHoursPoint: OpeningHoursPoint,
+                PlusCode: PlusCode,
                 SearchBox: MigrationSearchBox,
               });
               break;
