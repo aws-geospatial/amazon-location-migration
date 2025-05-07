@@ -2,14 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  GetPlaceCommand as GetPlaceCommandV1,
-  GetPlaceRequest as GetPlaceRequestV1,
   LocationClient,
   SearchPlaceIndexForTextCommand,
   SearchPlaceIndexForTextRequest,
 } from "@aws-sdk/client-location";
 
-import { GeoPlacesClient, SearchNearbyCommand, SearchNearbyRequest } from "@aws-sdk/client-geo-places";
+import {
+  GeoPlacesClient,
+  GetPlaceCommand,
+  GetPlaceRequest,
+  GetPlaceResponse,
+  SearchNearbyCommand,
+  SearchNearbyRequest,
+  SearchNearbyResultItem,
+} from "@aws-sdk/client-geo-places";
 
 import {
   LatLngToLngLat,
@@ -23,6 +29,7 @@ import { convertPlaceOpeningHoursToOpeningHours } from "./opening_hours";
 import {
   convertAmazonPlaceToGoogle,
   convertGeocoderAddressComponentToAddressComponent,
+  convertNewFieldsToPlaceResultFields,
   convertPlacePlusCodeToPlusCode,
   PlaceResult,
 } from "./place_conversion";
@@ -101,6 +108,23 @@ const convertGooglePlaceToGoogleNewPlace = (place: PlaceResult, newPlace?: Migra
   newPlace.websiteURI = place.website;
 
   return newPlace;
+};
+
+const parseNewPlaceFromAmazonPlace = (
+  place: GetPlaceResponse | SearchNearbyResultItem,
+  fields: string[],
+  newPlace?: MigrationPlace | null,
+) => {
+  // Retrieve the PlaceResult fields based on the input new Place fields specified
+  const placeResultFields = convertNewFieldsToPlaceResultFields(fields);
+
+  // Parse the Amazon Place result to our google PlaceResult
+  const googlePlace = convertAmazonPlaceToGoogle(place, placeResultFields, true);
+
+  // Then, convert Google PlaceResult to new places Place instance.
+  // They are similar, but new places has a concrete Place class with property names that
+  // are slightly different (e.g. formattedAddress vs. formatted_address)
+  return convertGooglePlaceToGoogleNewPlace(googlePlace, newPlace);
 };
 
 export class MigrationPlace implements google.maps.places.Place {
@@ -187,14 +211,15 @@ export class MigrationPlace implements google.maps.places.Place {
     return undefined;
   }
 
+  // https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place.fetchFields
   fetchFields(options: google.maps.places.FetchFieldsRequest): Promise<{ place: MigrationPlace }> {
     const placeId = this.id;
     const requestedLanguage = this.requestedLanguage;
     const fields = options.fields; // required
 
-    const input: GetPlaceRequestV1 = {
-      IndexName: MigrationPlace._placeIndexName, // required
+    const input: GetPlaceRequest = {
       PlaceId: placeId, // required
+      AdditionalFeatures: ["Contact", "TimeZone"], // "Contact" is needed for contact details and opening hours, "TimeZone" is needed for place's time zone
     };
 
     if (requestedLanguage) {
@@ -202,18 +227,16 @@ export class MigrationPlace implements google.maps.places.Place {
     }
 
     return new Promise((resolve, reject) => {
-      const command = new GetPlaceCommandV1(input);
+      const command = new GetPlaceCommand(input);
 
-      MigrationPlace._clientV1
+      MigrationPlace._client
         .send(command)
-        .then((response) => {
-          const place = response.Place;
-
-          // Pass in this reference so it will get updated, but we also return it as well
-          const newPlace = convertAmazonPlaceToGoogleNewPlaceV1({ Place: place, PlaceId: placeId }, fields, this);
+        .then((place) => {
+          // Parse the properties into this Place instance
+          parseNewPlaceFromAmazonPlace(place, fields, this);
 
           resolve({
-            place: newPlace,
+            place: this,
           });
         })
         .catch((error) => {
@@ -385,13 +408,8 @@ export class MigrationPlace implements google.maps.places.Place {
           const results = response.ResultItems;
           if (results.length !== 0) {
             results.forEach(function (place) {
-              // Parse the Amazon Place result to our google PlaceResult
-              const googlePlace = convertAmazonPlaceToGoogle(place, fields, true);
-
-              // Then, convert Google PlaceResult to new places Place instance.
-              // They are similar, but new places has a concrete Place class with property names that
-              // are slightly different (e.g. formattedAddress vs. formatted_address)
-              const newPlace = convertGooglePlaceToGoogleNewPlace(googlePlace);
+              // Parse the properties into a new Place instance
+              const newPlace = parseNewPlaceFromAmazonPlace(place, fields);
 
               // Set the requested language/region on the new Place if they had been specified in this search
               if (language) {

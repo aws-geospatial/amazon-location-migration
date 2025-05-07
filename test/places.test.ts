@@ -57,27 +57,6 @@ const mockedClientSendV1 = jest.fn((command) => {
           ],
         });
       }
-    } else if (command instanceof GetPlaceCommandV1) {
-      if (command.input.PlaceId === undefined || command.input.PlaceId === clientErrorQuery) {
-        // Return an empty object that will throw an error
-        resolve({});
-      } else {
-        resolve({
-          Place: {
-            Label: testPlaceWithAddressLabel,
-            AddressNumber: "1337",
-            Street: "Cool Place Road",
-            Geometry: {
-              Point: [testLng, testLat],
-            },
-            TimeZone: {
-              Offset: -18000,
-            },
-            Municipality: "Austin",
-            Categories: ["City"],
-          },
-        });
-      }
     } else if (command instanceof SearchPlaceIndexForSuggestionsCommand) {
       if (command.input.Text == clientErrorQuery) {
         // Return an empty object that will throw an error
@@ -110,7 +89,6 @@ jest.mock("@aws-sdk/client-location", () => ({
   }),
 }));
 import {
-  GetPlaceCommand as GetPlaceCommandV1,
   LocationClient,
   SearchPlaceIndexForSuggestionsCommand,
   SearchPlaceIndexForTextCommand,
@@ -519,6 +497,7 @@ import {
   SearchNearbyRequest,
   SearchTextCommand,
   SearchTextRequest,
+  GetPlaceRequest,
 } from "@aws-sdk/client-geo-places";
 
 const autocompleteService = new MigrationAutocompleteService();
@@ -2380,8 +2359,8 @@ test("fetchFields should return only specified fields", async () => {
     fields: ["formattedAddress", "location"],
   });
 
-  expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-  expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
+  expect(mockedClientSend).toHaveBeenCalledTimes(1);
+  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
 
   // Properties for the requested fields on the newPlace instance should
   // be filled in after calling fetchFields
@@ -2412,8 +2391,8 @@ test("fetchFields should return all fields if specified", async () => {
     fields: ["*"],
   });
 
-  expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-  expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
+  expect(mockedClientSend).toHaveBeenCalledTimes(1);
+  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
 
   // Properties for all fields on the newPlace instance should
   // be filled in after calling fetchFields
@@ -2439,9 +2418,9 @@ test("fetchFields should pass language if specified", async () => {
     fields: ["*"],
   });
 
-  expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-  expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(GetPlaceCommandV1));
-  const clientInput = mockedClientSendV1.mock.calls[0][0].input;
+  expect(mockedClientSend).toHaveBeenCalledTimes(1);
+  expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+  const clientInput: GetPlaceRequest = mockedClientSend.mock.calls[0][0].input;
 
   expect(clientInput.Language).toStrictEqual("en");
 

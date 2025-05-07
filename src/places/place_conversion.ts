@@ -495,11 +495,50 @@ const convertAmazonPlaceToGoogleV1 = (placeObject, fields, includeDetailFields) 
   return googlePlace;
 };
 
+// Since we use convertAmazonPlaceToGoogle to convert the Amazon Place response to
+// a Google PlaceResult, we need to map the new Place property fields to the corrresponding
+// PlaceResult fields so that the proper fields are parsed/filtered when specified
+const newFieldToPlaceResultFieldMapping: { [key: string]: string } = {
+  addressComponents: "address_components",
+  adrFormatAddress: "adr_address",
+  displayName: "name",
+  formattedAddress: "formatted_address",
+  id: "place_id",
+  internationalPhoneNumber: "international_phone_number",
+  location: "geometry.location",
+  nationalPhoneNumber: "formatted_phone_number",
+  openingHours: "opening_hours",
+  plusCode: "plus_code",
+  regularOpeningHours: "opening_hours",
+  types: "types",
+  utcOffsetMinutes: "utc_offset_minutes",
+  viewport: "geometry.viewport",
+  websiteURI: "website",
+  "*": "ALL",
+};
+const convertNewFieldsToPlaceResultFields = (fields: string[] | null): string[] => {
+  if (!fields) {
+    return [];
+  }
+
+  const placeResultFields: string[] = [];
+  fields.forEach((field) => {
+    if (field in newFieldToPlaceResultFieldMapping) {
+      placeResultFields.push(newFieldToPlaceResultFieldMapping[field]);
+    } else {
+      console.warn("Unsupported field:", field);
+    }
+  });
+
+  return placeResultFields;
+};
+
 export {
   convertAmazonCategoriesToGoogle,
   convertAmazonPlaceToGoogle,
   convertAmazonPlaceToGoogleV1,
   convertGeocoderAddressComponentToAddressComponent,
   convertPlacePlusCodeToPlusCode,
+  convertNewFieldsToPlaceResultFields,
   PlaceResult,
 };

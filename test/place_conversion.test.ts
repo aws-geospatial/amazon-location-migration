@@ -5,11 +5,12 @@ import {
   convertAmazonCategoriesToGoogle,
   convertAmazonPlaceToGoogle,
   convertGeocoderAddressComponentToAddressComponent,
+  convertNewFieldsToPlaceResultFields,
   convertPlacePlusCodeToPlusCode,
 } from "../src/places";
 
-// Spy on console.error so we can verify it gets called in error cases
-jest.spyOn(console, "error").mockImplementation(() => {});
+// Spy on console.warn so we can verify it gets called in warning cases
+jest.spyOn(console, "warn").mockImplementation(() => {});
 
 // Set a fake system time so that any logic that creates a new Date.now (e.g. new Date())
 // will be deterministic
@@ -460,4 +461,24 @@ test("address component conversion should handle null input", () => {
 test("plus code conversion should handle null input", () => {
   const plusCode = convertPlacePlusCodeToPlusCode(null);
   expect(plusCode).toBeNull();
+});
+
+test("fields conversion should handle null input", () => {
+  const fields = convertNewFieldsToPlaceResultFields(null);
+  expect(fields).toHaveLength(0);
+});
+
+test("fields conversion should handle multiple field conversions", () => {
+  const fields = ["addressComponents", "displayName", "*"];
+
+  const newFields = convertNewFieldsToPlaceResultFields(fields);
+  expect(newFields).toStrictEqual(["address_components", "name", "ALL"]);
+});
+
+test("fields conversion should throw warning for unsupported fields", () => {
+  const fields = ["addressComponents", "googleMapsURI", "displayName"];
+
+  const newFields = convertNewFieldsToPlaceResultFields(fields);
+  expect(newFields).toStrictEqual(["address_components", "name"]);
+  expect(console.warn).toHaveBeenCalledTimes(1);
 });
