@@ -107,41 +107,6 @@ const mockedClientSendV1 = jest.fn((command) => {
           },
         });
       }
-    } else if (command instanceof SearchPlaceIndexForTextCommand) {
-      if (command.input.Text == clientErrorQuery) {
-        // Return an empty object that will throw an error
-        resolve({});
-      } else if (command.input.Text == "cool place") {
-        resolve({
-          Results: [
-            {
-              Place: {
-                Label: "cool place, austin, tx",
-                Geometry: {
-                  Point: [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
-                },
-                Categories: ["City"],
-              },
-              PlaceId: "KEEP_AUSTIN_WEIRD",
-            },
-          ],
-        });
-      } else if (command.input.Text == "another cool place") {
-        resolve({
-          Results: [
-            {
-              Place: {
-                Label: "another cool place, austin, tx",
-                Geometry: {
-                  Point: [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
-                },
-                Categories: ["City"],
-              },
-              PlaceId: "ANOTHER_COOL_PLACE",
-            },
-          ],
-        });
-      }
     } else if (command instanceof CalculateRouteMatrixCommand) {
       // checks if DestinationPositions array contains clientErrorDestinationPosition
       if (
@@ -171,12 +136,7 @@ jest.mock("@aws-sdk/client-location", () => ({
     };
   }),
 }));
-import {
-  LocationClient,
-  CalculateRouteCommand,
-  SearchPlaceIndexForTextCommand,
-  CalculateRouteMatrixCommand,
-} from "@aws-sdk/client-location";
+import { LocationClient, CalculateRouteCommand, CalculateRouteMatrixCommand } from "@aws-sdk/client-location";
 
 const mockedClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
@@ -311,7 +271,6 @@ distanceMatrixService._client = new LocationClient();
 
 // The DirectionsService and DistanceMatrixService also uses the PlacesService in cases where the route is specified with a query string
 // or PlaceId, so we need to set up a mocked one here.
-MigrationPlacesService.prototype._clientV1 = new LocationClient();
 MigrationPlacesService.prototype._client = new GeoPlacesClient();
 directionsService._placesService = new MigrationPlacesService();
 distanceMatrixService._placesService = new MigrationPlacesService();

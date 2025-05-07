@@ -2,12 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  LocationClient,
-  SearchPlaceIndexForTextCommand,
-  SearchPlaceIndexForTextRequest,
-} from "@aws-sdk/client-location";
-
-import {
   GeoPlacesClient,
   GetPlaceCommand,
   GetPlaceRequest,
@@ -15,6 +9,8 @@ import {
   SearchNearbyCommand,
   SearchNearbyRequest,
   SearchNearbyResultItem,
+  SearchTextCommand,
+  SearchTextRequest,
 } from "@aws-sdk/client-geo-places";
 
 import {
@@ -35,62 +31,12 @@ import {
 } from "./place_conversion";
 import { getAllAmazonPlaceTypesFromGoogle } from "./place_types";
 
-// This helper is for converting an Amazon Place V1 object to a new Google Place class
-// TODO: Remove this method once we have migrated away from all V1 client SDK usage
-const convertAmazonPlaceToGoogleNewPlaceV1 = (amazonPlaceObject, fields, googlePlace?: MigrationPlace | null) => {
-  const place = amazonPlaceObject.Place;
-
-  // If a Google Place object wasn't passed in, then create a new one
-  if (!googlePlace) {
-    googlePlace = new MigrationPlace({
-      id: amazonPlaceObject.PlaceId,
-    });
-  }
-
-  // fields is required, so the only way to include all is by passing ['*'] or
-  // specifying each individual field
-  let includeAllFields = false;
-  if (fields.includes("*")) {
-    includeAllFields = true;
-  }
-
-  if (includeAllFields || fields.includes("displayName")) {
-    googlePlace.displayName = place.Label.split(",")[0];
-  }
-
-  if (includeAllFields || fields.includes("formattedAddress")) {
-    googlePlace.formattedAddress = place.Label;
-  }
-
-  if (includeAllFields || fields.includes("location")) {
-    const point = place.Geometry.Point;
-    googlePlace.location = new MigrationLatLng(point[1], point[0]);
-  }
-
-  if (includeAllFields || fields.includes("utcOffsetMinutes")) {
-    // Our time zone offset is given in seconds, but Google's uses minutes
-    let timeZoneOffsetInMinutes;
-    if (place.TimeZone) {
-      timeZoneOffsetInMinutes = place.TimeZone.Offset / 60;
-
-      googlePlace.utcOffsetMinutes = timeZoneOffsetInMinutes;
-    }
-  }
-
-  return googlePlace;
-};
-
 // Helper to convert Google's PlaceResult (https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#PlaceResult)
 // for which we have extensive parsing logic to convert from our Amazon Place responses in convertAmazonPlaceToGoogle
 // to Google's new Place object (https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#Place)
-const convertGooglePlaceToGoogleNewPlace = (place: PlaceResult, newPlace?: MigrationPlace | null) => {
-  // If a newPlace object wasn't passed in, then create a new one
-  if (!newPlace) {
-    newPlace = new MigrationPlace({
-      id: place.place_id,
-    });
-  }
-
+// The newPlace object that is passed in will have its properties updated with the corresponding
+// values from the place (PlaceResult)
+const convertGooglePlaceToGoogleNewPlace = (place: PlaceResult, newPlace: MigrationPlace) => {
   // Parse the PlaceResult properties into our Place properties
   newPlace.addressComponents = convertGeocoderAddressComponentToAddressComponent(place.address_components);
   newPlace.adrFormatAddress = place.adr_address;
@@ -106,14 +52,12 @@ const convertGooglePlaceToGoogleNewPlace = (place: PlaceResult, newPlace?: Migra
   newPlace.utcOffsetMinutes = place.utc_offset_minutes;
   newPlace.viewport = place.geometry?.viewport;
   newPlace.websiteURI = place.website;
-
-  return newPlace;
 };
 
 const parseNewPlaceFromAmazonPlace = (
   place: GetPlaceResponse | SearchNearbyResultItem,
   fields: string[],
-  newPlace?: MigrationPlace | null,
+  newPlace: MigrationPlace,
 ) => {
   // Retrieve the PlaceResult fields based on the input new Place fields specified
   const placeResultFields = convertNewFieldsToPlaceResultFields(fields);
@@ -124,12 +68,10 @@ const parseNewPlaceFromAmazonPlace = (
   // Then, convert Google PlaceResult to new places Place instance.
   // They are similar, but new places has a concrete Place class with property names that
   // are slightly different (e.g. formattedAddress vs. formatted_address)
-  return convertGooglePlaceToGoogleNewPlace(googlePlace, newPlace);
+  convertGooglePlaceToGoogleNewPlace(googlePlace, newPlace);
 };
 
 export class MigrationPlace implements google.maps.places.Place {
-  static _clientV1: LocationClient; // This will be populated by the top level module that creates our location client
-  static _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
   static _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
 
   accessibilityOptions?: google.maps.places.AccessibilityOptions | null;
@@ -262,10 +204,11 @@ export class MigrationPlace implements google.maps.places.Place {
     for (const property in this) {
       const value = this[property];
 
-      // Handle special-case for location property that needs to return its own JSON object
+      // Handle special-case for properties that have their own toJSON helper methods (e.g. location, viewport)
       // Everything else that's a primitive (boolean/string/number) can just return the value as-is
-      if (property === "location") {
-        jsonObject[property as string] = (value as MigrationLatLng).toJSON();
+      if (value && typeof value === "object" && "toJSON" in value) {
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        jsonObject[property as string] = (value.toJSON as Function)();
       } else {
         jsonObject[property as string] = value;
       }
@@ -281,10 +224,11 @@ export class MigrationPlace implements google.maps.places.Place {
     const bounds = request.locationRestriction; // optional
     const language = request.language; // optional
     const maxResultCount = request.maxResultCount; // optional
+    const region = request.region; // optional
 
-    const input: SearchPlaceIndexForTextRequest = {
-      IndexName: this._placeIndexName,
-      Text: query, // required
+    const input: SearchTextRequest = {
+      QueryText: query, // required
+      AdditionalFeatures: ["Contact", "TimeZone"], // "Contact" is needed for contact details and opening hours, "TimeZone" is needed for place's time zone
     };
 
     // If bounds is specified, then location bias is ignored
@@ -293,12 +237,63 @@ export class MigrationPlace implements google.maps.places.Place {
       const southWest = latLngBounds.getSouthWest();
       const northEast = latLngBounds.getNorthEast();
 
-      input.FilterBBox = [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()];
-    } else if (locationBias) {
-      const lngLat = LatLngToLngLat(locationBias);
-      if (lngLat) {
-        input.BiasPosition = lngLat;
+      input.Filter = {
+        BoundingBox: [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()],
+      };
+    }
+    // Determine the locationBias, which can be passed in as:
+    // google.maps.LatLng
+    // | google.maps.LatLngLiteral
+    // | google.maps.LatLngBounds
+    // | google.maps.LatLngBoundsLiteral
+    // | google.maps.Circle
+    // | google.maps.CircleLiteral
+    else if (locationBias) {
+      if (
+        locationBias instanceof MigrationLatLng ||
+        (Object.prototype.hasOwnProperty.call(locationBias, "lat") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "lng"))
+      ) {
+        const lngLat = LatLngToLngLat(locationBias);
+        if (lngLat) {
+          input.BiasPosition = lngLat;
+        }
+      } else if (
+        locationBias instanceof MigrationLatLngBounds ||
+        (Object.prototype.hasOwnProperty.call(locationBias, "west") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "south") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "east") &&
+          Object.prototype.hasOwnProperty.call(locationBias, "north"))
+      ) {
+        const latLngBounds = new MigrationLatLngBounds(
+          locationBias as google.maps.LatLngBounds | google.maps.LatLngBoundsLiteral,
+        );
+        const southWest = latLngBounds.getSouthWest();
+        const northEast = latLngBounds.getNorthEast();
+
+        input.Filter = {
+          BoundingBox: [southWest.lng(), southWest.lat(), northEast.lng(), northEast.lat()],
+        };
+      } else {
+        // Last case is google.maps.Circle | google.maps.CircleLiteral
+        const circle = new MigrationCircle(locationBias as google.maps.Circle | google.maps.CircleLiteral);
+
+        const lngLat = LatLngToLngLat(circle.getCenter());
+        if (lngLat) {
+          input.Filter = {
+            Circle: {
+              Center: lngLat,
+              Radius: circle.getRadius(),
+            },
+          };
+        }
       }
+    } else {
+      // SearchTextCommand expects either a BiasPosition or Filter, so if no locationBias is specified,
+      // then we use a world bounding box as a filter.
+      input.Filter = {
+        BoundingBox: [-180, -90, 180, 90],
+      };
     }
 
     if (language) {
@@ -309,22 +304,35 @@ export class MigrationPlace implements google.maps.places.Place {
       input.MaxResults = maxResultCount;
     }
 
-    return new Promise((resolve, reject) => {
-      const command = new SearchPlaceIndexForTextCommand(input);
+    if (region) {
+      input.Filter = {
+        IncludeCountries: [region],
+      };
+    }
 
-      MigrationPlace._clientV1
+    return new Promise((resolve, reject) => {
+      const command = new SearchTextCommand(input);
+
+      MigrationPlace._client
         .send(command)
         .then((response) => {
           const googlePlaces = [];
 
-          const results = response.Results;
+          const results = response.ResultItems;
           if (results.length !== 0) {
             results.forEach(function (place) {
-              const newPlace = convertAmazonPlaceToGoogleNewPlaceV1(place, fields);
+              // Parse the properties into a new Place instance
+              const newPlace = new MigrationPlace({
+                id: place.PlaceId,
+              });
+              parseNewPlaceFromAmazonPlace(place, fields, newPlace);
 
               // Set the requested language/region on the new Place if they had been specified in this search
               if (language) {
                 newPlace.requestedLanguage = language;
+              }
+              if (region) {
+                newPlace.requestedRegion = region;
               }
 
               googlePlaces.push(newPlace);
@@ -409,7 +417,10 @@ export class MigrationPlace implements google.maps.places.Place {
           if (results.length !== 0) {
             results.forEach(function (place) {
               // Parse the properties into a new Place instance
-              const newPlace = parseNewPlaceFromAmazonPlace(place, fields);
+              const newPlace = new MigrationPlace({
+                id: place.PlaceId,
+              });
+              parseNewPlaceFromAmazonPlace(place, fields, newPlace);
 
               // Set the requested language/region on the new Place if they had been specified in this search
               if (language) {

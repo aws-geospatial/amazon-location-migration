@@ -91,14 +91,14 @@
 | [isOpenNow](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.isOpenNow)                           | :x:                |       |
 | [language](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.language)                             | :white_check_mark: |       |
 | [locationBias](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.locationBias)                     | :white_check_mark: |       |
-| [locationRestriction](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.locationRestriction)       | :x:                |       |
+| [locationRestriction](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.locationRestriction)       | :white_check_mark: |       |
 | [maxResultCount](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.maxResultCount)                 | :white_check_mark: |       |
 | [minRating](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.minRating)                           | :x:                |       |
 | [priceLevels](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.priceLevels)                       | :x:                |       |
 | [query](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.query)                                   | :white_check_mark: |       |
 | [rankBy](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.rankBy)                                 | :x:                |       |
 | [rankPreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.rankPreference)                 | :x:                |       |
-| [region](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.region)                                 | :x:                |       |
+| [region](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.region)                                 | :white_check_mark: |       |
 | [textQuery](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.textQuery)                           | :white_check_mark: |       |
 | [useStrictTypeFiltering](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/place#SearchByTextRequest.useStrictTypeFiltering) | :x:                |       |
 

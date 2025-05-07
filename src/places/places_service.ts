@@ -1,8 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { LocationClient } from "@aws-sdk/client-location";
-
 import {
   GeoPlacesClient,
   GetPlaceCommand,
@@ -24,8 +22,6 @@ import { convertAmazonPlaceToGoogle } from "./place_conversion";
 import { getAllAmazonPlaceTypesFromGoogle } from "./place_types";
 
 class MigrationPlacesService {
-  _clientV1: LocationClient; // This will be populated by the top level module that creates our location client
-  _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
   _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
 
   findPlaceFromQuery(request: google.maps.places.FindPlaceFromQueryRequest, callback) {

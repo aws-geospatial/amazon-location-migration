@@ -19,31 +19,7 @@ const clientErrorQuery = "THIS_WILL_CAUSE_A_CLIENT_ERROR";
 
 const mockedClientSendV1 = jest.fn((command) => {
   return new Promise((resolve, reject) => {
-    if (command instanceof SearchPlaceIndexForTextCommand) {
-      if (command.input.Text == clientErrorQuery) {
-        // Return an empty object that will throw an error
-        resolve({});
-      } else {
-        resolve({
-          Results: [
-            {
-              Place: {
-                Label: testPlaceLabel,
-                Geometry: {
-                  Point: [testLng, testLat],
-                },
-                TimeZone: {
-                  Name: "CST",
-                  Offset: -18000,
-                },
-                Categories: ["City"],
-              },
-              PlaceId: "KEEP_AUSTIN_WEIRD",
-            },
-          ],
-        });
-      }
-    } else if (command instanceof SearchPlaceIndexForPositionCommand) {
+    if (command instanceof SearchPlaceIndexForPositionCommand) {
       if (command.input.Position && command.input.Position[0] == -1 && command.input.Position[1] == -1) {
         // Return an empty object that will throw an error
         resolve({});
@@ -76,11 +52,7 @@ jest.mock("@aws-sdk/client-location", () => ({
     };
   }),
 }));
-import {
-  LocationClient,
-  SearchPlaceIndexForPositionCommand,
-  SearchPlaceIndexForTextCommand,
-} from "@aws-sdk/client-location";
+import { LocationClient, SearchPlaceIndexForPositionCommand } from "@aws-sdk/client-location";
 
 const mockedClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
@@ -239,7 +211,6 @@ jest.mock("@aws-sdk/client-geo-places", () => ({
 import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@aws-sdk/client-geo-places";
 
 const placesService = new MigrationPlacesService();
-placesService._clientV1 = new LocationClient();
 placesService._client = new GeoPlacesClient();
 MigrationGeocoder.prototype._client = new LocationClient();
 MigrationGeocoder.prototype._placesService = placesService;

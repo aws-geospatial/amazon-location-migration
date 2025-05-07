@@ -169,9 +169,8 @@ const convertAmazonPlaceToGoogle = (
     }
   }
 
-  if (includeAllFields || fields.includes("place_id")) {
-    googlePlace.place_id = place.PlaceId;
-  }
+  // Always include the PlaceId (if it exists)
+  googlePlace.place_id = place.PlaceId;
 
   if (includeAllFields || fields.includes("plus_code")) {
     // Calculate the Open Location Code/plus code https://plus.codes/
