@@ -1,11 +1,27 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+jest.mock("@aws-sdk/client-geo-places", () => ({
+  ...jest.requireActual("@aws-sdk/client-geo-places"),
+  GeoPlacesClient: jest.fn().mockImplementation(() => {
+    return {
+      // Mock the serviceId because the geocoder plugin looks for this to determine GeoPlacesClient vs. LocationClient
+      config: {
+        serviceId: "Geo Places",
+      },
+    };
+  }),
+}));
+import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
+
 import { MigrationInfoWindow, MigrationMap, MigrationMarker } from "../src/maps";
 import { MigrationDirectionsRenderer } from "../src/directions";
 import { MigrationLatLng } from "../src/common";
 import { MigrationSearchBox, MigrationAutocomplete } from "../src/places";
 import { addListener, addListenerOnce, removeListener } from "../src/events";
+
+MigrationAutocomplete.prototype._client = new GeoPlacesClient();
+MigrationSearchBox.prototype._client = new GeoPlacesClient();
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
@@ -423,16 +439,30 @@ test("should call results handler after place_changed when addListenerOnce", (do
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
-        PlaceId: testPlaceId,
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
@@ -456,16 +486,30 @@ test("should call result handler after place_changed when addListenerOnce", (don
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
-        PlaceId: testPlaceId,
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
@@ -489,16 +533,30 @@ test("should call result handler after places_changed when addListenerOnce", (do
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
-        PlaceId: testPlaceId,
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
@@ -522,16 +580,30 @@ test("should call results handler after places_changed when addListenerOnce", (d
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
-        PlaceId: testPlaceId,
+        PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });

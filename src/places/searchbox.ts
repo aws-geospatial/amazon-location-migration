@@ -6,14 +6,13 @@ import {
   PlacesGeocoderOptions,
 } from "@aws/amazon-location-for-maplibre-gl-geocoder";
 
-import { LocationClient } from "@aws-sdk/client-location";
+import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
 
 import { AddListenerResponse, MigrationLatLngBounds } from "../common";
-import { convertAmazonPlaceToGoogleV1 } from "./place_conversion";
+import { convertAmazonPlaceToGoogle } from "./place_conversion";
 
 export class MigrationSearchBox {
-  _client: LocationClient; // This will be populated by the top level module that creates our location client
-  _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
   #maplibreGeocoder;
   #bounds: MigrationLatLngBounds | undefined;
   #places;
@@ -27,11 +26,7 @@ export class MigrationSearchBox {
       maplibreGeocoderOptions.placeholder = inputField.placeholder;
     }
 
-    this.#maplibreGeocoder = buildAmazonLocationMaplibreGeocoder(
-      this._client,
-      this._placeIndexName,
-      maplibreGeocoderOptions,
-    );
+    this.#maplibreGeocoder = buildAmazonLocationMaplibreGeocoder(this._client, maplibreGeocoderOptions);
 
     if (opts?.bounds) {
       this.setBounds(opts.bounds);
@@ -78,10 +73,10 @@ export class MigrationSearchBox {
       const resultsWrappedHandler = (results) => {
         if (results.place || results.features?.length) {
           if (results.place) {
-            this.#places = [convertAmazonPlaceToGoogleV1(results.place.properties, ["ALL"], true)];
+            this.#places = [convertAmazonPlaceToGoogle(results.place.properties, ["ALL"], true)];
           } else {
             this.#places = results.features.map((result) => {
-              return convertAmazonPlaceToGoogleV1(result.properties, ["ALL"], true);
+              return convertAmazonPlaceToGoogle(result.properties, ["ALL"], true);
             });
           }
 
@@ -104,7 +99,7 @@ export class MigrationSearchBox {
 
       // This event is triggered if the user selects a place from a list of query suggestions
       const resultWrappedHandler = (result) => {
-        this.#places = [convertAmazonPlaceToGoogleV1(result.result.properties, ["ALL"], true)];
+        this.#places = [convertAmazonPlaceToGoogle(result.result.properties, ["ALL"], true)];
 
         handler();
         if (listenerType == "once") {

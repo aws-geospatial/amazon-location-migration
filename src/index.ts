@@ -48,13 +48,13 @@ import { PACKAGE_VERSION } from "./version";
 // Also the MapLibre Geocoder input field won't function properly
 const maplibreStyle = document.createElement("link");
 maplibreStyle.setAttribute("rel", "stylesheet");
-maplibreStyle.setAttribute("href", "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css");
+maplibreStyle.setAttribute("href", "https://cdn.jsdelivr.net/npm/maplibre-gl@5.5.0/dist/maplibre-gl.css");
 document.head.appendChild(maplibreStyle);
 const maplibreGeocoderStyle = document.createElement("link");
 maplibreGeocoderStyle.setAttribute("rel", "stylesheet");
 maplibreGeocoderStyle.setAttribute(
   "href",
-  "https://www.unpkg.com/@aws/amazon-location-for-maplibre-gl-geocoder@1.x/dist/amazon-location-for-mlg-styles.css",
+  "https://cdn.jsdelivr.net/npm/@aws/amazon-location-for-maplibre-gl-geocoder@2.x/dist/amazon-location-for-mlg-styles.css",
 );
 document.head.appendChild(maplibreGeocoderStyle);
 
@@ -107,15 +107,13 @@ const migrationInit = async function () {
 
   // Pass our location client, and optionally place index and route calculator names
   // to our migration services
-  MigrationAutocomplete.prototype._client = clientV1;
-  MigrationAutocomplete.prototype._placeIndexName = placeIndexName;
+  MigrationAutocomplete.prototype._client = client;
   MigrationAutocompleteService.prototype._client = client;
   MigrationGeocoder.prototype._client = clientV1;
   MigrationGeocoder.prototype._placeIndexName = placeIndexName;
   MigrationPlace._client = client;
   MigrationPlacesService.prototype._client = client;
-  MigrationSearchBox.prototype._client = clientV1;
-  MigrationSearchBox.prototype._placeIndexName = placeIndexName;
+  MigrationSearchBox.prototype._client = client;
   MigrationDirectionsService.prototype._client = clientV1;
   MigrationDirectionsService.prototype._routeCalculatorName = routeCalculatorName;
   MigrationDistanceMatrixService.prototype._client = clientV1;

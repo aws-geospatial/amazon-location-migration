@@ -6,14 +6,13 @@ import {
   PlacesGeocoderOptions,
 } from "@aws/amazon-location-for-maplibre-gl-geocoder";
 
-import { LocationClient } from "@aws-sdk/client-location";
+import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
 
 import { AddListenerResponse, MigrationLatLngBounds } from "../common";
-import { convertAmazonPlaceToGoogleV1 } from "./place_conversion";
+import { convertAmazonPlaceToGoogle } from "./place_conversion";
 
 export class MigrationAutocomplete {
-  _client: LocationClient; // This will be populated by the top level module that creates our location client
-  _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
   #maplibreGeocoder;
   #bounds: MigrationLatLngBounds | undefined;
   #strictBounds = false;
@@ -32,11 +31,7 @@ export class MigrationAutocomplete {
       maplibreGeocoderOptions.placeholder = inputField.placeholder;
     }
 
-    this.#maplibreGeocoder = buildAmazonLocationMaplibreGeocoder(
-      this._client,
-      this._placeIndexName,
-      maplibreGeocoderOptions,
-    );
+    this.#maplibreGeocoder = buildAmazonLocationMaplibreGeocoder(this._client, maplibreGeocoderOptions);
 
     const geocoder = this.#maplibreGeocoder.getPlacesGeocoder();
     geocoder.addTo(inputField.parentElement);
@@ -121,7 +116,7 @@ export class MigrationAutocomplete {
           // The fields could be set later, so we need to query again before converting the place
           const fields = this.#fields || ["ALL"];
 
-          this.#place = convertAmazonPlaceToGoogleV1(results.place.properties, fields, true);
+          this.#place = convertAmazonPlaceToGoogle(results.place.properties, fields, true);
 
           // When the user picks a prediction, the geocoder displays the updated results
           // by default (e.g. drops down the single chosen prediction).
@@ -146,7 +141,7 @@ export class MigrationAutocomplete {
         // The fields could be set later, so we need to query again before converting the place
         const fields = this.#fields || ["ALL"];
 
-        this.#place = convertAmazonPlaceToGoogleV1(result.result.properties, fields, true);
+        this.#place = convertAmazonPlaceToGoogle(result.result.properties, fields, true);
 
         handler();
         if (listenerType == "once") {

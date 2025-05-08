@@ -31,69 +31,6 @@ const testPlaceWithAddressLabel = "1337 Cool Place Road, Austin, TX, USA";
 
 const clientErrorQuery = "THIS_WILL_CAUSE_A_CLIENT_ERROR";
 
-const mockedClientSendV1 = jest.fn((command) => {
-  return new Promise((resolve, reject) => {
-    if (command instanceof SearchPlaceIndexForTextCommand) {
-      if (command.input.Text == clientErrorQuery) {
-        // Return an empty object that will throw an error
-        resolve({});
-      } else {
-        resolve({
-          Results: [
-            {
-              Place: {
-                Label: testPlaceLabel,
-                Geometry: {
-                  Point: [testLng, testLat],
-                },
-                TimeZone: {
-                  Name: "CST",
-                  Offset: -18000,
-                },
-                Categories: ["City"],
-              },
-              PlaceId: "KEEP_AUSTIN_WEIRD",
-            },
-          ],
-        });
-      }
-    } else if (command instanceof SearchPlaceIndexForSuggestionsCommand) {
-      if (command.input.Text == clientErrorQuery) {
-        // Return an empty object that will throw an error
-        resolve({});
-      } else {
-        resolve({
-          Results: [
-            {
-              Text: "cool places near austin",
-            },
-            {
-              PlaceId: "COOL_PLACE_1",
-              Text: "123 cool place way, austin, tx",
-            },
-          ],
-        });
-      }
-    } else {
-      reject();
-    }
-  });
-});
-
-jest.mock("@aws-sdk/client-location", () => ({
-  ...jest.requireActual("@aws-sdk/client-location"),
-  LocationClient: jest.fn().mockImplementation(() => {
-    return {
-      send: mockedClientSendV1,
-    };
-  }),
-}));
-import {
-  LocationClient,
-  SearchPlaceIndexForSuggestionsCommand,
-  SearchPlaceIndexForTextCommand,
-} from "@aws-sdk/client-location";
-
 const mockedClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
     if (command instanceof AutocompleteCommand) {
@@ -483,6 +420,10 @@ jest.mock("@aws-sdk/client-geo-places", () => ({
   GeoPlacesClient: jest.fn().mockImplementation(() => {
     return {
       send: mockedClientSend,
+      // Mock the serviceId because the geocoder plugin looks for this to determine GeoPlacesClient vs. LocationClient
+      config: {
+        serviceId: "Geo Places",
+      },
     };
   }),
 }));
@@ -505,7 +446,8 @@ autocompleteService._client = new GeoPlacesClient();
 const placesService = new MigrationPlacesService();
 placesService._client = new GeoPlacesClient();
 MigrationPlace._client = new GeoPlacesClient();
-MigrationSearchBox.prototype._client = new LocationClient();
+MigrationAutocomplete.prototype._client = new GeoPlacesClient();
+MigrationSearchBox.prototype._client = new GeoPlacesClient();
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -2000,11 +1942,11 @@ test("SearchBox should return first suggestion result when pressing Enter", (don
     const places = searchBox.getPlaces();
 
     expect(places.length).toStrictEqual(1);
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(2);
+    expect(mockedClientSend).toHaveBeenCalledTimes(2);
 
     const place = places[0];
 
-    expect(place.formatted_address).toStrictEqual(testPlaceLabel);
+    expect(place.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(place.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
 
     // Once this test is done we re-enable our fake timers
@@ -2036,7 +1978,7 @@ test("SearchBox should handle single place result when clicked on", (done) => {
     const places = searchBox.getPlaces();
 
     expect(places.length).toStrictEqual(1);
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
 
     const place = places[0];
 
@@ -2056,16 +1998,30 @@ test("SearchBox should handle single place result when clicked on", (done) => {
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
         PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
@@ -2082,7 +2038,7 @@ test("SearchBox should handle user selecting an item from the list after choosin
     const places = searchBox.getPlaces();
 
     expect(places.length).toStrictEqual(1);
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
 
     const place = places[0];
 
@@ -2103,16 +2059,30 @@ test("SearchBox should handle user selecting an item from the list after choosin
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
         PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
@@ -2267,16 +2237,30 @@ test("Autocomplete should handle single place result when clicked on", (done) =>
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
         PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
@@ -2310,16 +2294,30 @@ test("Autocomplete should only reply with all fields if none are specified for s
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
         PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
@@ -2357,16 +2355,30 @@ test("Autocomplete should only reply with the fields that are specified", (done)
       type: "Feature",
       place_name: testPlaceLabel,
       properties: {
-        Place: {
+        Address: {
           Label: testPlaceWithAddressLabel,
-          AddressNumber: "1337",
-          Street: "Cool Place Road",
-          Geometry: {
-            Point: [testLng, testLat],
+          Country: {
+            Code2: "US",
+            Code3: "USA",
+            Name: "United States",
           },
-          Municipality: "Austin",
+          Region: {
+            Code: "TX",
+            Name: "Texas",
+          },
+          SubRegion: {
+            Name: "Cool SubRegion",
+          },
+          Locality: "Austin",
+          District: "Cool District",
+          PostalCode: "78704",
+          Street: "Cool Place Road",
+          AddressNumber: "1337",
         },
         PlaceId: "KEEP_AUSTIN_WEIRD",
+        PlaceType: "PointOfInterest",
+        Position: [testLng, testLat],
+        Title: "1337 Cool Place Road",
       },
     },
   });
