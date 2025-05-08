@@ -18,11 +18,37 @@ import {
   MigrationLatLngBounds,
   PlacesServiceStatus,
 } from "../common";
-import { convertAmazonPlaceToGoogle } from "./place_conversion";
+import { convertAmazonPlaceToGoogle, PlaceResult } from "./place_conversion";
 import { getAllAmazonPlaceTypesFromGoogle } from "./place_types";
 
 class MigrationPlacesService {
   _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
+
+  // https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#PlacesService.findPlaceFromPhoneNumber
+  findPlaceFromPhoneNumber(
+    request: google.maps.places.FindPlaceFromPhoneNumberRequest,
+    callback: (results: PlaceResult[] | null, status: google.maps.places.PlacesServiceStatus) => void,
+  ) {
+    const phoneNumber = request.phoneNumber; // required
+    const fields = request.fields; // required
+    const locationBias = request.locationBias; // optional
+    const language = request.language; // optional
+
+    // The findPlaceFromPhoneNumber request is accomplished using the same underlying
+    // Amazon Location API (SearchText) as findPlaceFromQuery. The phoneNumber input
+    // field is just passed as the query input for findPlaceFromQuery, and then it also
+    // supports locationBias, fields, and language.
+    const input: google.maps.places.FindPlaceFromQueryRequest = {
+      query: phoneNumber,
+      locationBias: locationBias,
+      fields: fields,
+      language: language,
+    };
+
+    this.findPlaceFromQuery(input, (results, status) => {
+      callback(results, status);
+    });
+  }
 
   findPlaceFromQuery(request: google.maps.places.FindPlaceFromQueryRequest, callback) {
     const query = request.query;

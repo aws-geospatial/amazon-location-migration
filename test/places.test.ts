@@ -514,6 +514,282 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+test("findPlaceFromPhoneNumber should only return the requested fields", (done) => {
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name", "geometry"],
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+
+    const returnedLatLng = firstResult.geometry?.location;
+    expect(returnedLatLng!.lat()).toStrictEqual(testLat);
+    expect(returnedLatLng!.lng()).toStrictEqual(testLng);
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    expect(firstResult.formatted_address).toBeUndefined();
+    expect(firstResult.reference).toBeUndefined();
+    expect(firstResult.types).toBeUndefined();
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should return all fields when ALL are requested", (done) => {
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["ALL"],
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+
+    const returnedLatLng = firstResult.geometry?.location;
+    expect(returnedLatLng!.lat()).toStrictEqual(testLat);
+    expect(returnedLatLng!.lng()).toStrictEqual(testLng);
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
+    expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(firstResult.reference).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    expect(firstResult.types).toStrictEqual(["point_of_interest", "aquarium"]);
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should accept locationBias as google.maps.LatLng", (done) => {
+  const biasLat = 0;
+  const biasLng = 1;
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+    locationBias: new MigrationLatLng(biasLat, biasLng),
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.BiasPosition?.[0]).toStrictEqual(biasLng);
+    expect(clientInput.BiasPosition?.[1]).toStrictEqual(biasLat);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should accept locationBias as google.maps.LatLngLiteral", (done) => {
+  const biasLat = 0;
+  const biasLng = 1;
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+    locationBias: {
+      lat: biasLat,
+      lng: biasLng,
+    },
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.BiasPosition?.[0]).toStrictEqual(biasLng);
+    expect(clientInput.BiasPosition?.[1]).toStrictEqual(biasLat);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should accept locationBias as google.maps.LatLngBounds", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+    locationBias: new MigrationLatLngBounds(new MigrationLatLng(south, west), new MigrationLatLng(north, east)),
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should accept locationBias as google.maps.LatLngBoundsLiteral", (done) => {
+  const east = 0;
+  const north = 1;
+  const south = 2;
+  const west = 3;
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+    locationBias: {
+      east: east,
+      north: north,
+      west: west,
+      south: south,
+    },
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.BoundingBox).toStrictEqual([west, south, east, north]);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should accept locationBias as google.maps.Circle", (done) => {
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+    locationBias: new MigrationCircle({
+      center: new MigrationLatLng(testLat, testLng),
+      radius: 1337,
+    }),
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.Circle?.Center).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Filter?.Circle?.Radius).toStrictEqual(1337);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should accept locationBias as google.maps.CircleLiteral", (done) => {
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+    locationBias: {
+      center: {
+        lat: testLat,
+        lng: testLng,
+      },
+      radius: 1337,
+    },
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+    expect(clientInput.Filter?.Circle?.Center).toStrictEqual([testLng, testLat]);
+    expect(clientInput.Filter?.Circle?.Radius).toStrictEqual(1337);
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should accept language", (done) => {
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+    language: "en",
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results!.length).toStrictEqual(1);
+    const firstResult = results![0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    const clientInput: SearchTextRequest = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.Language).toStrictEqual("en");
+
+    expect(firstResult.name).toStrictEqual("1337 Cool Place Road");
+    expect(status).toStrictEqual(PlacesServiceStatus.OK);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("findPlaceFromPhoneNumber should handle client error", (done) => {
+  const request: google.maps.places.FindPlaceFromPhoneNumberRequest = {
+    phoneNumber: "+15124208353",
+    fields: ["name"],
+  };
+
+  placesService.findPlaceFromPhoneNumber(request, (results, status) => {
+    expect(results).toHaveLength(0);
+    expect(status).toStrictEqual(PlacesServiceStatus.UNKNOWN_ERROR);
+
+    expect(console.error).toHaveBeenCalledTimes(1);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
 test("findPlaceFromQuery should only return the requested fields", (done) => {
   const request = {
     query: "Austin, TX",
