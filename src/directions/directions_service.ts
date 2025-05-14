@@ -2,11 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  CalculateRouteCarModeOptions,
-  CalculateRouteCommand,
-  CalculateRouteRequest,
-  LocationClient,
-} from "@aws-sdk/client-location";
+  GeoRoutesClient,
+  CalculateRoutesCommand,
+  CalculateRoutesRequest,
+  CalculateRoutesResponse,
+  GeometryFormat,
+  RouteLegAdditionalFeature,
+  RoutePedestrianTravelStep,
+  RouteTravelMode,
+  RouteVehicleTravelStep,
+} from "@aws-sdk/client-geo-routes";
 
 import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../common";
 import { TravelMode } from "./defines";
@@ -26,11 +31,7 @@ const ROUTE_FIND_LOCATION_FIELDS = ["geometry", "place_id", "types", "formatted_
 export class MigrationDirectionsService {
   // This will be populated by the top level module
   // that creates our location client
-  _client: LocationClient;
-
-  // This will be populated by the top level module
-  // that is passed our route calculator name
-  _routeCalculatorName: string;
+  _client: GeoRoutesClient;
 
   // This will be populated by the top level module
   // that already has a MigrationPlacesService that has
@@ -47,45 +48,46 @@ export class MigrationDirectionsService {
             .then((destinationResponse: ParseOrFindLocationResponse) => {
               const destinationPosition = destinationResponse.position;
 
-              const input: CalculateRouteRequest = {
-                CalculatorName: this._routeCalculatorName, // required
-                DeparturePosition: departurePosition, // required
-                DestinationPosition: destinationPosition, // required
-                IncludeLegGeometry: true,
+              const input: CalculateRoutesRequest = {
+                Origin: departurePosition, // required
+                Destination: destinationPosition, // required
+                LegGeometryFormat: GeometryFormat.SIMPLE,
+                LegAdditionalFeatures: [
+                  RouteLegAdditionalFeature.SUMMARY,
+                  RouteLegAdditionalFeature.TRAVEL_STEP_INSTRUCTIONS,
+                  RouteLegAdditionalFeature.TYPICAL_DURATION,
+                ],
               };
 
               if ("travelMode" in options) {
                 switch (options.travelMode) {
                   case TravelMode.DRIVING: {
-                    input.TravelMode = "Car";
+                    input.TravelMode = RouteTravelMode.CAR;
                     break;
                   }
                   case TravelMode.WALKING: {
-                    input.TravelMode = "Walking";
+                    input.TravelMode = RouteTravelMode.PEDESTRIAN;
                     break;
                   }
                 }
               }
 
-              // only pass in avoidFerries and avoidTolls options if travel mode is Driving, Amazon Location Client will error out
-              // if CarModeOptions is passed in and travel mode is not Driving
-              if (
-                ("avoidFerries" in options || "avoidTolls" in options) &&
-                "travelMode" in options &&
-                options.travelMode == TravelMode.DRIVING
-              ) {
-                const carModeOptions: CalculateRouteCarModeOptions = {};
-                if ("avoidFerries" in options) {
-                  carModeOptions.AvoidFerries = options.avoidFerries;
-                }
-                if ("avoidTolls" in options) {
-                  carModeOptions.AvoidTolls = options.avoidTolls;
-                }
-                input.CarModeOptions = carModeOptions;
+              if ("avoidFerries" in options) {
+                input.Avoid = {
+                  Ferries: options.avoidFerries,
+                };
               }
 
-              if ("drivingOptions" in options && options.travelMode == TravelMode.DRIVING) {
-                input.DepartureTime = options.drivingOptions.departureTime;
+              if ("avoidTolls" in options) {
+                // Create Avoid sub-object if it doesn't exist already
+                input.Avoid ??= {};
+
+                input.Avoid.TollRoads = options.avoidTolls;
+                input.Avoid.TollTransponders = options.avoidTolls;
+              }
+
+              if (options.drivingOptions?.departureTime) {
+                input.DepartureTime = options.drivingOptions.departureTime.toISOString();
               }
 
               if ("waypoints" in options) {
@@ -96,9 +98,16 @@ export class MigrationDirectionsService {
                   ROUTE_FIND_LOCATION_FIELDS,
                 )
                   .then((waypointResponses) => {
-                    input.WaypointPositions = waypointResponses.map((locationResponse) => locationResponse.position);
+                    input.Waypoints = waypointResponses.map((locationResponse, index) => {
+                      const googleWaypoint = options.waypoints[index];
+                      const stopover = googleWaypoint.stopover ?? true; // Google treats each waypoint as a stop by default
+                      return {
+                        Position: locationResponse.position,
+                        PassThrough: !stopover,
+                      };
+                    });
 
-                    const command = new CalculateRouteCommand(input);
+                    const command = new CalculateRoutesCommand(input);
 
                     this._client
                       .send(command)
@@ -134,7 +143,7 @@ export class MigrationDirectionsService {
                     });
                   });
               } else {
-                const command = new CalculateRouteCommand(input);
+                const command = new CalculateRoutesCommand(input);
 
                 this._client
                   .send(command)
@@ -180,85 +189,110 @@ export class MigrationDirectionsService {
     });
   }
 
-  _convertAmazonResponseToGoogleResponse(response, options, originResponse, destinationResponse, waypointResponses?) {
-    const bounds = response.Summary.RouteBBox;
+  _convertAmazonResponseToGoogleResponse(
+    response: CalculateRoutesResponse,
+    options,
+    originResponse,
+    destinationResponse,
+    waypointResponses?,
+  ) {
+    const googleRoutes: google.maps.DirectionsRoute[] = [];
+    response.Routes.forEach((route) => {
+      let bounds = new MigrationLatLngBounds();
+      const googleLegs = [];
+      route.Legs.forEach((leg) => {
+        const legGeometry = leg.Geometry.LineString;
+        const googleSteps: google.maps.DirectionsStep[] = [];
+        const legDetails = leg.VehicleLegDetails || leg.PedestrianLegDetails; // We currently only support vehicle or walking routes
+        const steps = legDetails.TravelSteps;
+        const numSteps = steps.length;
+        steps.forEach((step: RouteVehicleTravelStep | RoutePedestrianTravelStep, stepIndex) => {
+          // Retrieve the start and end locations for each step from the leg geometry:
+          //    For every step before the final step, the end position is the next step's starting position
+          //    For the the final step, the end position is the last position in the leg geometry
+          const geometryOffset = step.GeometryOffset;
+          const startPosition = legGeometry[geometryOffset];
+          const startLocation = new MigrationLatLng(startPosition[1], startPosition[0]);
+          const nextStepIndex = stepIndex + 1;
+          const endPosition =
+            nextStepIndex < numSteps ? legGeometry[steps[nextStepIndex].GeometryOffset] : legGeometry.at(-1);
+          const endLocation = new MigrationLatLng(endPosition[1], endPosition[0]);
 
-    const googleLegs = [];
-    // using "(leg) =>" instead of "function(leg)" to allow us to access 'this'
-    response.Legs.forEach((leg) => {
-      const steps: google.maps.DirectionsStep[] = [];
-      leg.Steps.forEach((step) => {
-        const startLocation = new MigrationLatLng(step.StartPosition[1], step.StartPosition[0]);
-        const endLocation = new MigrationLatLng(step.EndPosition[1], step.EndPosition[0]);
-        steps.push({
+          googleSteps.push({
+            distance: {
+              // we do not support Google's behavior of using the unit system of the country of origin and so we will use
+              // Amazon Location's default unit system of kilometers if the unit system option is not specified
+              text: convertKilometersToGoogleDistanceText(step.Distance, options),
+              value: step.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
+            },
+            duration: {
+              text: formatSecondsAsGoogleDurationText(step.Duration),
+              value: step.Duration,
+            },
+            start_location: startLocation,
+            start_point: startLocation,
+            end_location: endLocation,
+            end_point: endLocation,
+            travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
+            // TODO: These are not currently supported, but are required in the response
+            encoded_lat_lngs: "",
+            instructions: "",
+            maneuver: "",
+            path: [],
+            lat_lngs: [],
+          });
+        });
+
+        // Extend the bounds for all legs in this route to cover all of the geometry coordinates
+        bounds = legGeometry.reduce((bounds, coord) => {
+          return bounds.extend({ lat: coord[1], lng: coord[0] });
+        }, bounds);
+
+        const legOverview = legDetails.Summary.Overview;
+        googleLegs.push({
           distance: {
             // we do not support Google's behavior of using the unit system of the country of origin and so we will use
             // Amazon Location's default unit system of kilometers if the unit system option is not specified
-            text: convertKilometersToGoogleDistanceText(step.Distance, options),
-            value: step.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
+            text: convertKilometersToGoogleDistanceText(legOverview.Distance, options),
+            value: legOverview.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
           },
           duration: {
-            text: formatSecondsAsGoogleDurationText(step.DurationSeconds),
-            value: step.DurationSeconds,
+            text: formatSecondsAsGoogleDurationText(legOverview.Duration),
+            value: legOverview.Duration,
           },
-          start_location: startLocation,
-          start_point: startLocation,
-          end_location: endLocation,
-          end_point: endLocation,
-          travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
-          // TODO: These are not currently supported, but are required in the response
-          encoded_lat_lngs: "",
-          instructions: "",
-          maneuver: "",
-          path: [],
-          lat_lngs: [],
+          geometry: leg.Geometry,
+          steps: googleSteps,
+          start_location: new MigrationLatLng(
+            leg.VehicleLegDetails.Departure.Place.Position[1],
+            leg.VehicleLegDetails.Departure.Place.Position[0],
+          ), // start_location of leg, not entire route
+          end_location: new MigrationLatLng(
+            leg.VehicleLegDetails.Arrival.Place.Position[1],
+            leg.VehicleLegDetails.Arrival.Place.Position[0],
+          ), // end_location of leg, not entire route
+          start_address: originResponse.formatted_address,
+          end_address: destinationResponse.formatted_address,
         });
       });
 
-      googleLegs.push({
-        distance: {
-          // we do not support Google's behavior of using the unit system of the country of origin and so we will use
-          // Amazon Location's default unit system of kilometers if the unit system option is not specified
-          text: convertKilometersToGoogleDistanceText(leg.Distance, options),
-          value: leg.Distance * KILOMETERS_TO_METERS_CONSTANT, // in meters, multiply km by 1000
-        },
-        duration: {
-          text: formatSecondsAsGoogleDurationText(leg.DurationSeconds),
-          value: leg.DurationSeconds,
-        },
-        geometry: leg.Geometry,
-        steps: steps,
-        start_location: new MigrationLatLng(leg.StartPosition[1], leg.StartPosition[0]), // start_location of leg, not entire route
-        end_location: new MigrationLatLng(leg.EndPosition[1], leg.EndPosition[0]), // end_location of leg, not entire route
-        start_address: originResponse.formatted_address,
-        end_address: destinationResponse.formatted_address,
-      });
-    });
+      const googleRoute: google.maps.DirectionsRoute = {
+        bounds: bounds,
+        legs: googleLegs,
+        // TODO: These are not currently supported, but are required in the response
+        copyrights: "",
+        overview_path: [],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
+      };
 
-    const googleRoute: google.maps.DirectionsRoute = {
-      bounds: new MigrationLatLngBounds(
-        {
-          lng: bounds[0],
-          lat: bounds[1],
-        },
-        {
-          lng: bounds[2],
-          lat: bounds[3],
-        },
-      ),
-      legs: googleLegs,
-      // TODO: These are not currently supported, but are required in the response
-      copyrights: "",
-      overview_path: [],
-      overview_polyline: "",
-      summary: "",
-      warnings: [],
-      waypoint_order: [],
-    };
+      googleRoutes.push(googleRoute);
+    });
 
     const googleResponse: google.maps.DirectionsResult = {
       request: options,
-      routes: [googleRoute],
+      routes: googleRoutes,
     };
 
     // add geocoded waypoints if the data is available

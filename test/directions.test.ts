@@ -55,59 +55,7 @@ const testAnotherCoolPlaceLocation = new MigrationLatLng(7, 8);
 
 const mockedClientSendV1 = jest.fn((command) => {
   return new Promise((resolve, reject) => {
-    if (command instanceof CalculateRouteCommand) {
-      if (JSON.stringify(command.input.DestinationPosition) == JSON.stringify(clientErrorDestinationPosition)) {
-        // Return an empty object that will throw an error
-        resolve({});
-      } else {
-        const startPosition = command.input.DeparturePosition as number[];
-        const endPosition = command.input.DestinationPosition as number[];
-
-        resolve({
-          Legs: [
-            {
-              Distance: 9001,
-              DurationSeconds: 12032,
-              EndPosition: endPosition,
-              Geometry: {
-                LineString: [
-                  [0, 0],
-                  [1, 1],
-                  [2, 2],
-                ],
-              },
-              StartPosition: startPosition,
-              Steps: [
-                {
-                  Distance: 3,
-                  DurationSeconds: 5,
-                  EndPosition: [3, 4],
-                  StartPosition: [1, 2],
-                },
-                {
-                  Distance: 4,
-                  DurationSeconds: 6,
-                  EndPosition: [6, 7],
-                  StartPosition: [3, 4],
-                },
-                {
-                  Distance: 10,
-                  DurationSeconds: 7,
-                  EndPosition: [20, 21],
-                  StartPosition: [6, 7],
-                },
-              ],
-            },
-          ],
-          Summary: {
-            Distance: 9001,
-            DistanceUnit: "Kilometers",
-            DurationSeconds: 1337,
-            RouteBBox: startPosition.concat(endPosition),
-          },
-        });
-      }
-    } else if (command instanceof CalculateRouteMatrixCommand) {
+    if (command instanceof CalculateRouteMatrixCommand) {
       // checks if DestinationPositions array contains clientErrorDestinationPosition
       if (
         command.input.DestinationPositions?.some(
@@ -136,9 +84,9 @@ jest.mock("@aws-sdk/client-location", () => ({
     };
   }),
 }));
-import { LocationClient, CalculateRouteCommand, CalculateRouteMatrixCommand } from "@aws-sdk/client-location";
+import { LocationClient, CalculateRouteMatrixCommand } from "@aws-sdk/client-location";
 
-const mockedClientSend = jest.fn((command) => {
+const mockedPlacesClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
     if (command instanceof GetPlaceCommand) {
       if (command.input.PlaceId === undefined || command.input.PlaceId === clientErrorPlaceId) {
@@ -258,15 +206,315 @@ jest.mock("@aws-sdk/client-geo-places", () => ({
   ...jest.requireActual("@aws-sdk/client-geo-places"),
   GeoPlacesClient: jest.fn().mockImplementation(() => {
     return {
-      send: mockedClientSend,
+      send: mockedPlacesClientSend,
     };
   }),
 }));
 import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@aws-sdk/client-geo-places";
 
+const testDeparturePosition = [-97.7335401, 30.2870699];
+const testArrivalPosition = [-97.7385452, 30.3134151];
+const testRouteBounds = new MigrationLatLngBounds({
+  east: -97.7298,
+  north: 30.31381,
+  west: -97.738545,
+  south: 30.28707,
+});
+const mockedRoutesClientSend = jest.fn((command) => {
+  return new Promise((resolve, reject) => {
+    if (command instanceof CalculateRoutesCommand) {
+      if (JSON.stringify(command.input.Destination) == JSON.stringify(clientErrorDestinationPosition)) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          LegGeometryFormat: "Simple",
+          Notices: [],
+          Routes: [
+            {
+              Legs: [
+                {
+                  Geometry: {
+                    LineString: [
+                      [-97.73354, 30.28707],
+                      [-97.73355, 30.28715],
+                      [-97.73356, 30.28735],
+                      [-97.73361, 30.28752],
+                      [-97.7337, 30.28766],
+                      [-97.73379, 30.28778],
+                      [-97.73396, 30.28797],
+                      [-97.73434, 30.28841],
+                      [-97.73445, 30.28859],
+                      [-97.7345, 30.2887],
+                      [-97.73453, 30.28878],
+                      [-97.73458, 30.28896],
+                      [-97.73461, 30.28907],
+                      [-97.73461, 30.28931],
+                      [-97.73457, 30.28962],
+                      [-97.73454, 30.28976],
+                      [-97.73449, 30.29005],
+                      [-97.73449, 30.29019],
+                      [-97.73452, 30.29043],
+                      [-97.73446, 30.29054],
+                      [-97.73446, 30.29061],
+                      [-97.73464, 30.29112],
+                      [-97.73454, 30.29126],
+                      [-97.73444, 30.29142],
+                      [-97.73424, 30.29174],
+                      [-97.73413, 30.29191],
+                      [-97.73401, 30.2921],
+                      [-97.73392, 30.29224],
+                      [-97.73367, 30.29266],
+                      [-97.73333, 30.29318],
+                      [-97.73291, 30.29383],
+                      [-97.73275, 30.29408],
+                      [-97.73247, 30.29453],
+                      [-97.73183, 30.29553],
+                      [-97.73149, 30.29606],
+                      [-97.73122, 30.29649],
+                      [-97.73118, 30.29655],
+                      [-97.73095, 30.29691],
+                      [-97.73055, 30.29754],
+                      [-97.7304, 30.29778],
+                      [-97.73, 30.2984],
+                      [-97.7298, 30.29872],
+                      [-97.73016, 30.2989],
+                      [-97.73075, 30.2992],
+                      [-97.73093, 30.29929],
+                      [-97.73154, 30.29957],
+                      [-97.7321, 30.29984],
+                      [-97.73268, 30.30012],
+                      [-97.73312, 30.30033],
+                      [-97.73343, 30.30048],
+                      [-97.73357, 30.30055],
+                      [-97.73392, 30.30071],
+                      [-97.73415, 30.30082],
+                      [-97.73441, 30.30094],
+                      [-97.73454, 30.301],
+                      [-97.73469, 30.30107],
+                      [-97.73492, 30.30118],
+                      [-97.73511, 30.30127],
+                      [-97.73524, 30.30133],
+                      [-97.73553, 30.30147],
+                      [-97.73557, 30.30149],
+                      [-97.73581, 30.30161],
+                      [-97.73631, 30.30185],
+                      [-97.73708, 30.30221],
+                      [-97.73744, 30.30238],
+                      [-97.73763, 30.30248],
+                      [-97.73781, 30.30257],
+                      [-97.73791, 30.30262],
+                      [-97.73816, 30.30275],
+                      [-97.73796, 30.30306],
+                      [-97.73789, 30.30318],
+                      [-97.73784, 30.30325],
+                      [-97.73774, 30.30342],
+                      [-97.73768, 30.30351],
+                      [-97.73752, 30.30376],
+                      [-97.73734, 30.30406],
+                      [-97.73729, 30.30414],
+                      [-97.73722, 30.30425],
+                      [-97.73701, 30.30457],
+                      [-97.73688, 30.30476],
+                      [-97.73668, 30.30505],
+                      [-97.73654, 30.30525],
+                      [-97.7364, 30.30549],
+                      [-97.73634, 30.30559],
+                      [-97.73609, 30.30599],
+                      [-97.73584, 30.30638],
+                      [-97.73575, 30.30652],
+                      [-97.73561, 30.30674],
+                      [-97.73528, 30.30725],
+                      [-97.73514, 30.30749],
+                      [-97.73471, 30.30816],
+                      [-97.73461, 30.30831],
+                      [-97.73444, 30.30864],
+                      [-97.73421, 30.30899],
+                      [-97.73402, 30.30928],
+                      [-97.73371, 30.30976],
+                      [-97.73325, 30.31045],
+                      [-97.73299, 30.31085],
+                      [-97.73352, 30.31116],
+                      [-97.73372, 30.31128],
+                      [-97.7339, 30.31138],
+                      [-97.73529, 30.31221],
+                      [-97.73537, 30.31225],
+                      [-97.73596, 30.31259],
+                      [-97.73624, 30.31275],
+                      [-97.7368, 30.31305],
+                      [-97.73702, 30.31317],
+                      [-97.73759, 30.31348],
+                      [-97.73799, 30.31367],
+                      [-97.7381, 30.31372],
+                      [-97.73829, 30.31381],
+                      [-97.73841, 30.31362],
+                      [-97.738545, 30.313415],
+                    ],
+                  },
+                  Language: "en-us",
+                  TravelMode: "Car",
+                  Type: "Vehicle",
+                  VehicleLegDetails: {
+                    Arrival: {
+                      Place: {
+                        OriginalPosition: [-97.73835, 30.31332],
+                        Position: testArrivalPosition,
+                      },
+                    },
+                    Departure: {
+                      Place: {
+                        OriginalPosition: [-97.7335401, 30.2870299],
+                        Position: testDeparturePosition,
+                      },
+                    },
+                    Incidents: [],
+                    Notices: [],
+                    PassThroughWaypoints: [],
+                    Spans: [],
+                    Summary: {
+                      Overview: {
+                        BestCaseDuration: 423,
+                        Distance: 4047,
+                        Duration: 423,
+                        TypicalDuration: 423,
+                      },
+                      TravelOnly: {
+                        BestCaseDuration: 423,
+                        Duration: 423,
+                        TypicalDuration: 423,
+                      },
+                    },
+                    TollSystems: [],
+                    Tolls: [],
+                    TravelSteps: [
+                      {
+                        Distance: 403,
+                        Duration: 74,
+                        ExitNumber: [],
+                        GeometryOffset: 0,
+                        Instruction: "Head north on San Jacinto Blvd. Go for 403 m.",
+                        Type: "Depart",
+                      },
+                      {
+                        Distance: 1044,
+                        Duration: 112,
+                        ExitNumber: [],
+                        GeometryOffset: 18,
+                        Instruction: "Turn right onto Duval St. Go for 1.0 km.",
+                        TurnStepDetails: {
+                          Intersection: [],
+                          SteeringDirection: "Right",
+                          TurnIntensity: "Typical",
+                        },
+                        Type: "Turn",
+                      },
+                      {
+                        Distance: 916,
+                        Duration: 77,
+                        ExitNumber: [],
+                        GeometryOffset: 41,
+                        Instruction: "Turn left onto E 38th St. Go for 916 m.",
+                        TurnStepDetails: {
+                          Intersection: [],
+                          SteeringDirection: "Left",
+                          TurnIntensity: "Typical",
+                        },
+                        Type: "Turn",
+                      },
+                      {
+                        Distance: 1029,
+                        Duration: 80,
+                        ExitNumber: [],
+                        GeometryOffset: 68,
+                        Instruction: "Turn right onto Guadalupe St. Go for 1.0 km.",
+                        TurnStepDetails: {
+                          Intersection: [],
+                          SteeringDirection: "Right",
+                          TurnIntensity: "Typical",
+                        },
+                        Type: "Turn",
+                      },
+                      {
+                        Distance: 605,
+                        Duration: 62,
+                        ExitNumber: [],
+                        GeometryOffset: 97,
+                        Instruction: "Turn left onto W 45th St. Go for 605 m.",
+                        TurnStepDetails: {
+                          Intersection: [],
+                          SteeringDirection: "Left",
+                          TurnIntensity: "Typical",
+                        },
+                        Type: "Turn",
+                      },
+                      {
+                        Distance: 50,
+                        Duration: 18,
+                        ExitNumber: [],
+                        GeometryOffset: 110,
+                        Instruction: "Turn left. Go for 50 m.",
+                        TurnStepDetails: {
+                          Intersection: [],
+                          SteeringDirection: "Left",
+                          TurnIntensity: "Typical",
+                        },
+                        Type: "Turn",
+                      },
+                      {
+                        Distance: 0,
+                        Duration: 0,
+                        ExitNumber: [],
+                        GeometryOffset: 112,
+                        Instruction: "Arrive at your destination on the left.",
+                        Type: "Arrive",
+                      },
+                    ],
+                    TruckRoadTypes: [],
+                    Zones: [],
+                  },
+                },
+              ],
+              MajorRoadLabels: [
+                {
+                  RoadName: {
+                    Language: "en",
+                    Value: "Guadalupe St",
+                  },
+                },
+                {
+                  RoadName: {
+                    Language: "en",
+                    Value: "Duval St",
+                  },
+                },
+              ],
+              Summary: {
+                Distance: 4047,
+                Duration: 423,
+              },
+            },
+          ],
+        });
+      }
+    } else {
+      reject();
+    }
+  });
+});
+
+jest.mock("@aws-sdk/client-geo-routes", () => ({
+  ...jest.requireActual("@aws-sdk/client-geo-routes"),
+  GeoRoutesClient: jest.fn().mockImplementation(() => {
+    return {
+      send: mockedRoutesClientSend,
+    };
+  }),
+}));
+import { GeoRoutesClient, CalculateRoutesCommand, CalculateRoutesRequest } from "@aws-sdk/client-geo-routes";
+
 const directionsService = new MigrationDirectionsService();
 const distanceMatrixService = new MigrationDistanceMatrixService();
-directionsService._client = new LocationClient();
+directionsService._client = new GeoRoutesClient();
 distanceMatrixService._client = new LocationClient();
 
 // The DirectionsService and DistanceMatrixService also uses the PlacesService in cases where the route is specified with a query string
@@ -958,8 +1206,8 @@ test("should get new directions in handler when directions_changed event", (done
 });
 
 test("should return route with origin as LatLng and destination as LatLng", (done) => {
-  const origin = new MigrationLatLng(1, 2);
-  const destination = new MigrationLatLng(20, 21);
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
 
   const request = {
     origin: origin,
@@ -969,9 +1217,9 @@ test("should return route with origin as LatLng and destination as LatLng", (don
 
   directionsService.route(request).then((response) => {
     // Since origin and destination are both specified as parseable values, the only mocked
-    // LocationClient call should be the CalculateRouteCommand
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+    // GeoPlacesClient call should be the CalculateRoutesCommand
+    expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
 
     const routes = response.routes;
 
@@ -980,7 +1228,7 @@ test("should return route with origin as LatLng and destination as LatLng", (don
     const route = routes[0];
 
     const bounds = route.bounds;
-    expect(bounds.equals(new MigrationLatLngBounds(origin, destination))).toStrictEqual(true);
+    expect(bounds.equals(testRouteBounds)).toStrictEqual(true);
 
     const legs = route.legs;
 
@@ -988,7 +1236,7 @@ test("should return route with origin as LatLng and destination as LatLng", (don
 
     const leg = legs[0];
 
-    expect(leg.steps.length).toStrictEqual(3);
+    expect(leg.steps.length).toStrictEqual(7);
     expect(leg.start_location.equals(origin)).toStrictEqual(true);
     expect(leg.end_location.equals(destination)).toStrictEqual(true);
 
@@ -997,8 +1245,8 @@ test("should return route with origin as LatLng and destination as LatLng", (don
 });
 
 test("should return route with origin as LatLng and destination as Place.location", (done) => {
-  const origin = new MigrationLatLng(1, 2);
-  const destination = new MigrationLatLng(20, 21);
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
 
   const request = {
     origin: origin,
@@ -1010,26 +1258,20 @@ test("should return route with origin as LatLng and destination as Place.locatio
 
   directionsService.route(request).then((response) => {
     // Since origin and destination are both specified as parseable values, the only mocked
-    // LocationClient call should be the CalculateRouteCommand
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+    // GeoPlacesClient call should be the CalculateRoutesCommand
+    expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
 
     const routes = response.routes;
-
     expect(routes.length).toStrictEqual(1);
-
-    const route = routes[0];
-
-    const bounds = route.bounds;
-    expect(bounds.equals(new MigrationLatLngBounds(origin, destination))).toStrictEqual(true);
 
     done();
   });
 });
 
 test("should return route with origin as Place.location and destination as LatLng", (done) => {
-  const origin = new MigrationLatLng(1, 2);
-  const destination = new MigrationLatLng(20, 21);
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
 
   const request = {
     origin: {
@@ -1041,26 +1283,20 @@ test("should return route with origin as Place.location and destination as LatLn
 
   directionsService.route(request).then((response) => {
     // Since origin and destination are both specified as parseable values, the only mocked
-    // LocationClient call should be the CalculateRouteCommand
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+    // GeoPlacesClient call should be the CalculateRoutesCommand
+    expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
 
     const routes = response.routes;
-
     expect(routes.length).toStrictEqual(1);
-
-    const route = routes[0];
-
-    const bounds = route.bounds;
-    expect(bounds.equals(new MigrationLatLngBounds(origin, destination))).toStrictEqual(true);
 
     done();
   });
 });
 
 test("should return route with origin as Place.location and destination as Place.location", (done) => {
-  const origin = new MigrationLatLng(1, 2);
-  const destination = new MigrationLatLng(20, 21);
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
 
   const request = {
     origin: {
@@ -1074,18 +1310,12 @@ test("should return route with origin as Place.location and destination as Place
 
   directionsService.route(request).then((response) => {
     // Since origin and destination are both specified as parseable values, the only mocked
-    // LocationClient call should be the CalculateRouteCommand
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+    // GeoPlacesClient call should be the CalculateRoutesCommand
+    expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
 
     const routes = response.routes;
-
     expect(routes.length).toStrictEqual(1);
-
-    const route = routes[0];
-
-    const bounds = route.bounds;
-    expect(bounds.equals(new MigrationLatLngBounds(origin, destination))).toStrictEqual(true);
 
     done();
   });
@@ -1103,22 +1333,14 @@ test("should return route with origin as string and destination as Place.query",
   directionsService.route(request).then((response) => {
     // Since both origin and destination were query inputs, these will both trigger a
     // findPlaceFromQuery request to retrieve the location geometry, so there
-    // will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for routes)
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
-    expect(mockedClientSend).toHaveBeenCalledTimes(2);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    // will be a total of 3 mocked send calls (2 for places, 1 for routes)
+    expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
+    expect(mockedPlacesClientSend).toHaveBeenCalledTimes(2);
+    expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
 
     const routes = response.routes;
-
     expect(routes.length).toStrictEqual(1);
-
-    const route = routes[0];
-
-    const bounds = route.bounds;
-    expect(bounds.equals(new MigrationLatLngBounds(testCoolPlaceLocation, testAnotherCoolPlaceLocation))).toStrictEqual(
-      true,
-    );
 
     done();
   });
@@ -1138,12 +1360,12 @@ test("should return route with origin as Place.placeId and destination as Place.
   directionsService.route(request).then((response) => {
     // Since origin was a placeId and destination was a query input, these will trigger a
     // getDetails and findPlaceFromQuery request (respectively) to retrieve the location geometry,
-    // so there will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for routes)
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledTimes(2);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+    // so there will be a total of 3 mocked send calls (2 for places, 1 for routes)
+    expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
+    expect(mockedPlacesClientSend).toHaveBeenCalledTimes(2);
+    expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
 
     const geocodedWaypoints = response.geocoded_waypoints;
     const routes = response.routes;
@@ -1151,11 +1373,7 @@ test("should return route with origin as Place.placeId and destination as Place.
     expect(routes.length).toStrictEqual(1);
 
     const route = routes[0];
-    const bounds = route.bounds;
     const legs = route.legs;
-    expect(bounds.equals(new MigrationLatLngBounds(testCoolPlaceLocation, testAnotherCoolPlaceLocation))).toStrictEqual(
-      true,
-    );
     expect(legs.length).toStrictEqual(1);
 
     const leg = legs[0];
@@ -1167,26 +1385,31 @@ test("should return route with origin as Place.placeId and destination as Place.
     const start_location = leg.start_location;
     const end_location = leg.end_location;
     expect(distance).toStrictEqual({
-      text: "9001 km",
-      value: 9001000,
+      text: "4047 km",
+      value: 4047000,
     });
-    expect(steps.length).toStrictEqual(3);
+    expect(steps.length).toStrictEqual(7);
     expect(duration).toStrictEqual({
-      text: "3 hours 21 mins",
-      value: 12032,
+      text: "8 mins",
+      value: 423,
     });
+
     expect(start_address).toStrictEqual("cool place, austin, tx");
     expect(end_address).toStrictEqual("another cool place, austin, tx");
-    expect(start_location.equals(new MigrationLatLng(testCoolPlaceLocation))).toStrictEqual(true);
-    expect(end_location.equals(new MigrationLatLng(testAnotherCoolPlaceLocation))).toStrictEqual(true);
+    expect(
+      start_location.equals(new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0])),
+    ).toStrictEqual(true);
+    expect(end_location.equals(new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]))).toStrictEqual(
+      true,
+    );
 
     done();
   });
 });
 
 test("should return route with origin as LatLng and destination as LatLng with callback specified", (done) => {
-  const origin = new MigrationLatLng(1, 2);
-  const destination = new MigrationLatLng(20, 21);
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
 
   const request = {
     origin: origin,
@@ -1197,26 +1420,21 @@ test("should return route with origin as LatLng and destination as LatLng with c
   directionsService
     .route(request, (results, status) => {
       // Since origin and destination are both specified as parseable values, the only mocked
-      // LocationClient call should be the CalculateRouteCommand
-      expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-      expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteCommand));
+      // GeoPlacesClient call should be the CalculateRoutesCommand
+      expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
+      expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
 
       const routes = results.routes;
-
       expect(routes.length).toStrictEqual(1);
 
       const route = routes[0];
-
-      const bounds = route.bounds;
-      expect(bounds.equals(new MigrationLatLngBounds(origin, destination))).toStrictEqual(true);
-
       const legs = route.legs;
 
       expect(legs.length).toStrictEqual(1);
 
       const leg = legs[0];
 
-      expect(leg.steps.length).toStrictEqual(3);
+      expect(leg.steps.length).toStrictEqual(7);
       expect(leg.start_location.equals(origin)).toStrictEqual(true);
       expect(leg.end_location.equals(destination)).toStrictEqual(true);
 
@@ -1225,68 +1443,6 @@ test("should return route with origin as LatLng and destination as LatLng with c
     .then(() => {
       done();
     });
-});
-
-test("should call route with options travel mode set to walking and unit system set to imperial", (done) => {
-  const request = {
-    origin: {
-      placeId: "KEEP_AUSTIN_WEIRD",
-    },
-    destination: {
-      query: "another cool place",
-    },
-    travelMode: TravelMode.WALKING,
-    unitSystem: UnitSystem.IMPERIAL,
-  };
-
-  directionsService.route(request).then(() => {
-    expect(mockedClientSendV1).toHaveBeenCalledWith(
-      expect.objectContaining({
-        input: {
-          CalculatorName: undefined,
-          DeparturePosition: [4, 3],
-          DestinationPosition: [8, 7],
-          IncludeLegGeometry: true,
-          TravelMode: "Walking",
-        },
-      }),
-    );
-
-    done();
-  });
-});
-
-test("should call route with options travel mode set to driving and unit system set to metric", (done) => {
-  const request = {
-    origin: {
-      placeId: "KEEP_AUSTIN_WEIRD",
-    },
-    destination: {
-      query: "another cool place",
-    },
-    travelMode: TravelMode.DRIVING,
-    unitSystem: UnitSystem.METRIC,
-    drivingOptions: {
-      departureTime: new Date("2000-01-01"),
-    },
-  };
-
-  directionsService.route(request).then(() => {
-    expect(mockedClientSendV1).toHaveBeenCalledWith(
-      expect.objectContaining({
-        input: {
-          CalculatorName: undefined,
-          DeparturePosition: [4, 3],
-          DepartureTime: new Date("2000-01-01"),
-          DestinationPosition: [8, 7],
-          IncludeLegGeometry: true,
-          TravelMode: "Car",
-        },
-      }),
-    );
-
-    done();
-  });
 });
 
 test("should call route with options avoidFerries set to true and avoidTolls set to true", (done) => {
@@ -1303,18 +1459,57 @@ test("should call route with options avoidFerries set to true and avoidTolls set
   };
 
   directionsService.route(request).then(() => {
-    expect(mockedClientSendV1).toHaveBeenCalledWith(
-      expect.objectContaining({
-        input: {
-          CalculatorName: undefined,
-          CarModeOptions: { AvoidFerries: true, AvoidTolls: true },
-          DeparturePosition: [4, 3],
-          DestinationPosition: [8, 7],
-          IncludeLegGeometry: true,
-          TravelMode: "Car",
-        },
-      }),
-    );
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
+    const clientInput: CalculateRoutesRequest = mockedRoutesClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.Avoid?.Ferries).toStrictEqual(true);
+    expect(clientInput.Avoid?.TollRoads).toStrictEqual(true);
+    expect(clientInput.Avoid?.TollTransponders).toStrictEqual(true);
+
+    done();
+  });
+});
+
+test("should use correct travelMode when walking is specified", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.WALKING,
+  };
+
+  directionsService.route(request).then(() => {
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
+    const clientInput: CalculateRoutesRequest = mockedRoutesClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.TravelMode).toStrictEqual("Pedestrian");
+
+    done();
+  });
+});
+
+test("should use correct departureTime when when drivingOptions are specified", (done) => {
+  const request = {
+    origin: {
+      placeId: "KEEP_AUSTIN_WEIRD",
+    },
+    destination: {
+      query: "another cool place",
+    },
+    travelMode: TravelMode.DRIVING,
+    drivingOptions: {
+      departureTime: new Date("2020-04-22T17:57:24Z"),
+    },
+  };
+
+  directionsService.route(request).then(() => {
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
+    const clientInput: CalculateRoutesRequest = mockedRoutesClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.DepartureTime).toStrictEqual("2020-04-22T17:57:24.000Z");
 
     done();
   });
@@ -1339,18 +1534,15 @@ test("should call route with option waypoints set", (done) => {
   };
 
   directionsService.route(request).then(() => {
-    expect(mockedClientSendV1).toHaveBeenCalledWith(
-      expect.objectContaining({
-        input: {
-          CalculatorName: undefined,
-          DeparturePosition: [4, 3],
-          DestinationPosition: [8, 7],
-          IncludeLegGeometry: true,
-          TravelMode: "Car",
-          WaypointPositions: [[8, 7]],
-        },
-      }),
-    );
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
+    const clientInput: CalculateRoutesRequest = mockedRoutesClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.Waypoints).toStrictEqual([
+      {
+        Position: [8, 7],
+        PassThrough: false,
+      },
+    ]);
 
     done();
   });
@@ -1376,18 +1568,15 @@ test("should call route with option waypoints set and callback specified", (done
 
   directionsService
     .route(request, (_, status) => {
-      expect(mockedClientSendV1).toHaveBeenCalledWith(
-        expect.objectContaining({
-          input: {
-            CalculatorName: undefined,
-            DeparturePosition: [4, 3],
-            DestinationPosition: [8, 7],
-            IncludeLegGeometry: true,
-            TravelMode: "Car",
-            WaypointPositions: [[8, 7]],
-          },
-        }),
-      );
+      expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
+      const clientInput: CalculateRoutesRequest = mockedRoutesClientSend.mock.calls[0][0].input;
+
+      expect(clientInput.Waypoints).toStrictEqual([
+        {
+          Position: [8, 7],
+          PassThrough: false,
+        },
+      ]);
       expect(status).toStrictEqual(DirectionsStatus.OK);
     })
     .then(() => {
@@ -1557,9 +1746,9 @@ test("should return getDistanceMatrix with origin as Place.placeId and destinati
     // getDetails and findPlaceFromQuery request (respectively) to retrieve the location geometry,
     // so there will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for distance matrix)
     expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledTimes(2);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+    expect(mockedPlacesClientSend).toHaveBeenCalledTimes(2);
+    expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
     expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
 
     const rows = response.rows;
@@ -1769,9 +1958,9 @@ test("getDistanceMatrix will invoke the callback if specified", (done) => {
   distanceMatrixService
     .getDistanceMatrix(request, (results, status) => {
       expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-      expect(mockedClientSend).toHaveBeenCalledTimes(2);
-      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
-      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
+      expect(mockedPlacesClientSend).toHaveBeenCalledTimes(2);
+      expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+      expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
       expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
 
       const rows = results.rows;

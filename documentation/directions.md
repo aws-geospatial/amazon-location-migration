@@ -25,6 +25,13 @@
 | [unitSystem](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsRequest.unitSystem)                             | :white_check_mark: |                                       |
 | [waypoints](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsRequest.waypoints)                               | :white_check_mark: |                                       |
 
+### [DirectionsWaypoint interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsWaypoint)
+
+| [Properties](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsWaypoint-Properties) | Supported          | Notes |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
+| [location](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsWaypoint.location)     | :white_check_mark: |       |
+| [stopover](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#DirectionsWaypoint.stopover)     | :white_check_mark: |       |
+
 ### [DirectionsResult interface](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsResult)
 
 | [Properties](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsResult-Properties)                         | Supported          | Notes                                                                   |

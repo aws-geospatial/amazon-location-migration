@@ -4,6 +4,7 @@
 import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { LocationClient } from "@aws-sdk/client-location";
 import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
+import { GeoRoutesClient } from "@aws-sdk/client-geo-routes";
 
 import {
   MigrationDirectionsRenderer,
@@ -99,7 +100,13 @@ const migrationInit = async function () {
     ...authHelperV1.getClientConfig(), // Configures the client to use API keys when making supported requests
   });
 
-  const client = new GeoPlacesClient({
+  const placesClient = new GeoPlacesClient({
+    region: region, // Region containing Amazon Location resource
+    customUserAgent: `migration-sdk-${PACKAGE_VERSION}`, // Append tag with SDK version to the default user agent
+    ...authHelper.getClientConfig(), // Configures the client to use API keys when making supported requests
+  });
+
+  const routesClient = new GeoRoutesClient({
     region: region, // Region containing Amazon Location resource
     customUserAgent: `migration-sdk-${PACKAGE_VERSION}`, // Append tag with SDK version to the default user agent
     ...authHelper.getClientConfig(), // Configures the client to use API keys when making supported requests
@@ -107,15 +114,14 @@ const migrationInit = async function () {
 
   // Pass our location client, and optionally place index and route calculator names
   // to our migration services
-  MigrationAutocomplete.prototype._client = client;
-  MigrationAutocompleteService.prototype._client = client;
+  MigrationAutocomplete.prototype._client = placesClient;
+  MigrationAutocompleteService.prototype._client = placesClient;
   MigrationGeocoder.prototype._client = clientV1;
   MigrationGeocoder.prototype._placeIndexName = placeIndexName;
-  MigrationPlace._client = client;
-  MigrationPlacesService.prototype._client = client;
-  MigrationSearchBox.prototype._client = client;
-  MigrationDirectionsService.prototype._client = clientV1;
-  MigrationDirectionsService.prototype._routeCalculatorName = routeCalculatorName;
+  MigrationPlace._client = placesClient;
+  MigrationPlacesService.prototype._client = placesClient;
+  MigrationSearchBox.prototype._client = placesClient;
+  MigrationDirectionsService.prototype._client = routesClient;
   MigrationDistanceMatrixService.prototype._client = clientV1;
   MigrationDistanceMatrixService.prototype._routeCalculatorName = routeCalculatorName;
 
