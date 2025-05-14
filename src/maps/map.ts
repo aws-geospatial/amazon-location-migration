@@ -1,13 +1,13 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { CameraOptions, IControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
+import { CameraOptions, IControl, FullscreenControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
   AddListenerResponse,
+  convertGoogleControlPositionToMapLibre,
   ColorScheme,
   GoogleMapEvent,
   GoogleMapMouseEvent,
-  GoogleToMaplibreControlPosition,
   GoogleToMaplibreEvent,
   LatLngToLngLat,
   MapTypeId,
@@ -31,6 +31,7 @@ const systemIsDarkMode = () => {
 */
 class MigrationMap {
   #map: Map;
+  #fullscreenControl: IControl;
   #navigationControl: IControl;
   #colorScheme = "Light";
   #mapTypeId: MapTypeId = MapTypeId.ROADMAP;
@@ -98,6 +99,11 @@ class MigrationMap {
     // furthermore, you can specify zoomControlOptions without passing in zoomControl as an option
     if (options.zoomControl === undefined || options.zoomControl === true) {
       this.#addNavigationControl(options.zoomControlOptions);
+    }
+
+    // Add FullscreenControl if fullscreenControl is true or not passed in (Google by default adds fullscreen control to map)
+    if (options.fullscreenControl == undefined || options.fullscreenControl) {
+      this.#addFullscreenControl(options.fullscreenControlOptions);
     }
   }
 
@@ -317,16 +323,24 @@ class MigrationMap {
       this.setTilt(options.tilt);
     }
 
-    if (options.zoomControl === undefined) {
-      // if zoomControl not sent in, check if navControl exists:  navControl exists means map created with zoomControl option
-      // set to true or default, navControl not exists means map created without zoomControl option so don't create new navControl
-      if (this.#navigationControl !== undefined && options.zoomControlOptions && options.zoomControlOptions.position) {
+    // When calling setOptions, the zoomControl is only modified if the zoomControl field is passed in,
+    // which differs from the constructor behavior where you can specify zoomControlOptions without passing zoomControl
+    if (options.zoomControl !== undefined) {
+      if (options.zoomControl) {
         this.#addNavigationControl(options.zoomControlOptions);
+      } else if (this.#navigationControl) {
+        this.#map.removeControl(this.#navigationControl);
       }
-    } else if (options.zoomControl === true) {
-      this.#addNavigationControl(options.zoomControlOptions);
-    } else if (options.zoomControl === false) {
-      this.#map.removeControl(this.#navigationControl);
+    }
+
+    // When calling setOptions, the fullscreenControl is only modified if the fullscreenControl field is passed in,
+    // which differs from the constructor behavior where you can specify fullscreenControlOptions without passing fullscreenControl
+    if (options.fullscreenControl !== undefined) {
+      if (options.fullscreenControl) {
+        this.#addFullscreenControl(options.fullscreenControlOptions);
+      } else if (this.#fullscreenControl) {
+        this.#map.removeControl(this.#fullscreenControl);
+      }
     }
   }
 
@@ -363,26 +377,26 @@ class MigrationMap {
     }
   }
 
-  // helper method for adding a NavigationControl to the map, checks that 'position' option is set,
-  // only translates 8 out of 29 positions that Google offers, we will default to bottom-right for
-  // positions that MapLibre does not offer
-  #addNavigationControl(zoomControlOptions) {
+  #addNavigationControl(zoomControlOptions: google.maps.ZoomControlOptions | null) {
     // remove old navControl so we don't have multiple
     if (this.#navigationControl) {
       this.#map.removeControl(this.#navigationControl);
     }
+
     // add new navControl
-    if (
-      zoomControlOptions &&
-      zoomControlOptions.position &&
-      zoomControlOptions.position in GoogleToMaplibreControlPosition
-    ) {
-      this.#navigationControl = new NavigationControl();
-      this.#map.addControl(this.#navigationControl, GoogleToMaplibreControlPosition[zoomControlOptions.position]);
-    } else {
-      this.#navigationControl = new NavigationControl();
-      this.#map.addControl(this.#navigationControl, "bottom-right");
+    const controlPosition = convertGoogleControlPositionToMapLibre(zoomControlOptions?.position) || "bottom-right";
+    this.#navigationControl = new NavigationControl();
+    this.#map.addControl(this.#navigationControl, controlPosition);
+  }
+
+  #addFullscreenControl(fullscreenControlOptions: google.maps.FullscreenControlOptions | null) {
+    if (this.#fullscreenControl) {
+      this.#map.removeControl(this.#fullscreenControl);
     }
+
+    const controlPosition = convertGoogleControlPositionToMapLibre(fullscreenControlOptions?.position) || "top-right";
+    this.#fullscreenControl = new FullscreenControl();
+    this.#map.addControl(this.#fullscreenControl, controlPosition);
   }
 
   // Internal method for migration logic that needs to access the underlying MapLibre map

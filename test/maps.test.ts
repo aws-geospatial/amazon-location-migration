@@ -70,7 +70,7 @@ jest.mock("maplibre-gl", () => ({
   }),
 }));
 
-import { LngLatBounds, Map, MapOptions, NavigationControl } from "maplibre-gl";
+import { FullscreenControl, LngLatBounds, Map, MapOptions, NavigationControl } from "maplibre-gl";
 
 MigrationMap.prototype._apiKey = "test-api-key";
 MigrationMap.prototype._region = "test-region";
@@ -79,6 +79,7 @@ const testLat = 30.268193; // Austin, TX :)
 const testLng = -97.7457518;
 
 jest.spyOn(console, "error").mockImplementation(() => {});
+jest.spyOn(console, "warn").mockImplementation(() => {});
 
 // Mock the window.matchMedia check for ColorScheme.FOLLOW_SYSTEM
 Object.defineProperty(window, "matchMedia", {
@@ -105,6 +106,10 @@ test("should set migration map options", () => {
     zoomControlOptions: {
       position: MigrationControlPosition.LEFT_TOP,
     },
+    fullscreenControl: true,
+    fullscreenControlOptions: {
+      position: MigrationControlPosition.BOTTOM_LEFT,
+    },
   });
 
   const expectedMaplibreOptions: MapOptions = {
@@ -123,8 +128,10 @@ test("should set migration map options", () => {
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
-  expect(mockAddControl).toHaveBeenCalledTimes(1);
-  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-left");
+
+  expect(mockAddControl).toHaveBeenCalledTimes(2);
+  expect(mockAddControl).toHaveBeenNthCalledWith(1, expect.any(NavigationControl), "top-left");
+  expect(mockAddControl).toHaveBeenNthCalledWith(2, expect.any(FullscreenControl), "bottom-left");
 });
 
 test("should set migration map options with control position not available in MapLibre", () => {
@@ -148,8 +155,14 @@ test("should set migration map options with control position not available in Ma
   expect(testMap).not.toBeNull();
   expect(Map).toHaveBeenCalledTimes(1);
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
-  expect(mockAddControl).toHaveBeenCalledTimes(1);
+
+  // By default, both the FullscreenControl and NavigationControl will be added to the map
+  expect(mockAddControl).toHaveBeenCalledTimes(2);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(FullscreenControl), "top-right");
   expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
+
+  // There will also be a console warning since the zoom control position specified isn't supported
+  expect(console.warn).toHaveBeenCalledTimes(1);
 });
 
 test("should set appropriate color-scheme for ColorScheme.DARK", () => {
@@ -301,6 +314,10 @@ test("should call setOptions from migration map", () => {
     zoomControlOptions: {
       position: MigrationControlPosition.LEFT_TOP,
     },
+    fullscreenControl: true,
+    fullscreenControlOptions: {
+      position: MigrationControlPosition.LEFT_BOTTOM,
+    },
   });
 
   expect(mockSetCenter).toHaveBeenCalledTimes(1);
@@ -315,13 +332,17 @@ test("should call setOptions from migration map", () => {
   expect(mockSetPitch).toHaveBeenCalledWith(45);
   expect(mockSetBearing).toHaveBeenCalledTimes(1);
   expect(mockSetBearing).toHaveBeenCalledWith(90);
-  expect(mockAddControl).toHaveBeenCalledTimes(2);
-  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "bottom-right");
-  expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-left");
+  expect(mockAddControl).toHaveBeenCalledTimes(4);
+  expect(mockAddControl).toHaveBeenNthCalledWith(1, expect.any(NavigationControl), "bottom-right");
+  expect(mockAddControl).toHaveBeenNthCalledWith(2, expect.any(FullscreenControl), "top-right");
+  expect(mockAddControl).toHaveBeenNthCalledWith(3, expect.any(NavigationControl), "top-left");
+  expect(mockAddControl).toHaveBeenNthCalledWith(4, expect.any(FullscreenControl), "bottom-left");
 });
 
 test("should call setOptions from migration map and remove NavigationControl", () => {
-  const testMap = new MigrationMap(null, {});
+  const testMap = new MigrationMap(null, {
+    fullscreenControl: false,
+  });
 
   testMap.setOptions({
     zoomControl: false,
@@ -336,6 +357,7 @@ test("should call setOptions from migration map and remove NavigationControl", (
 test("should call setOptions from migration map and add new NavigationControl", () => {
   const testMap = new MigrationMap(null, {
     zoomControl: false,
+    fullscreenControl: false,
   });
 
   testMap.setOptions({
@@ -347,9 +369,12 @@ test("should call setOptions from migration map and add new NavigationControl", 
 });
 
 test("should call setOptions from migration map and add new NavigationControl with zoomControlOptions", () => {
-  const testMap = new MigrationMap(null, {});
+  const testMap = new MigrationMap(null, {
+    fullscreenControl: false,
+  });
 
   testMap.setOptions({
+    zoomControl: true,
     zoomControlOptions: {
       position: MigrationControlPosition.RIGHT_TOP,
     },
@@ -360,6 +385,54 @@ test("should call setOptions from migration map and add new NavigationControl wi
   expect(mockAddControl).toHaveBeenCalledWith(expect.any(NavigationControl), "top-right");
   expect(mockRemoveControl).toHaveBeenCalledTimes(1);
   expect(mockRemoveControl).toHaveBeenCalledWith(expect.any(NavigationControl));
+});
+
+test("should call setOptions from migration map and remove FullscreenControl", () => {
+  const testMap = new MigrationMap(null, {
+    zoomControl: false,
+  });
+
+  testMap.setOptions({
+    fullscreenControl: false,
+  });
+
+  expect(mockAddControl).toHaveBeenCalledTimes(1);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(FullscreenControl), "top-right");
+  expect(mockRemoveControl).toHaveBeenCalledTimes(1);
+  expect(mockRemoveControl).toHaveBeenCalledWith(expect.any(FullscreenControl));
+});
+
+test("should call setOptions from migration map and add new FullscreenControl", () => {
+  const testMap = new MigrationMap(null, {
+    zoomControl: false,
+    fullscreenControl: false,
+  });
+
+  testMap.setOptions({
+    fullscreenControl: true,
+  });
+
+  expect(mockAddControl).toHaveBeenCalledTimes(1);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(FullscreenControl), "top-right");
+});
+
+test("should call setOptions from migration map and add new FullscreenControl with fullscreenControlOptions", () => {
+  const testMap = new MigrationMap(null, {
+    zoomControl: false,
+  });
+
+  testMap.setOptions({
+    fullscreenControl: true,
+    fullscreenControlOptions: {
+      position: MigrationControlPosition.BOTTOM_LEFT,
+    },
+  });
+
+  expect(mockAddControl).toHaveBeenCalledTimes(2);
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(FullscreenControl), "top-right");
+  expect(mockAddControl).toHaveBeenCalledWith(expect.any(FullscreenControl), "bottom-left");
+  expect(mockRemoveControl).toHaveBeenCalledTimes(1);
+  expect(mockRemoveControl).toHaveBeenCalledWith(expect.any(FullscreenControl));
 });
 
 test("should log error when setOptions is called with invalid center", () => {

@@ -81,7 +81,7 @@ export const MigrationControlPosition = {
 // Constant responsible for translating numbers representing Google ControlPositions into MapLibre position
 // strings that can be passed into MapLibre's 'addControl'
 // see more on Google ControlPosition: https://developers.google.com/maps/documentation/javascript/controls#ControlPositioning
-// see more on MapLibre ControlPosition: https://maplibre.org/maplibre-gl-js/docs/API/types/ControlPosition/
+// see more on MapLibre ControlPosition: https://maplibre.org/maplibre-gl-js/docs/API/type-aliases/ControlPosition/
 export const GoogleToMaplibreControlPosition = {};
 GoogleToMaplibreControlPosition[MigrationControlPosition.TOP_LEFT] = "top-left";
 GoogleToMaplibreControlPosition[MigrationControlPosition.TOP_RIGHT] = "top-right";

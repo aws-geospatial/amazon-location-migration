@@ -3,6 +3,7 @@
 
 export * from "./circle";
 export * from "./defines";
+export * from "./helpers";
 export * from "./lat_lng";
 export * from "./lat_lng_bounds";
 export * from "./mvc_object";
