@@ -9,50 +9,11 @@ import { GeocoderStatus, MigrationLatLngBounds } from "../src/common";
 jest.spyOn(console, "error").mockImplementation(() => {});
 
 // Austin, TX :)
-const testPlaceLabel = "Austin, TX, USA";
+const testPlaceWithAddressLabel = "1337 Cool Place Road, Austin, TX, USA";
 const testLat = 30.268193;
 const testLng = -97.7457518;
 
-const testPlaceWithAddressLabel = "1337 Cool Place Road, Austin, TX, USA";
-
 const clientErrorQuery = "THIS_WILL_CAUSE_A_CLIENT_ERROR";
-
-const mockedClientSendV1 = jest.fn((command) => {
-  return new Promise((resolve, reject) => {
-    if (command instanceof SearchPlaceIndexForPositionCommand) {
-      if (command.input.Position && command.input.Position[0] == -1 && command.input.Position[1] == -1) {
-        // Return an empty object that will throw an error
-        resolve({});
-      } else {
-        resolve({
-          Results: [
-            {
-              Place: {
-                Label: testPlaceLabel,
-                Geometry: {
-                  Point: [testLng, testLat],
-                },
-              },
-              PlaceId: "KEEP_AUSTIN_WEIRD",
-            },
-          ],
-        });
-      }
-    } else {
-      reject();
-    }
-  });
-});
-
-jest.mock("@aws-sdk/client-location", () => ({
-  ...jest.requireActual("@aws-sdk/client-location"),
-  LocationClient: jest.fn().mockImplementation(() => {
-    return {
-      send: mockedClientSendV1,
-    };
-  }),
-}));
-import { LocationClient, SearchPlaceIndexForPositionCommand } from "@aws-sdk/client-location";
 
 const mockedClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
@@ -119,7 +80,57 @@ const mockedClientSend = jest.fn((command) => {
           Title: "1337 Cool Place Road",
         });
       }
-    } else if (command instanceof SearchTextCommand) {
+    } else if (command instanceof ReverseGeocodeCommand) {
+      if (command.input.QueryPosition && command.input.QueryPosition[0] == -1 && command.input.QueryPosition[1] == -1) {
+        // Return an empty object that will throw an error
+        resolve({});
+      } else {
+        resolve({
+          ResultItems: [
+            {
+              Address: {
+                Label: testPlaceWithAddressLabel,
+                Country: {
+                  Code2: "US",
+                  Code3: "USA",
+                  Name: "United States",
+                },
+                Region: {
+                  Code: "TX",
+                  Name: "Texas",
+                },
+                SubRegion: {
+                  Name: "Cool SubRegion",
+                },
+                Locality: "Austin",
+                District: "Cool District",
+                PostalCode: "78704",
+                Street: "Cool Place Road",
+                AddressNumber: "1337",
+              },
+              Categories: [
+                {
+                  Name: "Cool Place",
+                  LocalizedName: "Cool Place",
+                  Id: "cool_place",
+                  Primary: true,
+                },
+              ],
+              MapView: [0, 1, 2, 3],
+              PlaceId: "KEEP_AUSTIN_WEIRD",
+              PlaceType: "PointOfInterest",
+              Position: [testLng, testLat],
+              TimeZone: {
+                Name: "America/Chicago",
+                Offset: "-05:00",
+                OffsetSeconds: -18000,
+              },
+              Title: "1337 Cool Place Road",
+            },
+          ],
+        });
+      }
+    } else if (command instanceof GeocodeCommand) {
       if (command.input.QueryText == clientErrorQuery) {
         // Return an empty object that will throw an error
         resolve({});
@@ -155,32 +166,7 @@ const mockedClientSend = jest.fn((command) => {
                   Primary: true,
                 },
               ],
-              Contacts: {
-                Phones: [
-                  {
-                    Value: "+15121234567",
-                  },
-                ],
-                Websites: [
-                  {
-                    Value: "https://coolwebsite.com",
-                  },
-                ],
-              },
               MapView: [0, 1, 2, 3],
-              OpeningHours: [
-                {
-                  Display: ["Mon-Sun: 08:30 - 13:37"],
-                  OpenNow: true,
-                  Components: [
-                    {
-                      OpenTime: "T083000",
-                      OpenDuration: "PT05H07M",
-                      Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR,SA,SU",
-                    },
-                  ],
-                },
-              ],
               PlaceId: "KEEP_AUSTIN_WEIRD",
               PlaceType: "PointOfInterest",
               Position: [testLng, testLat],
@@ -208,11 +194,18 @@ jest.mock("@aws-sdk/client-geo-places", () => ({
     };
   }),
 }));
-import { GeoPlacesClient, GetPlaceCommand, SearchTextCommand } from "@aws-sdk/client-geo-places";
+import {
+  GeocodeCommand,
+  GeocodeCommandInput,
+  GeoPlacesClient,
+  GetPlaceCommand,
+  ReverseGeocodeCommand,
+  ReverseGeocodeCommandInput,
+} from "@aws-sdk/client-geo-places";
 
 const placesService = new MigrationPlacesService();
 placesService._client = new GeoPlacesClient();
-MigrationGeocoder.prototype._client = new LocationClient();
+MigrationGeocoder.prototype._client = new GeoPlacesClient();
 MigrationGeocoder.prototype._placesService = placesService;
 
 afterEach(() => {
@@ -235,10 +228,10 @@ test("geocoder should return result when location is specified", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForPositionCommand));
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(ReverseGeocodeCommand));
 
-    expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -249,7 +242,7 @@ test("geocoder should return result when location is specified", (done) => {
   });
 });
 
-test("geocoder should accept language when specified", (done) => {
+test("geocoder should accept language when specified with location", (done) => {
   const geocoder = new MigrationGeocoder();
 
   const request: google.maps.GeocoderRequest = {
@@ -266,14 +259,46 @@ test("geocoder should accept language when specified", (done) => {
     expect(results.length).toStrictEqual(1);
     const firstResult = results[0];
 
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForPositionCommand));
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(ReverseGeocodeCommand));
 
-    const clientInput = mockedClientSendV1.mock.calls[0][0].input;
+    const clientInput: ReverseGeocodeCommandInput = mockedClientSend.mock.calls[0][0].input;
 
     expect(clientInput.Language).toStrictEqual("en");
 
-    expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
+    expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
+    const returnedLatLng = firstResult.geometry.location;
+    expect(returnedLatLng.lat()).toStrictEqual(testLat);
+    expect(returnedLatLng.lng()).toStrictEqual(testLng);
+
+    // Signal the unit test is complete
+    done();
+  });
+});
+
+test("geocoder should accept language when specified with address", (done) => {
+  const geocoder = new MigrationGeocoder();
+
+  const request: google.maps.GeocoderRequest = {
+    address: testPlaceWithAddressLabel,
+    language: "en",
+  };
+
+  geocoder.geocode(request).then((response) => {
+    const results = response.results;
+
+    expect(results.length).toStrictEqual(1);
+    const firstResult = results[0];
+
+    expect(mockedClientSend).toHaveBeenCalledTimes(1);
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GeocodeCommand));
+
+    const clientInput: GeocodeCommandInput = mockedClientSend.mock.calls[0][0].input;
+
+    expect(clientInput.Language).toStrictEqual("en");
+
+    expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
     const returnedLatLng = firstResult.geometry.location;
     expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -299,7 +324,7 @@ test("geocoder with location will also invoke the callback if specified", (done)
       expect(results.length).toStrictEqual(1);
       const firstResult = results[0];
 
-      expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+      expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
       expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
       const returnedLatLng = firstResult.geometry.location;
       expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -313,10 +338,10 @@ test("geocoder with location will also invoke the callback if specified", (done)
       expect(results.length).toStrictEqual(1);
       const firstResult = results[0];
 
-      expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
-      expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(SearchPlaceIndexForPositionCommand));
+      expect(mockedClientSend).toHaveBeenCalledTimes(1);
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(ReverseGeocodeCommand));
 
-      expect(firstResult.formatted_address).toStrictEqual(testPlaceLabel);
+      expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
       expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
       const returnedLatLng = firstResult.geometry.location;
       expect(returnedLatLng.lat()).toStrictEqual(testLat);
@@ -456,7 +481,7 @@ test("geocoder should return result when address is specified", (done) => {
     const firstResult = results[0];
 
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GeocodeCommand));
 
     expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
     expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
@@ -496,7 +521,7 @@ test("geocoder with address will also invoke the callback if specified", (done) 
       const firstResult = results[0];
 
       expect(mockedClientSend).toHaveBeenCalledTimes(1);
-      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+      expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GeocodeCommand));
 
       expect(firstResult.formatted_address).toStrictEqual(testPlaceWithAddressLabel);
       expect(firstResult.place_id).toStrictEqual("KEEP_AUSTIN_WEIRD");
@@ -524,7 +549,7 @@ test("geocoder with address should accept bounds when specified", (done) => {
     const firstResult = results[0];
 
     expect(mockedClientSend).toHaveBeenCalledTimes(1);
-    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
+    expect(mockedClientSend).toHaveBeenCalledWith(expect.any(GeocodeCommand));
 
     const clientInput = mockedClientSend.mock.calls[0][0].input;
 

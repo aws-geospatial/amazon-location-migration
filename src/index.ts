@@ -74,9 +74,6 @@ const apiKey = urlParams.get("apiKey");
 const defaultRegion = "us-west-2";
 const region = urlParams.get("region") || defaultRegion;
 
-// Optional, but if user wants to perform any Places requests, this is required
-const placeIndexName = urlParams.get("placeIndex");
-
 // Optional, but if user wants to perform any Route requests, this is required
 const routeCalculatorName = urlParams.get("routeCalculator");
 
@@ -116,8 +113,7 @@ const migrationInit = async function () {
   // to our migration services
   MigrationAutocomplete.prototype._client = placesClient;
   MigrationAutocompleteService.prototype._client = placesClient;
-  MigrationGeocoder.prototype._client = clientV1;
-  MigrationGeocoder.prototype._placeIndexName = placeIndexName;
+  MigrationGeocoder.prototype._client = placesClient;
   MigrationPlace._client = placesClient;
   MigrationPlacesService.prototype._client = placesClient;
   MigrationSearchBox.prototype._client = placesClient;

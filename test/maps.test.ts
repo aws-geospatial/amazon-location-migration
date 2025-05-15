@@ -574,6 +574,8 @@ test("MapTypeControl should change mapTypeId when button is clicked", () => {
     fullscreenControl: false,
   });
 
+  expect(testMap).toBeDefined();
+
   expect(mockAddControl).toHaveBeenCalledTimes(1);
   expect(mockAddControl).toHaveBeenCalledWith(expect.any(MapTypeControl), "top-left");
 

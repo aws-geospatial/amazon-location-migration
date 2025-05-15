@@ -33,7 +33,6 @@ const testPlaceLabel = "Austin, TX, USA";
 const testLat = 30.268193;
 const testLng = -97.7457518;
 const testPlaceWithAddressLabel = "1337 Cool Place Road, Austin, TX, USA";
-const testPlaceId = "KEEP_AUSTIN_WEIRD";
 
 afterEach(() => {
   jest.clearAllMocks();

@@ -2,20 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  LocationClient,
-  SearchPlaceIndexForPositionCommand,
-  SearchPlaceIndexForPositionRequest,
-} from "@aws-sdk/client-location";
+  GeoPlacesClient,
+  GeocodeCommand,
+  GeocodeRequest,
+  ReverseGeocodeCommand,
+  ReverseGeocodeRequest,
+} from "@aws-sdk/client-geo-places";
 
 import { GeocoderStatus, LatLngToLngLat, PlacesServiceStatus, MigrationLatLngBounds } from "./common";
-import { convertAmazonPlaceToGoogleV1, MigrationPlacesService } from "./places";
+import { convertAmazonPlaceToGoogle, MigrationPlacesService } from "./places";
 
 class MigrationGeocoder {
-  _client: LocationClient; // This will be populated by the top level module that creates our location client
-  _placeIndexName: string; // This will be populated by the top level module that is passed our place index name
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
   // This will be populated by the top level module
-  // that already has a MigrationPlacesService that has
-  // been configured with our place index name
+  // that already has a MigrationPlacesService
   _placesService: MigrationPlacesService;
 
   geocode(request: google.maps.GeocoderRequest, callback?): Promise<google.maps.GeocoderResponse> {
@@ -30,9 +30,9 @@ class MigrationGeocoder {
 
     if (location) {
       const lngLat = LatLngToLngLat(location);
-      const input: SearchPlaceIndexForPositionRequest = {
-        IndexName: this._placeIndexName, // required
-        Position: lngLat,
+      const input: ReverseGeocodeRequest = {
+        QueryPosition: lngLat,
+        AdditionalFeatures: ["TimeZone"], // "TimeZone" is needed for place's time zone
       };
 
       if (language) {
@@ -40,17 +40,17 @@ class MigrationGeocoder {
       }
 
       return new Promise((resolve, reject) => {
-        const command = new SearchPlaceIndexForPositionCommand(input);
+        const command = new ReverseGeocodeCommand(input);
 
         this._client
           .send(command)
           .then((response) => {
             const googleResults = [];
 
-            const results = response.Results;
+            const results = response.ResultItems;
             if (results.length !== 0) {
               results.forEach(function (place) {
-                const newPlace = convertAmazonPlaceToGoogleV1(place, fields, false);
+                const newPlace = convertAmazonPlaceToGoogle(place, fields, false);
 
                 googleResults.push(newPlace);
               });
@@ -106,29 +106,49 @@ class MigrationGeocoder {
         });
       });
     } else if (address) {
+      const input: GeocodeRequest = {
+        QueryText: address,
+        AdditionalFeatures: ["TimeZone"], // "TimeZone" is needed for place's time zone
+      };
+
+      if (bounds) {
+        const latLngBounds = new MigrationLatLngBounds(bounds);
+        const boundsCenter = latLngBounds.getCenter();
+        input.BiasPosition = LatLngToLngLat(boundsCenter);
+      }
+
+      if (language) {
+        input.Language = language;
+      }
+
       return new Promise((resolve, reject) => {
-        const request: google.maps.places.FindPlaceFromQueryRequest = {
-          query: address,
-          fields: fields,
-        };
+        const command = new GeocodeCommand(input);
 
-        // TODO: findPlaceFromQuery only supports a locationBias instead of a bounds, so if bounds
-        // was specified we will just use the center to act as a locationBias
-        if (bounds) {
-          const latLngBounds = new MigrationLatLngBounds(bounds);
-          request.locationBias = latLngBounds.getCenter();
-        }
+        this._client
+          .send(command)
+          .then((response) => {
+            const googleResults = [];
 
-        this._placesService.findPlaceFromQuery(request, (results, status) => {
-          if (status == PlacesServiceStatus.OK) {
+            const results = response.ResultItems;
+            if (results.length !== 0) {
+              results.forEach(function (place) {
+                const newPlace = convertAmazonPlaceToGoogle(place, fields, false);
+
+                googleResults.push(newPlace);
+              });
+            }
+
             if (callback) {
-              callback(results, GeocoderStatus.OK);
+              callback(googleResults, GeocoderStatus.OK);
             }
 
             resolve({
-              results: results,
+              results: googleResults,
             });
-          } else {
+          })
+          .catch((error) => {
+            console.error(error);
+
             if (callback) {
               callback(null, GeocoderStatus.UNKNOWN_ERROR);
             }
@@ -136,8 +156,7 @@ class MigrationGeocoder {
             reject({
               status: GeocoderStatus.UNKNOWN_ERROR,
             });
-          }
-        });
+          });
       });
     }
   }
