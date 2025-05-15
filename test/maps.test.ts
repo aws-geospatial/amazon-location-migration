@@ -18,7 +18,7 @@ const mockAddControl = jest.fn();
 const mockRemoveControl = jest.fn();
 const mockFitBounds = jest.fn();
 const mockGetBounds = jest.fn();
-const mockGetCenter = jest.fn();
+const mockGetCenter = jest.fn().mockReturnValue([0, 1]);
 const mockSetCenter = jest.fn();
 const mockGetContainer = jest.fn();
 const mockJumpTo = jest.fn();
@@ -81,13 +81,12 @@ const testLng = -97.7457518;
 jest.spyOn(console, "error").mockImplementation(() => {});
 jest.spyOn(console, "warn").mockImplementation(() => {});
 
-// Mock the window.matchMedia check for ColorScheme.FOLLOW_SYSTEM
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: jest.fn().mockImplementation((query) => ({
-    matches: true,
-    media: query,
-  })),
+beforeEach(() => {
+  // Reset matchMedia before each test
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+  });
 });
 
 afterEach(() => {
@@ -132,6 +131,24 @@ test("should set migration map options", () => {
   expect(mockAddControl).toHaveBeenCalledTimes(2);
   expect(mockAddControl).toHaveBeenNthCalledWith(1, expect.any(NavigationControl), "top-left");
   expect(mockAddControl).toHaveBeenNthCalledWith(2, expect.any(FullscreenControl), "bottom-left");
+});
+
+test("migration map should transform requests with custom user agent", () => {
+  const testMap = new MigrationMap(null, {});
+  const mockedMap = jest.mocked(Map);
+
+  expect(testMap).toBeDefined();
+
+  const mockedMapInput = mockedMap.mock.calls[0][0];
+  expect(mockedMapInput.transformRequest).toBeDefined();
+
+  const transformRequestFn = mockedMapInput.transformRequest;
+  const testUrl =
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light";
+  const output = transformRequestFn!(testUrl);
+  expect(output!.url).toStrictEqual(testUrl);
+  expect("X-Amz-User-Agent" in output!.headers).toStrictEqual(true);
+  expect(output!.headers["X-Amz-User-Agent"]).toContain("migration-sdk");
 });
 
 test("should set migration map options with control position not available in MapLibre", () => {
@@ -182,7 +199,14 @@ test("should set appropriate color-scheme for ColorScheme.DARK", () => {
   expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
 });
 
-test("should set appropriate color-scheme for ColorScheme.FOLLOW_SYSTEM", () => {
+test("should set appropriate color-scheme for ColorScheme.FOLLOW_SYSTEM when dark mode is enabled on system", () => {
+  // Our map tries to match against "prefers-color-scheme: dark", so by mocking "matches" as true,
+  // this simulates the system color-scheme being set to dark mode
+  window.matchMedia = jest.fn().mockImplementation((query) => ({
+    matches: true,
+    media: query,
+  }));
+
   const testMap = new MigrationMap(null, {
     colorScheme: ColorScheme.FOLLOW_SYSTEM,
   });
@@ -191,6 +215,30 @@ test("should set appropriate color-scheme for ColorScheme.FOLLOW_SYSTEM", () => 
     container: null,
     style:
       "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark",
+    transformRequest: expect.any(Function),
+    validateStyle: false,
+  };
+  expect(testMap).not.toBeNull();
+  expect(Map).toHaveBeenCalledTimes(1);
+  expect(Map).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set appropriate color-scheme for ColorScheme.FOLLOW_SYSTEM when dark mode is disabled on system", () => {
+  // Our map tries to match against "prefers-color-scheme: dark", so by mocking "matches" as false,
+  // this simulates the system color-scheme being set to light mode
+  window.matchMedia = jest.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+  }));
+
+  const testMap = new MigrationMap(null, {
+    colorScheme: ColorScheme.FOLLOW_SYSTEM,
+  });
+
+  const expectedMaplibreOptions: MapOptions = {
+    container: null,
+    style:
+      "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light",
     transformRequest: expect.any(Function),
     validateStyle: false,
   };

@@ -146,7 +146,7 @@ class MigrationMap {
   getCenter() {
     const center = this.#map.getCenter();
 
-    return new MigrationLatLng(center?.lat, center?.lng);
+    return new MigrationLatLng(center.lat, center.lng);
   }
 
   getDiv() {
