@@ -15,6 +15,7 @@ import {
   MigrationLatLngBounds,
 } from "../common";
 import { PACKAGE_VERSION } from "../version";
+import { MapTypeControl } from "./map_type_control";
 
 const systemIsDarkMode = () => {
   return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -32,6 +33,7 @@ const systemIsDarkMode = () => {
 class MigrationMap {
   #map: Map;
   #fullscreenControl: IControl;
+  #mapTypeControl: IControl;
   #navigationControl: IControl;
   #colorScheme = "Light";
   #mapTypeId: MapTypeId = MapTypeId.ROADMAP;
@@ -104,6 +106,11 @@ class MigrationMap {
     // Add FullscreenControl if fullscreenControl is true or not passed in (Google by default adds fullscreen control to map)
     if (options.fullscreenControl == undefined || options.fullscreenControl) {
       this.#addFullscreenControl(options.fullscreenControlOptions);
+    }
+
+    // Add MapTypeControl if mapTypeControl is true or not passed in (Google by default adds map type control to map)
+    if (options.mapTypeControl == undefined || options.mapTypeControl) {
+      this.#addMapTypeControl(options.mapTypeControlOptions);
     }
   }
 
@@ -342,6 +349,16 @@ class MigrationMap {
         this.#map.removeControl(this.#fullscreenControl);
       }
     }
+
+    // When calling setOptions, the mapTypeControl is only modified if the mapTypeControl field is passed in,
+    // which differs from the constructor behavior where you can specify mapTypeControlOptions without passing mapTypeControl
+    if (options.mapTypeControl !== undefined) {
+      if (options.mapTypeControl) {
+        this.#addMapTypeControl(options.mapTypeControlOptions);
+      } else if (this.#mapTypeControl) {
+        this.#map.removeControl(this.#mapTypeControl);
+      }
+    }
   }
 
   setTilt(tilt) {
@@ -397,6 +414,21 @@ class MigrationMap {
     const controlPosition = convertGoogleControlPositionToMapLibre(fullscreenControlOptions?.position) || "top-right";
     this.#fullscreenControl = new FullscreenControl();
     this.#map.addControl(this.#fullscreenControl, controlPosition);
+  }
+
+  #addMapTypeControl(mapTypeControlOptions: google.maps.MapTypeControlOptions | null) {
+    if (this.#mapTypeControl) {
+      this.#map.removeControl(this.#mapTypeControl);
+    }
+
+    // Pass the mapTypeIds (if specified) and setup callback so we can update map type
+    // when the corresponding buttons are clicked on the control
+    this.#mapTypeControl = new MapTypeControl(mapTypeControlOptions?.mapTypeIds, (mapTypeId: string) => {
+      this.setMapTypeId(mapTypeId);
+    });
+
+    const controlPosition = convertGoogleControlPositionToMapLibre(mapTypeControlOptions?.position) || "top-left";
+    this.#map.addControl(this.#mapTypeControl, controlPosition);
   }
 
   // Internal method for migration logic that needs to access the underlying MapLibre map

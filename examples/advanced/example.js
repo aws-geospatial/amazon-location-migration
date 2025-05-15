@@ -62,6 +62,7 @@ async function initMap(center) {
     center: center,
     zoom: 14,
     mapId: "DEMO_MAP_ID",
+    mapTypeControl: false, // The map type control overlaps our panel, so don't show by default
   });
 
   const { Geocoder } = await google.maps.importLibrary("geocoding");
