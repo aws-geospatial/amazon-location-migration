@@ -88,7 +88,7 @@ GitHub provides additional document on [forking a repository](https://help.githu
 
 Once you have built the migration SDK in your development environment, there are several examples under the `<root>/examples` folder that you can run locally with the built migration SDK.
 
-The examples are generated from templates that have placeholder values for your resources (e.g. API keys, map name, place index, etc...). You will need to fill out an `examples/config.json` file with your specific values.
+The examples are generated from templates that have placeholder values for your resources (e.g. API keys). You will need to fill out an `examples/config.json` file with your specific values.
 
 First, copy the `examples/config.template.json` file:
 

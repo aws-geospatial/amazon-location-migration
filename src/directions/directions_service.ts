@@ -30,12 +30,12 @@ const ROUTE_FIND_LOCATION_FIELDS = ["geometry", "place_id", "types", "formatted_
 
 export class MigrationDirectionsService {
   // This will be populated by the top level module
-  // that creates our location client
+  // that creates our GeoRoutes client
   _client: GeoRoutesClient;
 
   // This will be populated by the top level module
   // that already has a MigrationPlacesService that has
-  // been configured with our place index name
+  // been configured
   _placesService: MigrationPlacesService;
 
   route(options: google.maps.DirectionsRequest, callback?) {

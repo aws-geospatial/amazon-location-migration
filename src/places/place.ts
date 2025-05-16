@@ -72,7 +72,7 @@ const parseNewPlaceFromAmazonPlace = (
 };
 
 export class MigrationPlace implements google.maps.places.Place {
-  static _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
+  static _client: GeoPlacesClient; // This will be populated by the top level module that creates our GeoPlaces client
 
   accessibilityOptions?: google.maps.places.AccessibilityOptions | null;
   addressComponents?: AddressComponent[];

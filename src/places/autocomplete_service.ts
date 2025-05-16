@@ -101,7 +101,7 @@ const setRequestLocationBias = (
 // Migration class for google.maps.places.AutocompleteService
 // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService
 export class MigrationAutocompleteService {
-  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our GeoPlaces client
 
   // https://developers.google.com/maps/documentation/javascript/reference/places-autocomplete-service#AutocompleteService.getQueryPredictions
   getQueryPredictions(

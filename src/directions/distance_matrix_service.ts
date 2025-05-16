@@ -32,7 +32,7 @@ export class MigrationDistanceMatrixService {
 
   // This will be populated by the top level module
   // that already has a MigrationPlacesService that has
-  // been configured with our place index name
+  // been configured
   _placesService: MigrationPlacesService;
 
   getDistanceMatrix(request: google.maps.DistanceMatrixRequest, callback?) {

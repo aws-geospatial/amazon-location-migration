@@ -60,7 +60,7 @@ maplibreGeocoderStyle.setAttribute(
 document.head.appendChild(maplibreGeocoderStyle);
 
 // Parse URL params from the query string this script was imported with so we can retrieve
-// params (e.g. API key, place index, etc...)
+// params (e.g. API key)
 const currentScript = document.currentScript as HTMLScriptElement;
 const currentScriptSrc = currentScript.src;
 const queryString = currentScriptSrc.substring(currentScriptSrc.indexOf("?"));
@@ -109,8 +109,7 @@ const migrationInit = async function () {
     ...authHelper.getClientConfig(), // Configures the client to use API keys when making supported requests
   });
 
-  // Pass our location client, and optionally place index and route calculator names
-  // to our migration services
+  // Pass our GeoPlaces/Routes clients to our migration services
   MigrationAutocomplete.prototype._client = placesClient;
   MigrationAutocompleteService.prototype._client = placesClient;
   MigrationGeocoder.prototype._client = placesClient;
@@ -127,7 +126,7 @@ const migrationInit = async function () {
   // We also need to create a places service for the Geocoder, which will use it for the
   // address and placeId geocode requests.
   // Constructing it here and passing it in will make sure
-  // it is already configured with the appropriate client and place index name.
+  // it is already configured with the appropriate client.
   MigrationDirectionsService.prototype._placesService = new MigrationPlacesService();
   MigrationDistanceMatrixService.prototype._placesService = new MigrationPlacesService();
   MigrationGeocoder.prototype._placesService = new MigrationPlacesService();

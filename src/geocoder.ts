@@ -13,7 +13,7 @@ import { GeocoderStatus, LatLngToLngLat, PlacesServiceStatus, MigrationLatLngBou
 import { convertAmazonPlaceToGoogle, MigrationPlacesService } from "./places";
 
 class MigrationGeocoder {
-  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our GeoPlaces client
   // This will be populated by the top level module
   // that already has a MigrationPlacesService
   _placesService: MigrationPlacesService;

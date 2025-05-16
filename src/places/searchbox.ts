@@ -12,7 +12,7 @@ import { AddListenerResponse, MigrationLatLngBounds } from "../common";
 import { convertAmazonPlaceToGoogle } from "./place_conversion";
 
 export class MigrationSearchBox {
-  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our GeoPlaces client
   #maplibreGeocoder;
   #bounds: MigrationLatLngBounds | undefined;
   #places;

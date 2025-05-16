@@ -22,7 +22,7 @@ import { convertAmazonPlaceToGoogle, PlaceResult } from "./place_conversion";
 import { getAllAmazonPlaceTypesFromGoogle } from "./place_types";
 
 class MigrationPlacesService {
-  _client: GeoPlacesClient; // This will be populated by the top level module that creates our location client
+  _client: GeoPlacesClient; // This will be populated by the top level module that creates our GeoPlaces client
 
   // https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/places-service#PlacesService.findPlaceFromPhoneNumber
   findPlaceFromPhoneNumber(
