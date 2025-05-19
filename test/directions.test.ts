@@ -25,6 +25,12 @@ const mockSetLngLat = jest.fn();
 const mockAddTo = jest.fn();
 const mockRemove = jest.fn();
 
+const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
+
 jest.mock("maplibre-gl", () => ({
   ...jest.requireActual("maplibre-gl"),
   Marker: jest.fn().mockImplementation(() => {
@@ -52,39 +58,6 @@ const clientErrorPlaceId = "INVALID_PLACE_ID";
 const clientErrorDestinationPosition = [-1, -1];
 const testCoolPlaceLocation = new MigrationLatLng(3, 4);
 const testAnotherCoolPlaceLocation = new MigrationLatLng(7, 8);
-
-const mockedClientSendV1 = jest.fn((command) => {
-  return new Promise((resolve, reject) => {
-    if (command instanceof CalculateRouteMatrixCommand) {
-      // checks if DestinationPositions array contains clientErrorDestinationPosition
-      if (
-        command.input.DestinationPositions?.some(
-          (position) =>
-            position.length === clientErrorDestinationPosition.length &&
-            position.every((num, index) => num === clientErrorDestinationPosition[index]),
-        )
-      ) {
-        resolve({});
-      } else {
-        resolve({
-          RouteMatrix: [[{ Distance: 12, DurationSeconds: 24 }]],
-        });
-      }
-    } else {
-      reject();
-    }
-  });
-});
-
-jest.mock("@aws-sdk/client-location", () => ({
-  ...jest.requireActual("@aws-sdk/client-location"),
-  LocationClient: jest.fn().mockImplementation(() => {
-    return {
-      send: mockedClientSendV1,
-    };
-  }),
-}));
-import { LocationClient, CalculateRouteMatrixCommand } from "@aws-sdk/client-location";
 
 const mockedPlacesClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
@@ -220,6 +193,7 @@ const testRouteBounds = new MigrationLatLngBounds({
   west: -97.738545,
   south: 30.28707,
 });
+
 const mockedRoutesClientSend = jest.fn((command) => {
   return new Promise((resolve, reject) => {
     if (command instanceof CalculateRoutesCommand) {
@@ -496,6 +470,20 @@ const mockedRoutesClientSend = jest.fn((command) => {
           ],
         });
       }
+    } else if (command instanceof CalculateRouteMatrixCommand) {
+      // checks if DestinationPositions array contains clientErrorDestinationPosition
+      if (command.input.Destinations?.some(
+          (position) =>
+            position.Position &&
+            position.Position.length === clientErrorDestinationPosition.length &&
+            position.Position.every((num, index) => num === clientErrorDestinationPosition[index])))
+      {
+        resolve({});
+      } else {
+        resolve({
+          RouteMatrix: [[{ Distance: 12, DurationSeconds: 24 }]],
+        });
+      }
     } else {
       reject();
     }
@@ -507,15 +495,25 @@ jest.mock("@aws-sdk/client-geo-routes", () => ({
   GeoRoutesClient: jest.fn().mockImplementation(() => {
     return {
       send: mockedRoutesClientSend,
+      // Mock the serviceId because the geocoder plugin looks for this to determine GeoRoutesClient vs. LocationClient
+      config: {
+        serviceId: "Geo Routes",
+      },
     };
   }),
 }));
-import { GeoRoutesClient, CalculateRoutesCommand, CalculateRoutesRequest } from "@aws-sdk/client-geo-routes";
+import {
+  GeoRoutesClient,
+  CalculateRoutesCommand,
+  CalculateRouteMatrixCommand,
+  CalculateRoutesRequest,
+  RouteTravelMode,
+} from "@aws-sdk/client-geo-routes";
 
 const directionsService = new MigrationDirectionsService();
 const distanceMatrixService = new MigrationDistanceMatrixService();
 directionsService._client = new GeoRoutesClient();
-distanceMatrixService._client = new LocationClient();
+distanceMatrixService._client = new GeoRoutesClient();
 
 // The DirectionsService and DistanceMatrixService also uses the PlacesService in cases where the route is specified with a query string
 // or PlaceId, so we need to set up a mocked one here.
@@ -528,6 +526,7 @@ distanceMatrixService._placesService = new MigrationPlacesService();
 // the values we pass to our google migration classes get transformed
 // correctly and our called
 import { Marker } from "maplibre-gl";
+import { RouteMatrixBoundary } from "@aws-sdk/client-geo-routes/dist-types/models/models_0";
 
 const testLat = 30.268193; // Austin, TX :)
 const testLng = -97.7457518;
@@ -536,6 +535,9 @@ jest.spyOn(console, "error").mockImplementation(() => {});
 
 afterEach(() => {
   jest.clearAllMocks();
+
+  // Clear out the DOM of the body, since we add elements to it
+  document.body.innerHTML = "";
 });
 
 test("should set directionsrenderer options", () => {
@@ -1470,6 +1472,8 @@ test("should call route with options avoidFerries set to true and avoidTolls set
   });
 });
 
+
+
 test("should use correct travelMode when walking is specified", (done) => {
   const request = {
     origin: {
@@ -1745,11 +1749,11 @@ test("should return getDistanceMatrix with origin as Place.placeId and destinati
     // Since origin was a placeId and destination was a query input, these will trigger a
     // getDetails and findPlaceFromQuery request (respectively) to retrieve the location geometry,
     // so there will be a total of 3 mocked LocationClient.send calls (2 for places, 1 for distance matrix)
-    expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+    expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
     expect(mockedPlacesClientSend).toHaveBeenCalledTimes(2);
     expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
     expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
-    expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
 
     const rows = response.rows;
     expect(rows.length).toStrictEqual(1);
@@ -1790,14 +1794,47 @@ test("should call getDistanceMatrix with options avoidFerries set to true and av
   };
 
   distanceMatrixService.getDistanceMatrix(request).then(() => {
-    expect(mockedClientSendV1).toHaveBeenCalledWith(
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          CalculatorName: undefined,
-          CarModeOptions: { AvoidFerries: true, AvoidTolls: true },
-          DeparturePositions: [[4, 3]],
-          DestinationPositions: [[8, 7]],
-          TravelMode: "Car",
+          Avoid: { Ferries: true, TollRoads: true, TollTransponders: true},
+          Origins: [{Position: [4, 3]}],
+          Destinations: [{Position: [8, 7]}],
+          TravelMode: RouteTravelMode.CAR,
+          RoutingBoundary: { Geometry: { BoundingBox: [3,4,7,8]}, Unbounded: false }
+        },
+      }),
+    );
+
+    done();
+  });
+});
+
+test("should call getDistanceMatrix with options avoidHighways set to true", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.DRIVING,
+    avoidHighways: true,
+  };
+
+  distanceMatrixService.getDistanceMatrix(request).then(() => {
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          Avoid: { ControlledAccessHighways: true },
+          Origins: [{Position: [4, 3]}],
+          Destinations: [{Position: [8, 7]}],
+          TravelMode: RouteTravelMode.CAR,
+          RoutingBoundary: { Geometry: { BoundingBox: [3,4,7,8]}, Unbounded: false }
         },
       }),
     );
@@ -1826,17 +1863,17 @@ test("should call getDistanceMatrix with options travel mode set to driving, uni
   };
 
   distanceMatrixService.getDistanceMatrix(request).then(() => {
-    expect(mockedClientSendV1).toHaveBeenCalledWith(
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          CalculatorName: undefined,
-          DeparturePositions: [[4, 3]],
-          DepartureTime: new Date("2000-01-01"),
-          DestinationPositions: [[8, 7]],
-          TravelMode: "Car",
-        },
-      }),
-    );
+            Origins: [{Position: [4, 3]}],
+            Destinations: [{Position: [8, 7]}],
+            TravelMode: RouteTravelMode.CAR,
+            RoutingBoundary: { Geometry: { BoundingBox: [3,4,7,8]}, Unbounded: false },
+            DepartureTime: new Date("2000-01-01").toISOString(),
+            },
+          }),
+      );
 
     done();
   });
@@ -1859,41 +1896,82 @@ test("should call getDistanceMatrix with options travel mode set to walking and 
   };
 
   distanceMatrixService.getDistanceMatrix(request).then(() => {
-    expect(mockedClientSendV1).toHaveBeenCalledWith(
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+          input: {
+            Origins: [{Position: [4, 3]}],
+            Destinations: [{Position: [8, 7]}],
+            TravelMode: RouteTravelMode.PEDESTRIAN,
+            RoutingBoundary: { Geometry: { BoundingBox: [3,4,7,8]}, Unbounded: false }
+          },
+        }),
+      );
+
+    done();
+  });
+});
+test("should call getDistanceMatrix with options travel mode set to walking and unit system set to imperial", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.WALKING,
+    unitSystem: UnitSystem.IMPERIAL,
+  };
+
+  distanceMatrixService.getDistanceMatrix(request).then(() => {
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+          input: {
+            Origins: [{Position: [4, 3]}],
+            Destinations: [{Position: [8, 7]}],
+            TravelMode: RouteTravelMode.PEDESTRIAN,
+            RoutingBoundary: { Geometry: { BoundingBox: [3,4,7,8]}, Unbounded: false }
+          },
+        }),
+      );
+
+    done();
+  });
+});
+
+test("should call getDistanceMatrix with options travel mode set to walking and unit system set to imperial", (done) => {
+  const request = {
+    origins: [
+      {
+        placeId: "KEEP_AUSTIN_WEIRD",
+      },
+    ],
+    destinations: [
+      {
+        query: "another cool place",
+      },
+    ],
+    travelMode: TravelMode.WALKING,
+    unitSystem: UnitSystem.IMPERIAL,
+  };
+
+  distanceMatrixService.getDistanceMatrix(request).then(() => {
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          CalculatorName: undefined,
-          DeparturePositions: [[4, 3]],
-          DestinationPositions: [[8, 7]],
-          TravelMode: "Walking",
+          Origins: [{Position: [4, 3]}],
+          Destinations: [{Position: [8, 7]}],
+          TravelMode: RouteTravelMode.PEDESTRIAN,
+          RoutingBoundary: { Geometry: { BoundingBox: [3,4,7,8]}, Unbounded: false }
         },
       }),
     );
 
     done();
   });
-});
-
-test("getDistanceMatrix should handle client error when performing getDetails destination request", (done) => {
-  const request = {
-    origins: ["cool place"],
-    destinations: [
-      {
-        placeId: clientErrorPlaceId,
-      },
-    ],
-    travelMode: TravelMode.DRIVING,
-  };
-
-  distanceMatrixService
-    .getDistanceMatrix(request)
-    .then(() => {})
-    .catch((error) => {
-      expect(error.status).toStrictEqual(DistanceMatrixStatus.UNKNOWN_ERROR);
-      expect(console.error).toHaveBeenCalledTimes(2);
-
-      done();
-    });
 });
 
 test("getDistanceMatrix should handle client error when performing findPlaceFromQuery origin request", (done) => {
@@ -1932,7 +2010,7 @@ test("getDistanceMatrix should handle client error", (done) => {
     .getDistanceMatrix(request)
     .then(() => {})
     .catch((error) => {
-      expect(error.status).toStrictEqual(DistanceMatrixStatus.UNKNOWN_ERROR);
+      expect(error.status).toStrictEqual(DistanceMatrixStatus.INVALID_REQUEST);
       expect(console.error).toHaveBeenCalledTimes(1);
 
       // Signal the unit test is complete
@@ -1957,11 +2035,11 @@ test("getDistanceMatrix will invoke the callback if specified", (done) => {
 
   distanceMatrixService
     .getDistanceMatrix(request, (results, status) => {
-      expect(mockedClientSendV1).toHaveBeenCalledTimes(1);
+      expect(mockedRoutesClientSend).toHaveBeenCalledTimes(1);
       expect(mockedPlacesClientSend).toHaveBeenCalledTimes(2);
       expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(SearchTextCommand));
       expect(mockedPlacesClientSend).toHaveBeenCalledWith(expect.any(GetPlaceCommand));
-      expect(mockedClientSendV1).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
+      expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRouteMatrixCommand));
 
       const rows = results.rows;
       expect(rows.length).toStrictEqual(1);

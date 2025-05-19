@@ -86,6 +86,20 @@
         <option value="san bernardino, ca">San Bernardino</option>
         <option value="los angeles, ca">Los Angeles</option>
       </select>
+      <b>Travel Mode: </b>
+      <select id="travelMode">
+        <option value="DRIVING">Driving</option>
+        <option value="WALKING">Walking</option>
+      </select>
+      <b>Avoid: </b>
+      <input type="checkbox" id="ferries" name="avoid" value="avoidFerries">
+      <label for="ferries">Ferries</label>
+
+      <input type="checkbox" id="highways" name="avoid" value="avoidHighways">
+      <label for="highways">Highways</label>
+
+      <input type="checkbox" id="tolls" name="avoid" value="avoidTolls">
+      <label for="tolls">Tolls</label>
     </div>
     <div id="map"></div>
 

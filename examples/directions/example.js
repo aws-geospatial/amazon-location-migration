@@ -38,6 +38,18 @@ function initMap() {
   document.getElementById("waypoint2").addEventListener("change", onChangeHandler);
   document.getElementById("waypoint3").addEventListener("change", onChangeHandler);
   document.getElementById("end").addEventListener("change", onChangeHandler);
+  document.getElementById("travelMode").addEventListener("change", onChangeHandler);
+  document.getElementById("ferries").addEventListener("change", onChangeHandler);
+  document.getElementById("highways").addEventListener("change", onChangeHandler);
+  document.getElementById("tolls").addEventListener("change", onChangeHandler);
+}
+
+function getAvoidOptions() {
+  const avoidOptions = [];
+  if (document.getElementById("ferries").checked) avoidOptions.push("avoidFerries");
+  if (document.getElementById("highways").checked) avoidOptions.push("avoidHighways");
+  if (document.getElementById("tolls").checked) avoidOptions.push("avoidTolls");
+  return avoidOptions;
 }
 
 function calculateAndDisplayRoute(directionsService, directionsRenderer) {
@@ -45,7 +57,7 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
   const waypoints = [];
   for (let i = 1; i <= 3; i++) {
     const elementValue = document.getElementById("waypoint" + i).value;
-    if (elementValue != "-") {
+    if (elementValue !== "-") {
       waypoints.push({
         location: {
           query: elementValue,
@@ -53,24 +65,44 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
       });
     }
   }
+
+  // Get avoid options
+  const avoidOptions = getAvoidOptions();
+
+  // Get selected travel mode
+  const selectedMode = document.getElementById("travelMode").value;
+
+  // Create the base route options
+  const routeOptions = {
+    origin: {
+      query: document.getElementById("start").value,
+    },
+    destination: {
+      query: document.getElementById("end").value,
+    },
+    travelMode: google.maps.TravelMode[selectedMode],
+    waypoints: waypoints,
+  };
+
+  // Add avoid options only if they are present in avoidOptions
+  if (avoidOptions.includes("avoidTolls")) {
+    routeOptions['avoidTolls'] = true;
+  }
+  if (avoidOptions.includes("avoidHighways")) {
+    routeOptions['avoidHighways'] = true;
+  }
+  if (avoidOptions.includes("avoidFerries")) {
+    routeOptions['avoidFerries'] = true;
+  }
+
   // make route call
   directionsService
-    .route({
-      origin: {
-        query: document.getElementById("start").value,
-      },
-      destination: {
-        query: document.getElementById("end").value,
-      },
-      travelMode: google.maps.TravelMode.DRIVING,
-      waypoints: waypoints,
-    })
+    .route(routeOptions)
     .then((response) => {
       directionsRenderer.setDirections(response);
     })
-    .catch((e) => window.alert("Directions request failed due to " + e));
+    .catch((e) => window.alert("Directions request failed due to " + e.message));
 }
-
 // generates a polyline with a random color, weight, and opacity
 function generateRandomPolylineOptions() {
   return {

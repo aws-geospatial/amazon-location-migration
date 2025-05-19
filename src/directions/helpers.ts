@@ -5,6 +5,7 @@ import { MigrationLatLng, PlacesServiceStatus } from "../common";
 import { MigrationPlacesService } from "../places";
 
 import { UnitSystem } from "./defines";
+import { RouteMatrixAvoidanceOptions } from '@aws-sdk/client-geo-routes';
 
 const KILOMETERS_TO_MILES_CONSTANT = 0.621371;
 
@@ -117,3 +118,9 @@ export function convertKilometersToGoogleDistanceText(kilometers, options) {
     ? kilometers * KILOMETERS_TO_MILES_CONSTANT + " mi"
     : kilometers + " km";
 }
+
+export const GoogleToAmazonAvoidanceMapping = {
+  avoidTolls: ['TollRoads', 'TollTransponders'] as (keyof RouteMatrixAvoidanceOptions)[],
+  avoidFerries: ['Ferries'] as (keyof RouteMatrixAvoidanceOptions)[],
+  avoidHighways: ['ControlledAccessHighways'] as (keyof RouteMatrixAvoidanceOptions)[]
+} as const;

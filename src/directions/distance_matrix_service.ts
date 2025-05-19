@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  CalculateRouteCarModeOptions,
+  GeoRoutesClient,
+  RouteMatrixOrigin,
+  RouteMatrixDestination,
   CalculateRouteMatrixCommand,
   CalculateRouteMatrixRequest,
-  LocationClient,
-} from "@aws-sdk/client-location";
+  RouteTravelMode,
+} from "@aws-sdk/client-geo-routes";
 
 import { MigrationPlacesService } from "../places";
 
@@ -14,8 +16,10 @@ import { DistanceMatrixElementStatus, DistanceMatrixStatus, TravelMode } from ".
 import {
   convertKilometersToGoogleDistanceText,
   formatSecondsAsGoogleDurationText,
+  GoogleToAmazonAvoidanceMapping,
   parseOrFindLocations,
 } from "./helpers";
+import { createProgressiveBounds } from "../common";
 
 // formatted_address needed for originAddresses and destinationAddresses
 const DISTANCE_MATRIX_FIND_LOCATION_FIELDS = ["geometry", "formatted_address"];
@@ -24,7 +28,7 @@ const KILOMETERS_TO_METERS_CONSTANT = 1000;
 export class MigrationDistanceMatrixService {
   // This will be populated by the top level module
   // that creates our location client
-  _client: LocationClient;
+  _client: GeoRoutesClient;
 
   // This will be populated by the top level module
   // that is passed our route calculator name
@@ -41,44 +45,53 @@ export class MigrationDistanceMatrixService {
         .then((originsResponse) => {
           parseOrFindLocations(request.destinations, this._placesService, DISTANCE_MATRIX_FIND_LOCATION_FIELDS)
             .then((destinationsResponse) => {
+
+              // Map origins and destinations
+              const origins: RouteMatrixOrigin[] = originsResponse.map(origin => ({
+                Position: origin.position
+              }));
+
+              const destinations: RouteMatrixDestination[] = destinationsResponse.map(destination => ({
+                Position: destination.position
+              }));
+
               const input: CalculateRouteMatrixRequest = {
-                CalculatorName: this._routeCalculatorName, // required
-                DeparturePositions: originsResponse.map((originResponse) => originResponse.position), // required
-                DestinationPositions: destinationsResponse.map((destinationResponse) => destinationResponse.position), // required
+                Origins: origins, // required
+                Destinations: destinations,  // required
+                RoutingBoundary: { // required
+                  Geometry: {
+                    BoundingBox: createProgressiveBounds(origins, destinations)
+                  },
+                  Unbounded: false
+                }
               };
 
               if ("travelMode" in request) {
                 switch (request.travelMode) {
                   case TravelMode.DRIVING: {
-                    input.TravelMode = "Car";
+                    input.TravelMode = RouteTravelMode.CAR;
                     break;
                   }
                   case TravelMode.WALKING: {
-                    input.TravelMode = "Walking";
+                    input.TravelMode = RouteTravelMode.PEDESTRIAN;
                     break;
                   }
                 }
               }
 
-              // only pass in avoidFerries and avoidTolls options if travel mode is Driving, Amazon Location Client will error out
-              // if CarModeOptions is passed in and travel mode is not Driving
-              if (
-                ("avoidFerries" in request || "avoidTolls" in request) &&
-                "travelMode" in request &&
-                request.travelMode == TravelMode.DRIVING
-              ) {
-                const carModeOptions: CalculateRouteCarModeOptions = {};
-                if ("avoidFerries" in request) {
-                  carModeOptions.AvoidFerries = request.avoidFerries;
+              // Add avoidance options if specified
+              for (const [requestKey, avoidKeys] of Object.entries(GoogleToAmazonAvoidanceMapping)) {
+                if (requestKey in request) {
+                  input.Avoid ??= {};
+                  for (const avoidKey of avoidKeys) {
+                    input.Avoid[avoidKey] = request[requestKey];
+                  }
                 }
-                if ("avoidTolls" in request) {
-                  carModeOptions.AvoidTolls = request.avoidTolls;
-                }
-                input.CarModeOptions = carModeOptions;
               }
 
-              if ("drivingOptions" in request && request.travelMode == TravelMode.DRIVING) {
-                input.DepartureTime = request.drivingOptions.departureTime;
+              // Add departure time if specified
+              if (request.drivingOptions?.departureTime) {
+                input.DepartureTime = request.drivingOptions.departureTime.toISOString();
               }
 
               const command = new CalculateRouteMatrixCommand(input);
@@ -103,7 +116,7 @@ export class MigrationDistanceMatrixService {
                   console.error(error);
 
                   reject({
-                    status: DistanceMatrixStatus.UNKNOWN_ERROR,
+                    status: DistanceMatrixStatus.INVALID_REQUEST,
                   });
                 });
             })

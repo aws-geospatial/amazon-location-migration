@@ -117,7 +117,7 @@ const migrationInit = async function () {
   MigrationPlacesService.prototype._client = placesClient;
   MigrationSearchBox.prototype._client = placesClient;
   MigrationDirectionsService.prototype._client = routesClient;
-  MigrationDistanceMatrixService.prototype._client = clientV1;
+  MigrationDistanceMatrixService.prototype._client = routesClient;
   MigrationDistanceMatrixService.prototype._routeCalculatorName = routeCalculatorName;
 
   // Additionally, we need to create a places service for our directions service and distance matrix

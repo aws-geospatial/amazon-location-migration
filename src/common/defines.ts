@@ -170,3 +170,4 @@ export const GoogleMarkerMouseDOMEvent = [MigrationEvent.click, MigrationEvent.d
 
 // List of Google InfoWindow Events
 export const GoogleInfoWindowEvent = [MigrationEvent.close, MigrationEvent.closeclick];
+
