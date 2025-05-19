@@ -1,6 +1,10 @@
 <html>
   <head>
     <title>Advanced Example - Google</title>
+
+    <!-- Need this so that the place details symbols show up properly -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
     <link rel="stylesheet" type="text/css" href="../common/style.css" />
     <link rel="stylesheet" type="text/css" href="./advanced.css" />
 
@@ -26,17 +30,44 @@
           <button id="back-to-results-button">Back to results</button>
         </div>
 
-        <div id="search-details-container">
-          <div id="search-details-name-container">
-            <span id="details-name">Name Goes Here</span>
-          </div>
-          <div id="search-details-buttons-container">
+        <div class="place-details-container" id="place-details-panel" style="display: none">
+          <div class="place-name" id="place-name"></div>
+
+          <div class="detail-section" id="buttons-section">
             <button id="details-get-directions">Directions</button>
           </div>
-          <div id="search-details-fields-container">
-            <span id="details-formatted-address">Address Goes Here</span>
+
+          <div class="detail-section" id="address-section">
+            <span class="detail-icon">📍</span>
+            <span class="detail-content" id="place-address"></span>
+          </div>
+
+          <div class="detail-section" id="hours-section">
+            <div class="hours-collapsed">
+              <span class="detail-icon">🕒</span>
+              <div class="detail-content">
+                <span id="hours-status"></span>
+              </div>
+              <button class="hours-toggle" id="hours-toggle">▼</button>
+            </div>
+            <div class="hours-expanded" id="hours-expanded"></div>
+          </div>
+
+          <div class="detail-section" id="website-section">
+            <span class="detail-icon">🌐</span>
+            <span class="detail-content">
+              <a id="place-website" target="_blank"></a>
+            </span>
+          </div>
+
+          <div class="detail-section" id="phone-section">
+            <span class="detail-icon">📞</span>
+            <span class="detail-content">
+              <a id="place-phone"></a>
+            </span>
           </div>
         </div>
+
         <div id="search-results-container">
           <ul id="search-results-list"></ul>
         </div>

@@ -26,25 +26,8 @@
   max-width: unset;
 }
 
-#search-details-container {
-  margin-left: 20px;
-  margin-right: 20px;
-}
-
-#search-details-name-container {
-  border-bottom: 2px solid lightgray;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-}
-
 #details-name {
   font-size: 1.5em;
-}
-
-#search-details-buttons-container {
-  border-bottom: 2px solid lightgray;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
 }
 
 #search-results-container {
@@ -94,4 +77,102 @@
 #destination-container {
   margin: 20px;
   text-align: center;
+}
+
+.place-details-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  padding: 16px;
+  font-family: Arial, sans-serif;
+  max-width: 400px;
+}
+
+.place-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: #202124;
+  margin-bottom: 12px;
+}
+
+.detail-section {
+  padding: 8px 0;
+  border-bottom: 1px solid #e8eaed;
+  display: flex;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-section a {
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.detail-section a:hover {
+  text-decoration: underline;
+}
+
+.detail-icon {
+  width: 20px;
+  display: inline-block;
+  color: #5f6368;
+  margin-right: 12px;
+  vertical-align: top;
+}
+
+.detail-content {
+  display: inline-block;
+  width: calc(100% - 32px);
+}
+
+#hours-section {
+  display: block;
+}
+
+.hours-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.hours-toggle {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #5f6368;
+}
+
+.hours-expanded {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e8eaed;
+  display: none;
+}
+
+.hours-day {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  color: #3c4043;
+}
+
+.hours-day.current {
+  font-weight: bold;
+  color: #1a73e8;
+}
+
+.status-open {
+  color: #188038;
+  font-weight: bold;
+}
+
+.status-closed {
+  color: #d93025;
+  font-weight: bold;
 }

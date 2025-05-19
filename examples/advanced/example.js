@@ -226,6 +226,15 @@ async function initMap(center) {
 
     inDirectionsMode = false;
   });
+
+  $(".hours-collapsed").click(() => {
+    const $hoursExpanded = $("#hours-expanded");
+    const $toggleButton = $("#hours-toggle");
+    const isExpanded = $hoursExpanded.is(":visible");
+
+    $hoursExpanded.slideToggle(200);
+    $toggleButton.html(isExpanded ? "▼" : "▲");
+  });
 }
 
 function calculateRoute() {
@@ -253,12 +262,77 @@ function showPlaceDetail(place) {
 
   createMarker(place);
 
+  // Hide the other containers that occupy the panel
   $("#back-to-results-container").hide();
   $("#search-results-container").hide();
 
-  $("#details-name").text(place.name);
-  $("#details-formatted-address").text(place.formatted_address);
-  $("#search-details-container").show();
+  // Update name
+  $("#place-name")
+    .text(place.name || "")
+    .toggle(!!place.name);
+
+  // Update address
+  $("#address-section").toggle(!!place.formatted_address);
+  $("#place-address").text(place.formatted_address || "");
+
+  // Update opening hours
+  const $hoursSection = $("#hours-section");
+  if (place.opening_hours) {
+    const $hoursStatus = $("#hours-status");
+    const $hoursExpanded = $("#hours-expanded");
+
+    const isOpen = place.opening_hours.isOpen();
+
+    $hoursStatus
+      .removeClass("status-open status-closed")
+      .addClass(isOpen ? "status-open" : "status-closed")
+      .text(isOpen ? "Open now" : "Closed now");
+
+    // Update weekly schedule
+    if (place.opening_hours.weekday_text) {
+      const currentDay = new Date().getDay();
+
+      const hoursHtml = place.opening_hours.weekday_text
+        .map((dayText, index) => {
+          const [day, ...hours] = dayText.split(": ");
+          const isCurrent = index === (currentDay + 6) % 7;
+          return `
+                            <div class="hours-day ${isCurrent ? "current" : ""}">
+                                <span>${day}</span>
+                                <span>${hours.join(": ")}</span>
+                            </div>
+                        `;
+        })
+        .join("");
+
+      $hoursExpanded.html(hoursHtml);
+    }
+
+    $hoursSection.show();
+  } else {
+    $hoursSection.hide();
+  }
+
+  // Update website
+  const $websiteSection = $("#website-section");
+  if (place.website) {
+    $("#place-website").attr("href", place.website).text(new URL(place.website).host);
+    $websiteSection.show();
+  } else {
+    $websiteSection.hide();
+  }
+
+  // Update phone
+  const $phoneSection = $("#phone-section");
+  if (place.formatted_phone_number) {
+    $("#place-phone").attr("href", `tel:${place.formatted_phone_number}`).text(place.formatted_phone_number);
+    $phoneSection.show();
+  } else {
+    $phoneSection.hide();
+  }
+
+  // Show the place details panel once we are done updating all the individual fields
+  $("#place-details-panel").show();
 
   map.setCenter(place.geometry.location);
   map.setZoom(14);
@@ -295,7 +369,7 @@ async function updatePlacesDetails() {
     const paddingInPixels = 50;
     map.fitBounds(resultsBounds, paddingInPixels);
 
-    $("#search-details-container").hide();
+    $("#place-details-panel").hide();
     $("#back-to-results-container").hide();
 
     $("#search-results-container").show();
@@ -309,7 +383,7 @@ async function updatePlacesDetails() {
       $("#back-to-results-container").show();
     });
   } else {
-    $("#search-details-container").hide();
+    $("#place-details-panel").hide();
     $("#search-results-container").hide();
     $("#back-to-results-container").hide();
   }
