@@ -6,12 +6,23 @@ import { convertAmazonOpeningHoursToGoogle, convertPlaceOpeningHoursToOpeningHou
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});
 
+beforeAll(() => {
+  jest.useFakeTimers();
+});
+
 // Set a fake system time so that any logic that creates a new Date.now (e.g. new Date())
 // will be deterministic
-jest.useFakeTimers().setSystemTime(new Date("2024-01-01T10:00:00.000Z"));
+beforeEach(() => {
+  jest.setSystemTime(new Date("2024-01-01T10:00:00.000Z"));
+});
 
 afterEach(() => {
   jest.clearAllMocks();
+  jest.clearAllTimers();
+});
+
+afterAll(() => {
+  jest.useRealTimers();
 });
 
 test("should return null if opening hours is missing or empty", () => {
