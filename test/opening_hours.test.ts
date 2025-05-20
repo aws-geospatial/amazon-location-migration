@@ -162,41 +162,34 @@ test("should handle open 24 hours special-case", () => {
 });
 
 test("should handle opening hours that go past midnight", () => {
-  const openingHours = convertAmazonOpeningHoursToGoogle(
-    [
-      {
-        Display: [
-          "Mon: 00:00 - 01:00, 17:00 - 24:00",
-          "Tue-Fri: 00:00 - 02:00, 17:00 - 24:00",
-          "Sat: 00:00 - 02:00, 20:00 - 24:00",
-          "Sun: 00:00 - 02:00, 19:00 - 24:00",
-        ],
-        OpenNow: true,
-        Components: [
-          {
-            OpenTime: "T170000",
-            OpenDuration: "PT09H00M",
-            Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR",
-          },
-          {
-            OpenTime: "T200000",
-            OpenDuration: "PT06H00M",
-            Recurrence: "FREQ:DAILY;BYDAY:SA",
-          },
-          {
-            OpenTime: "T190000",
-            OpenDuration: "PT06H00M",
-            Recurrence: "FREQ:DAILY;BYDAY:SU",
-          },
-        ],
-      },
-    ],
+  const openingHours = convertAmazonOpeningHoursToGoogle([
     {
-      Name: "Europe/Paris",
-      Offset: "+02:00",
-      OffsetSeconds: 7200,
+      Display: [
+        "Mon: 00:00 - 01:00, 17:00 - 24:00",
+        "Tue-Fri: 00:00 - 02:00, 17:00 - 24:00",
+        "Sat: 00:00 - 02:00, 20:00 - 24:00",
+        "Sun: 00:00 - 02:00, 19:00 - 24:00",
+      ],
+      OpenNow: true,
+      Components: [
+        {
+          OpenTime: "T170000",
+          OpenDuration: "PT09H00M",
+          Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR",
+        },
+        {
+          OpenTime: "T200000",
+          OpenDuration: "PT06H00M",
+          Recurrence: "FREQ:DAILY;BYDAY:SA",
+        },
+        {
+          OpenTime: "T190000",
+          OpenDuration: "PT06H00M",
+          Recurrence: "FREQ:DAILY;BYDAY:SU",
+        },
+      ],
     },
-  );
+  ]);
 
   const periods = openingHours!.periods;
   expect(periods).toHaveLength(7);
@@ -208,14 +201,12 @@ test("should handle opening hours that go past midnight", () => {
         hours: 19,
         minutes: 0,
         time: "1900",
-        nextDate: 1704646800000,
       },
       close: {
         day: 1,
         hours: 1,
         minutes: 0,
         time: "0100",
-        nextDate: 1704150000000,
       },
     },
     {
@@ -224,14 +215,12 @@ test("should handle opening hours that go past midnight", () => {
         hours: 17,
         minutes: 0,
         time: "1700",
-        nextDate: 1704121200000,
       },
       close: {
         day: 2,
         hours: 2,
         minutes: 0,
         time: "0200",
-        nextDate: 1704240000000,
       },
     },
     {
@@ -240,14 +229,12 @@ test("should handle opening hours that go past midnight", () => {
         hours: 17,
         minutes: 0,
         time: "1700",
-        nextDate: 1704207600000,
       },
       close: {
         day: 3,
         hours: 2,
         minutes: 0,
         time: "0200",
-        nextDate: 1704326400000,
       },
     },
     {
@@ -256,14 +243,12 @@ test("should handle opening hours that go past midnight", () => {
         hours: 17,
         minutes: 0,
         time: "1700",
-        nextDate: 1704294000000,
       },
       close: {
         day: 4,
         hours: 2,
         minutes: 0,
         time: "0200",
-        nextDate: 1704412800000,
       },
     },
     {
@@ -272,14 +257,12 @@ test("should handle opening hours that go past midnight", () => {
         hours: 17,
         minutes: 0,
         time: "1700",
-        nextDate: 1704380400000,
       },
       close: {
         day: 5,
         hours: 2,
         minutes: 0,
         time: "0200",
-        nextDate: 1704499200000,
       },
     },
     {
@@ -288,14 +271,12 @@ test("should handle opening hours that go past midnight", () => {
         hours: 17,
         minutes: 0,
         time: "1700",
-        nextDate: 1704466800000,
       },
       close: {
         day: 6,
         hours: 2,
         minutes: 0,
         time: "0200",
-        nextDate: 1704585600000,
       },
     },
     {
@@ -304,14 +285,12 @@ test("should handle opening hours that go past midnight", () => {
         hours: 20,
         minutes: 0,
         time: "2000",
-        nextDate: 1704564000000,
       },
       close: {
         day: 0,
         hours: 2,
         minutes: 0,
         time: "0200",
-        nextDate: 1704672000000,
       },
     },
   ]);
