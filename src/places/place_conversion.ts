@@ -417,83 +417,6 @@ const convertAmazonPlaceToGoogle = (
   return googlePlace;
 };
 
-// This helper is for converting an Amazon Place object to the legacy Google Places object format
-const convertAmazonPlaceToGoogleV1 = (placeObject, fields, includeDetailFields) => {
-  const place = placeObject.Place;
-  const googlePlace = {};
-
-  // For findPlaceFromQuery, the fields are required.
-  // But for getDetails, they are optional, and if they aren't specified
-  // then it is the same as requesting all fields.
-  let includeAllFields = false;
-  if (!fields || fields.includes("ALL")) {
-    includeAllFields = true;
-  }
-
-  if (includeAllFields || fields.includes("formatted_address")) {
-    googlePlace["formatted_address"] = place.Label;
-  }
-
-  if (includeAllFields || fields.includes("geometry") || fields.includes("geometry.location")) {
-    const point = place.Geometry.Point;
-    googlePlace["geometry"] = {
-      location: new MigrationLatLng(point[1], point[0]),
-    };
-  }
-
-  if (includeAllFields || fields.includes("name")) {
-    googlePlace["name"] = place.Label.split(",")[0];
-  }
-
-  if (includeAllFields || fields.includes("place_id")) {
-    googlePlace["place_id"] = placeObject.PlaceId;
-  }
-
-  if (includeAllFields || fields.includes("reference")) {
-    googlePlace["reference"] = placeObject.PlaceId;
-  }
-
-  // Needed for MigrationDirectionsService.route method's response field "geocoded_waypoints"
-  // which needs DirectionsGeocodedWaypoint objects that have property "type" which is the
-  // equivalent of Amazon Location's "Categories" property
-  if ((includeAllFields || fields.includes("types")) && place.Categories != null) {
-    googlePlace["types"] = place.Categories;
-  }
-
-  // Handle additional fields for getDetails request
-  if (includeDetailFields) {
-    // Our time zone offset is given in seconds, but Google's uses minutes
-    // Google's utc_offset field is deprecated in favor of utc_offset_minutes,
-    // but they still support it so we support both
-    let timeZoneOffsetInMinutes;
-    if (place.TimeZone) {
-      timeZoneOffsetInMinutes = place.TimeZone.Offset / 60;
-    }
-    if (includeAllFields || fields.includes("utc_offset")) {
-      googlePlace["utc_offset"] = timeZoneOffsetInMinutes;
-    }
-    if (includeAllFields || fields.includes("utc_offset_minutes")) {
-      googlePlace["utc_offset_minutes"] = timeZoneOffsetInMinutes;
-    }
-
-    // vicinity is in the format of "AddressNumber Street, Municipality",
-    // but street number or name might not be there depending on what was
-    // searched for (e.g. just a city name)
-    if (includeAllFields || fields.includes("vicinity")) {
-      let vicinity = place.Municipality;
-      if (place.Street) {
-        vicinity = `${place.Street}, ${vicinity}`;
-      }
-      if (place.AddressNumber) {
-        vicinity = `${place.AddressNumber} ${vicinity}`;
-      }
-      googlePlace["vicinity"] = vicinity;
-    }
-  }
-
-  return googlePlace;
-};
-
 // Since we use convertAmazonPlaceToGoogle to convert the Amazon Place response to
 // a Google PlaceResult, we need to map the new Place property fields to the corrresponding
 // PlaceResult fields so that the proper fields are parsed/filtered when specified
@@ -535,7 +458,6 @@ const convertNewFieldsToPlaceResultFields = (fields: string[] | null): string[] 
 export {
   convertAmazonCategoriesToGoogle,
   convertAmazonPlaceToGoogle,
-  convertAmazonPlaceToGoogleV1,
   convertGeocoderAddressComponentToAddressComponent,
   convertPlacePlusCodeToPlusCode,
   convertNewFieldsToPlaceResultFields,

@@ -184,7 +184,7 @@ export const convertAmazonOpeningHoursToGoogle = (openingHours: AmazonOpeningHou
   // e.g. Monday: 9:00 AM – 10:00 PM
   const weekdayText = [];
   for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-    const period = periods.find((element) => {
+    const dayPeriods = periods.filter((element) => {
       return element.open.day == dayIndex;
     });
 
@@ -192,42 +192,52 @@ export const convertAmazonOpeningHoursToGoogle = (openingHours: AmazonOpeningHou
 
     if (open24Hours) {
       weekdayText.push(`${dayString}: Open 24 hours`);
-    } else if (period) {
-      const openTime = period.open;
-      const openHours = openTime.hours;
-      const openMinutes = openTime.minutes;
-      const openDateTime = new Date();
-      openDateTime.setHours(openHours);
-      openDateTime.setMinutes(openMinutes);
+    } else if (dayPeriods.length) {
+      // Iterate over the periods for a given day. There could be multiple periods for a single day
+      //    e.g. restaurants that close for lunch and re-open for dinner, doctor's offices, etc...
+      const periodTexts = [];
+      dayPeriods.forEach((period) => {
+        const openTime = period.open;
+        const openHours = openTime.hours;
+        const openMinutes = openTime.minutes;
+        const openDateTime = new Date();
+        openDateTime.setHours(openHours);
+        openDateTime.setMinutes(openMinutes);
 
-      // Use the "short" timeStyle so that it omits seconds and doesn't 0-pad
-      // the hours to 2 digits
-      const openTimeStr = openDateTime.toLocaleTimeString([], { timeStyle: "short" });
-      let periodText = `${dayString}: ${openTimeStr}`;
+        // Use the "short" timeStyle so that it omits seconds and doesn't 0-pad
+        // the hours to 2 digits
+        const openTimeStr = openDateTime.toLocaleTimeString([], { timeStyle: "short" });
+        let periodText = openTimeStr;
 
-      const closeTime = period.close;
-      if (closeTime) {
-        const closeHours = closeTime.hours;
-        const closeMinutes = closeTime.minutes;
-        const closeDateTime = new Date();
-        closeDateTime.setHours(closeHours);
-        closeDateTime.setMinutes(closeMinutes);
+        const closeTime = period.close;
+        if (closeTime) {
+          const closeHours = closeTime.hours;
+          const closeMinutes = closeTime.minutes;
+          const closeDateTime = new Date();
+          closeDateTime.setHours(closeHours);
+          closeDateTime.setMinutes(closeMinutes);
 
-        const closeTimeStr = closeDateTime.toLocaleTimeString([], { timeStyle: "short" });
-        periodText += ` - ${closeTimeStr}`;
-      }
+          const closeTimeStr = closeDateTime.toLocaleTimeString([], { timeStyle: "short" });
+          periodText += ` - ${closeTimeStr}`;
+        }
 
-      // If the times are both AM or both PM, then we only want to show AM/PM on the closing time
-      // e.g. 09:00 - 11:00 AM
-      const amCount = periodText.match(/AM/g)?.length;
-      const pmCount = periodText.match(/PM/g)?.length;
-      if (amCount == 2) {
-        periodText = periodText.replace("AM ", "");
-      } else if (pmCount == 2) {
-        periodText = periodText.replace("PM ", "");
-      }
+        // If the times are both AM or both PM, then we only want to show AM/PM on the closing time
+        // e.g. 09:00 - 11:00 AM
+        const amCount = periodText.match(/AM/g)?.length;
+        const pmCount = periodText.match(/PM/g)?.length;
+        if (amCount == 2) {
+          periodText = periodText.replace("AM ", "");
+        } else if (pmCount == 2) {
+          periodText = periodText.replace("PM ", "");
+        }
 
-      weekdayText.push(periodText);
+        periodTexts.push(periodText);
+      });
+
+      // Join the day periods into a single line, e.g. "Tuesday: 9:00 AM - 12:30 PM, 2:00 - 6:00 PM"
+      const dayPeriodText = `${dayString}: ${periodTexts.join(", ")}`;
+
+      weekdayText.push(dayPeriodText);
     } else {
       // If there's no period for the dayIndex, then its closed for that day
       weekdayText.push(`${dayString}: Closed`);

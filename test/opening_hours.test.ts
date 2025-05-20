@@ -150,6 +150,327 @@ test("should handle open 24 hours special-case", () => {
   }
 });
 
+test("should handle opening hours that go past midnight", () => {
+  const openingHours = convertAmazonOpeningHoursToGoogle(
+    [
+      {
+        Display: [
+          "Mon: 00:00 - 01:00, 17:00 - 24:00",
+          "Tue-Fri: 00:00 - 02:00, 17:00 - 24:00",
+          "Sat: 00:00 - 02:00, 20:00 - 24:00",
+          "Sun: 00:00 - 02:00, 19:00 - 24:00",
+        ],
+        OpenNow: true,
+        Components: [
+          {
+            OpenTime: "T170000",
+            OpenDuration: "PT09H00M",
+            Recurrence: "FREQ:DAILY;BYDAY:MO,TU,WE,TH,FR",
+          },
+          {
+            OpenTime: "T200000",
+            OpenDuration: "PT06H00M",
+            Recurrence: "FREQ:DAILY;BYDAY:SA",
+          },
+          {
+            OpenTime: "T190000",
+            OpenDuration: "PT06H00M",
+            Recurrence: "FREQ:DAILY;BYDAY:SU",
+          },
+        ],
+      },
+    ],
+    {
+      Name: "America/Chicago",
+      Offset: "-05:00",
+      OffsetSeconds: -18000,
+    },
+  );
+
+  const periods = openingHours!.periods;
+  expect(periods).toHaveLength(7);
+
+  expect(periods).toStrictEqual([
+    {
+      open: {
+        day: 0,
+        hours: 19,
+        minutes: 0,
+        time: "1900",
+        nextDate: 1704672000000,
+      },
+      close: {
+        day: 1,
+        hours: 1,
+        minutes: 0,
+        time: "0100",
+        nextDate: 1704693600000,
+      },
+    },
+    {
+      open: {
+        day: 1,
+        hours: 17,
+        minutes: 0,
+        time: "1700",
+        nextDate: 1704146400000,
+      },
+      close: {
+        day: 2,
+        hours: 2,
+        minutes: 0,
+        time: "0200",
+        nextDate: 1704178800000,
+      },
+    },
+    {
+      open: {
+        day: 2,
+        hours: 17,
+        minutes: 0,
+        time: "1700",
+        nextDate: 1704232800000,
+      },
+      close: {
+        day: 3,
+        hours: 2,
+        minutes: 0,
+        time: "0200",
+        nextDate: 1704265200000,
+      },
+    },
+    {
+      open: {
+        day: 3,
+        hours: 17,
+        minutes: 0,
+        time: "1700",
+        nextDate: 1704319200000,
+      },
+      close: {
+        day: 4,
+        hours: 2,
+        minutes: 0,
+        time: "0200",
+        nextDate: 1704351600000,
+      },
+    },
+    {
+      open: {
+        day: 4,
+        hours: 17,
+        minutes: 0,
+        time: "1700",
+        nextDate: 1704405600000,
+      },
+      close: {
+        day: 5,
+        hours: 2,
+        minutes: 0,
+        time: "0200",
+        nextDate: 1704438000000,
+      },
+    },
+    {
+      open: {
+        day: 5,
+        hours: 17,
+        minutes: 0,
+        time: "1700",
+        nextDate: 1704492000000,
+      },
+      close: {
+        day: 6,
+        hours: 2,
+        minutes: 0,
+        time: "0200",
+        nextDate: 1704524400000,
+      },
+    },
+    {
+      open: {
+        day: 6,
+        hours: 20,
+        minutes: 0,
+        time: "2000",
+        nextDate: 1704589200000,
+      },
+      close: {
+        day: 0,
+        hours: 2,
+        minutes: 0,
+        time: "0200",
+        nextDate: 1704610800000,
+      },
+    },
+  ]);
+
+  expect(openingHours?.weekday_text).toStrictEqual([
+    "Monday: 5:00 PM - 2:00 AM",
+    "Tuesday: 5:00 PM - 2:00 AM",
+    "Wednesday: 5:00 PM - 2:00 AM",
+    "Thursday: 5:00 PM - 2:00 AM",
+    "Friday: 5:00 PM - 2:00 AM",
+    "Saturday: 8:00 PM - 2:00 AM",
+    "Sunday: 7:00 PM - 1:00 AM",
+  ]);
+});
+
+test("should handle place with multiple opening hours on a single day", () => {
+  const openingHours = convertAmazonOpeningHoursToGoogle([
+    {
+      Display: [
+        "Mon, Tue, Thu: 09:00 - 18:00",
+        "Wed: 09:00 - 12:30, 14:00 - 18:00",
+        "Fri: 09:00 - 17:00",
+        "Sat: 09:00 - 16:00",
+      ],
+      OpenNow: true,
+      Components: [
+        {
+          OpenTime: "T090000",
+          OpenDuration: "PT09H00M",
+          Recurrence: "FREQ:DAILY;BYDAY:MO,TU,TH",
+        },
+        {
+          OpenTime: "T090000",
+          OpenDuration: "PT03H30M",
+          Recurrence: "FREQ:DAILY;BYDAY:WE",
+        },
+        {
+          OpenTime: "T140000",
+          OpenDuration: "PT04H00M",
+          Recurrence: "FREQ:DAILY;BYDAY:WE",
+        },
+        {
+          OpenTime: "T090000",
+          OpenDuration: "PT08H00M",
+          Recurrence: "FREQ:DAILY;BYDAY:FR",
+        },
+        {
+          OpenTime: "T090000",
+          OpenDuration: "PT07H00M",
+          Recurrence: "FREQ:DAILY;BYDAY:SA",
+        },
+      ],
+    },
+  ]);
+
+  const periods = openingHours!.periods;
+
+  expect(periods).toHaveLength(7);
+  expect(periods).toStrictEqual([
+    {
+      close: {
+        day: 1,
+        time: "1800",
+        hours: 18,
+        minutes: 0,
+      },
+      open: {
+        day: 1,
+        time: "0900",
+        hours: 9,
+        minutes: 0,
+      },
+    },
+    {
+      close: {
+        day: 2,
+        time: "1800",
+        hours: 18,
+        minutes: 0,
+      },
+      open: {
+        day: 2,
+        time: "0900",
+        hours: 9,
+        minutes: 0,
+      },
+    },
+    {
+      close: {
+        day: 3,
+        time: "1230",
+        hours: 12,
+        minutes: 30,
+      },
+      open: {
+        day: 3,
+        time: "0900",
+        hours: 9,
+        minutes: 0,
+      },
+    },
+    {
+      close: {
+        day: 3,
+        time: "1800",
+        hours: 18,
+        minutes: 0,
+      },
+      open: {
+        day: 3,
+        time: "1400",
+        hours: 14,
+        minutes: 0,
+      },
+    },
+    {
+      close: {
+        day: 4,
+        time: "1800",
+        hours: 18,
+        minutes: 0,
+      },
+      open: {
+        day: 4,
+        time: "0900",
+        hours: 9,
+        minutes: 0,
+      },
+    },
+    {
+      close: {
+        day: 5,
+        time: "1700",
+        hours: 17,
+        minutes: 0,
+      },
+      open: {
+        day: 5,
+        time: "0900",
+        hours: 9,
+        minutes: 0,
+      },
+    },
+    {
+      close: {
+        day: 6,
+        time: "1600",
+        hours: 16,
+        minutes: 0,
+      },
+      open: {
+        day: 6,
+        time: "0900",
+        hours: 9,
+        minutes: 0,
+      },
+    },
+  ]);
+
+  expect(openingHours?.weekday_text).toStrictEqual([
+    "Monday: 9:00 AM - 6:00 PM",
+    "Tuesday: 9:00 AM - 6:00 PM",
+    "Wednesday: 9:00 AM - 12:30 PM, 2:00 - 6:00 PM",
+    "Thursday: 9:00 AM - 6:00 PM",
+    "Friday: 9:00 AM - 5:00 PM",
+    "Saturday: 9:00 AM - 4:00 PM",
+    "Sunday: Closed",
+  ]);
+});
+
 test("isOpen should return true if OpenNow is true", () => {
   const openingHours = convertAmazonOpeningHoursToGoogle([
     {
