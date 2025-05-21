@@ -18,7 +18,9 @@ import {
   formatSecondsAsGoogleDurationText,
   parseOrFindLocations,
   populateAvoidOptions,
+  getReverseGeocodedAddresses,
 } from "./helpers";
+
 import { createBoundsFromPositions } from "../common";
 import { LngLat } from "maplibre-gl";
 
@@ -89,19 +91,18 @@ export class MigrationDistanceMatrixService {
               this._client
                 .send(command)
                 .then((response) => {
-                  const googleResponse = this._convertAmazonResponseToGoogleResponse(
+                  this._convertAmazonResponseToGoogleResponse(
                     response,
                     originsResponse,
                     destinationsResponse,
                     request,
-                  );
-
-                  // if a callback was given, invoke it before resolving the promise
-                  if (callback) {
-                    callback(googleResponse, DistanceMatrixStatus.OK);
-                  }
-
-                  resolve(googleResponse);
+                  ).then((googleResponse) => {
+                    // if a callback was given, invoke it before resolving the promise
+                    if (callback) {
+                      callback(googleResponse, DistanceMatrixStatus.OK);
+                    }
+                    resolve(googleResponse);
+                  });
                 })
                 .catch((error) => {
                   console.error(error);
@@ -134,15 +135,10 @@ export class MigrationDistanceMatrixService {
     originsResponse,
     destinationsResponse,
     request,
-  ): google.maps.DistanceMatrixResponse {
-    const distanceMatrixResponseRows = [];
-    calculateRouteMatrixResponse.RouteMatrix.forEach((row) => {
-      const distanceMatrixResponseRow = {
-        elements: [],
-      };
-      row.forEach((cell) => {
-        // add element with response data to row
-        distanceMatrixResponseRow.elements.push({
+  ): Promise<google.maps.DistanceMatrixResponse> {
+    return new Promise((resolve) => {
+      const distanceMatrixResponseRows = calculateRouteMatrixResponse.RouteMatrix.map((row) => ({
+        elements: row.map((cell) => ({
           distance: {
             text: convertKilometersToGoogleDistanceText(cell.Distance, request),
             value: cell.Distance * KILOMETERS_TO_METERS_CONSTANT,
@@ -152,19 +148,27 @@ export class MigrationDistanceMatrixService {
             value: cell.DurationSeconds,
           },
           status: DistanceMatrixElementStatus.OK,
-        });
-      });
-      distanceMatrixResponseRows.push(distanceMatrixResponseRow);
+        })),
+      }));
+
+      // Get addresses for origins, then destinations
+      getReverseGeocodedAddresses(
+        this._placesService._client,
+        originsResponse.map((origin) => origin.position),
+        (originAddresses) => {
+          getReverseGeocodedAddresses(
+            this._placesService._client,
+            destinationsResponse.map((destination) => destination.position),
+            (destinationAddresses) => {
+              resolve({
+                originAddresses,
+                destinationAddresses,
+                rows: distanceMatrixResponseRows,
+              });
+            },
+          );
+        },
+      );
     });
-
-    // TODO: add destinationAddresses and originAddresses to response using destinationsResponse and originsResponse
-    // once PlacesService can reverse geocode (need to retrieve address name for coordinates to add to address arrays)
-    const distanceMatrixResponse = {
-      originAddresses: [],
-      destinationAddresses: [],
-      rows: distanceMatrixResponseRows,
-    };
-
-    return distanceMatrixResponse;
   }
 }

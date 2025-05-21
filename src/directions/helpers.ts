@@ -6,6 +6,7 @@ import { MigrationPlacesService } from "../places";
 
 import { UnitSystem } from "./defines";
 import { CalculateRouteMatrixRequest, CalculateRoutesRequest } from "@aws-sdk/client-geo-routes";
+import { GeoPlacesClient, ReverseGeocodeCommand, ReverseGeocodeRequest } from "@aws-sdk/client-geo-places";
 
 const KILOMETERS_TO_MILES_CONSTANT = 0.621371;
 
@@ -160,4 +161,45 @@ export function populateAvoidOptions(
       ControlledAccessHighways: true,
     };
   }
+}
+
+/**
+ * Gets formatted addresses for an array of coordinate positions using reverse geocoding.
+ *
+ * @param client - GeoPlacesClient instance for reverse geocoding
+ * @param positions - Array of [longitude, latitude] coordinates
+ * @param callback - Function to receive the array of formatted addresses
+ */
+export function getReverseGeocodedAddresses(
+  client: GeoPlacesClient,
+  positions: number[][],
+  callback: (addresses: string[]) => void,
+) {
+  if (positions.length === 0) {
+    callback([]);
+    return;
+  }
+
+  const geocodingPromises = positions.map((position) => {
+    const request: ReverseGeocodeRequest = {
+      QueryPosition: position,
+      AdditionalFeatures: ["TimeZone"],
+    };
+    const command = new ReverseGeocodeCommand(request);
+
+    return client
+      .send(command)
+      .then((response) => response.ResultItems?.[0]?.Address?.Label || "")
+      .catch((error) => {
+        console.error("Error reverse geocoding position:", error);
+        return "";
+      });
+  });
+
+  Promise.all(geocodingPromises)
+    .then((addresses) => callback(addresses))
+    .catch((error) => {
+      console.error("Error in reverse geocoding:", error);
+      callback(new Array(positions.length).fill(""));
+    });
 }
