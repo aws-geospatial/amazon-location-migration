@@ -32,7 +32,8 @@ jobs:
 
       - name: Get PR coverage
         run: |
-          git checkout ${{ github.head_ref }}
+          git fetch origin ${{ github.head_ref }}
+          git checkout origin/${{ github.head_ref }}
           npm test | tee pr_coverage.txt
           echo "PR_STATEMENTS=$(node -p "require('./coverage/coverage-summary.json').total.statements.pct")" >> $GITHUB_ENV
           echo "PR_BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")" >> $GITHUB_ENV
