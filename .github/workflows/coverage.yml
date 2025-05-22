@@ -9,8 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -21,6 +19,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Get PR coverage
+        run: |
+          npm test | tee pr_coverage.txt
+          echo "PR_STATEMENTS=$(node -p "require('./coverage/coverage-summary.json').total.statements.pct")" >> $GITHUB_ENV
+          echo "PR_BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")" >> $GITHUB_ENV
+          echo "PR_FUNCTIONS=$(node -p "require('./coverage/coverage-summary.json').total.functions.pct")" >> $GITHUB_ENV
+          echo "PR_LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")" >> $GITHUB_ENV
+
       - name: Get base branch coverage
         run: |
           git checkout ${{ github.base_ref }}
@@ -29,16 +35,6 @@ jobs:
           echo "BASE_BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")" >> $GITHUB_ENV
           echo "BASE_FUNCTIONS=$(node -p "require('./coverage/coverage-summary.json').total.functions.pct")" >> $GITHUB_ENV
           echo "BASE_LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")" >> $GITHUB_ENV
-
-      - name: Get PR coverage
-        run: |
-          git fetch origin ${{ github.head_ref }}
-          git checkout origin/${{ github.head_ref }}
-          npm test | tee pr_coverage.txt
-          echo "PR_STATEMENTS=$(node -p "require('./coverage/coverage-summary.json').total.statements.pct")" >> $GITHUB_ENV
-          echo "PR_BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")" >> $GITHUB_ENV
-          echo "PR_FUNCTIONS=$(node -p "require('./coverage/coverage-summary.json').total.functions.pct")" >> $GITHUB_ENV
-          echo "PR_LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")" >> $GITHUB_ENV
 
       - name: Compare coverage
         run: |
