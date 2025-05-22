@@ -1,0 +1,60 @@
+name: coverage
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get base branch coverage
+        run: |
+          git checkout ${{ github.base_ref }}
+          npm test | tee base_coverage.txt
+          echo "BASE_STATEMENTS=$(node -p "require('./coverage/coverage-summary.json').total.statements.pct")" >> $GITHUB_ENV
+          echo "BASE_BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")" >> $GITHUB_ENV
+          echo "BASE_FUNCTIONS=$(node -p "require('./coverage/coverage-summary.json').total.functions.pct")" >> $GITHUB_ENV
+          echo "BASE_LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")" >> $GITHUB_ENV
+
+      - name: Get PR coverage
+        run: |
+          git checkout ${{ github.head_ref }}
+          npm test | tee pr_coverage.txt
+          echo "PR_STATEMENTS=$(node -p "require('./coverage/coverage-summary.json').total.statements.pct")" >> $GITHUB_ENV
+          echo "PR_BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")" >> $GITHUB_ENV
+          echo "PR_FUNCTIONS=$(node -p "require('./coverage/coverage-summary.json').total.functions.pct")" >> $GITHUB_ENV
+          echo "PR_LINES=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")" >> $GITHUB_ENV
+
+      - name: Compare coverage
+        run: |
+          echo "Base Branch Coverage:"
+          echo "===================="
+          cat base_coverage.txt
+
+          echo -e "\nPR Coverage:"
+          echo "============"
+          cat pr_coverage.txt
+
+          if (( $(echo "${{ env.PR_STATEMENTS }} < ${{ env.BASE_STATEMENTS }}" | bc -l) )) || \
+             (( $(echo "${{ env.PR_BRANCHES }} < ${{ env.BASE_BRANCHES }}" | bc -l) )) || \
+             (( $(echo "${{ env.PR_FUNCTIONS }} < ${{ env.BASE_FUNCTIONS }}" | bc -l) )) || \
+             (( $(echo "${{ env.PR_LINES }} < ${{ env.BASE_LINES }}" | bc -l) )); then
+            echo "❌ Coverage decreased in one or more metrics"
+            exit 1
+          else
+            echo "✅ Coverage maintained or improved across all metrics"
+          fi

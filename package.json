@@ -64,6 +64,7 @@
     "coverageReporters": [
       "cobertura",
       "html",
+      "json-summary",
       "text"
     ],
     "testEnvironment": "jsdom",
