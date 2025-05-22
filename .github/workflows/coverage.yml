@@ -29,7 +29,8 @@ jobs:
 
       - name: Get base branch coverage
         run: |
-          git checkout ${{ github.event.pull_request.base.sha }}
+          git fetch origin ${{ github.base_ref }}
+          git checkout ${{ github.base_ref }}
           npm test | tee base_coverage.txt
           echo "BASE_STATEMENTS=$(node -p "require('./coverage/coverage-summary.json').total.statements.pct")" >> $GITHUB_ENV
           echo "BASE_BRANCHES=$(node -p "require('./coverage/coverage-summary.json').total.branches.pct")" >> $GITHUB_ENV
