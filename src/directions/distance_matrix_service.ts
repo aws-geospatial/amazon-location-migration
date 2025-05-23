@@ -152,23 +152,28 @@ export class MigrationDistanceMatrixService {
       }));
 
       // Get addresses for origins, then destinations
-      getReverseGeocodedAddresses(
-        this._placesService._client,
-        originsResponse.map((origin) => origin.position),
-        (originAddresses) => {
+      Promise.all<string[]>([
+        new Promise<string[]>((resolveOrigins) => {
+          getReverseGeocodedAddresses(
+            this._placesService._client,
+            originsResponse.map((origin) => origin.position),
+            (originAddresses: string[]) => resolveOrigins(originAddresses)
+          );
+        }),
+        new Promise<string[]>((resolveDestinations) => {
           getReverseGeocodedAddresses(
             this._placesService._client,
             destinationsResponse.map((destination) => destination.position),
-            (destinationAddresses) => {
-              resolve({
-                originAddresses,
-                destinationAddresses,
-                rows: distanceMatrixResponseRows,
-              });
-            },
+            (destinationAddresses: string[]) => resolveDestinations(destinationAddresses)
           );
-        },
-      );
+        })
+      ]).then(([originAddresses, destinationAddresses]) => {
+        resolve({
+          originAddresses,
+          destinationAddresses,
+          rows: distanceMatrixResponseRows,
+        });
+      });
     });
   }
 }

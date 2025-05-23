@@ -183,7 +183,6 @@ export function getReverseGeocodedAddresses(
   const geocodingPromises = positions.map((position) => {
     const request: ReverseGeocodeRequest = {
       QueryPosition: position,
-      AdditionalFeatures: ["TimeZone"],
     };
     const command = new ReverseGeocodeCommand(request);
 
