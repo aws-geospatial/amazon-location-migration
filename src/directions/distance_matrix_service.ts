@@ -157,16 +157,16 @@ export class MigrationDistanceMatrixService {
           getReverseGeocodedAddresses(
             this._placesService._client,
             originsResponse.map((origin) => origin.position),
-            (originAddresses: string[]) => resolveOrigins(originAddresses)
+            (originAddresses: string[]) => resolveOrigins(originAddresses),
           );
         }),
         new Promise<string[]>((resolveDestinations) => {
           getReverseGeocodedAddresses(
             this._placesService._client,
             destinationsResponse.map((destination) => destination.position),
-            (destinationAddresses: string[]) => resolveDestinations(destinationAddresses)
+            (destinationAddresses: string[]) => resolveDestinations(destinationAddresses),
           );
-        })
+        }),
       ]).then(([originAddresses, destinationAddresses]) => {
         resolve({
           originAddresses,

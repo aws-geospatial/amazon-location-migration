@@ -91,6 +91,29 @@ describe("getReverseGeocodedAddresses", () => {
     jest.clearAllMocks();
   });
 
+  /*
+  getDistanceMatrix's response has many origins and destinations which may or may not have
+  addresses. This is represented by the following matrix:
+  Expected Geocode Address Response Matrix
+  +------------+-------------+------------+-------------+------------------+
+  | Origin1    | Dest1      | Origin2    | Dest2       | Expected Result |
+  +------------+-------------+------------+-------------+------------------+
+  | correct    | correct    | correct    | correct     | All addresses   |
+  | correct    | incorrect  | correct    | correct     | D1 empty        |
+  | correct    | correct    | incorrect  | correct     | O2 empty        |
+  | correct    | correct    | correct    | incorrect   | D2 empty        |
+  | correct    | correct    | incorrect  | incorrect   | O2,D2 empty     |
+  | correct    | incorrect  | incorrect  | incorrect   | All empty except O1|
+  | incorrect  | incorrect  | incorrect  | incorrect   | All empty       |
+  +------------+-------------+------------+-------------+------------------+
+
+  where:
+  - correct   = returns valid address
+  - incorrect = returns empty string
+  - O1,O2     = Origin addresses
+  - D1,D2     = Destination addresses
+  */
+
   test("should handle empty positions array", (done) => {
     const mockCallback = jest.fn();
 
@@ -186,7 +209,6 @@ describe("getReverseGeocodedAddresses", () => {
         expect.objectContaining({
           input: {
             QueryPosition: [1, 2],
-            AdditionalFeatures: ["TimeZone"],
           },
         }),
       );
@@ -242,6 +264,111 @@ describe("getReverseGeocodedAddresses", () => {
 
       expect(consoleErrorSpy).not.toHaveBeenCalledWith("Error in reverse geocoding:", expect.any(Error));
 
+      done();
+    });
+  });
+
+  test("should handle two origins and two destinations - all correct", (done) => {
+    const positions = [
+      [1, 2],
+      [3, 4],
+      [5, 6],
+      [7, 8],
+    ];
+
+    mockedPlacesClientSend
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin1" } }] }))
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Destination1" } }] }))
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin2" } }] }))
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Destination2" } }] }));
+
+    getReverseGeocodedAddresses(geoPlacesClient, positions, (addresses) => {
+      expect(addresses).toEqual(["Origin1", "Destination1", "Origin2", "Destination2"]);
+      expect(mockedPlacesClientSend).toHaveBeenCalledTimes(4);
+      done();
+    });
+  });
+
+  test("should handle correct origins with one incorrect destination", (done) => {
+    const positions = [
+      [1, 2],
+      [3, 4],
+      [5, 6],
+      [7, 8],
+    ];
+
+    mockedPlacesClientSend
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin1" } }] }))
+      .mockImplementationOnce(() => Promise.reject(new Error("Geocoding failed"))) // Destination1 fails
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin2" } }] }))
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Destination2" } }] }));
+
+    getReverseGeocodedAddresses(geoPlacesClient, positions, (addresses) => {
+      expect(addresses).toEqual(["Origin1", "", "Origin2", "Destination2"]);
+      expect(mockedPlacesClientSend).toHaveBeenCalledTimes(4);
+      done();
+    });
+  });
+
+  test("should handle one incorrect origin with correct destinations", (done) => {
+    const positions = [
+      [1, 2],
+      [3, 4],
+      [5, 6],
+      [7, 8],
+    ];
+
+    mockedPlacesClientSend
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin1" } }] }))
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Destination1" } }] }))
+      .mockImplementationOnce(() => Promise.reject(new Error("Geocoding failed"))) // Origin2 fails
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Destination2" } }] }));
+
+    getReverseGeocodedAddresses(geoPlacesClient, positions, (addresses) => {
+      expect(addresses).toEqual(["Origin1", "Destination1", "", "Destination2"]);
+      expect(mockedPlacesClientSend).toHaveBeenCalledTimes(4);
+      done();
+    });
+  });
+
+  test("should handle correct origins with both destinations incorrect", (done) => {
+    const positions = [
+      [1, 2],
+      [3, 4],
+      [5, 6],
+      [7, 8],
+    ];
+
+    mockedPlacesClientSend
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin1" } }] }))
+      .mockImplementationOnce(() => Promise.reject(new Error("Geocoding failed"))) // Destination1 fails
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin2" } }] }))
+      .mockImplementationOnce(() => Promise.reject(new Error("Geocoding failed"))); // Destination2 fails
+
+    getReverseGeocodedAddresses(geoPlacesClient, positions, (addresses) => {
+      expect(addresses).toEqual(["Origin1", "", "Origin2", ""]);
+      expect(mockedPlacesClientSend).toHaveBeenCalledTimes(4);
+      done();
+    });
+  });
+
+  test("should handle one correct origin with all others incorrect", (done) => {
+    const positions = [
+      [1, 2],
+      [3, 4],
+      [5, 6],
+      [7, 8],
+    ];
+
+    mockedPlacesClientSend
+      .mockImplementationOnce(() => Promise.resolve({ ResultItems: [{ Address: { Label: "Origin1" } }] }))
+      .mockImplementationOnce(() => Promise.reject(new Error("Geocoding failed"))) // Destination1 fails
+      .mockImplementationOnce(() => Promise.reject(new Error("Geocoding failed"))) // Origin2 fails
+      .mockImplementationOnce(() => Promise.reject(new Error("Geocoding failed"))); // Destination2 fails
+
+    getReverseGeocodedAddresses(geoPlacesClient, positions, (addresses) => {
+      expect(addresses).toEqual(["Origin1", "", "", ""]);
+      expect(mockedPlacesClientSend).toHaveBeenCalledTimes(4);
       done();
     });
   });
