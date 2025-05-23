@@ -22,6 +22,7 @@ import {
   parseOrFindLocation,
   parseOrFindLocations,
   ParseOrFindLocationResponse,
+  populateAvoidOptions,
 } from "./helpers";
 
 const KILOMETERS_TO_METERS_CONSTANT = 1000;
@@ -72,22 +73,17 @@ export class MigrationDirectionsService {
                 }
               }
 
-              if ("avoidFerries" in options) {
-                input.Avoid = {
-                  Ferries: options.avoidFerries,
-                };
-              }
-
-              if ("avoidTolls" in options) {
-                // Create Avoid sub-object if it doesn't exist already
-                input.Avoid ??= {};
-
-                input.Avoid.TollRoads = options.avoidTolls;
-                input.Avoid.TollTransponders = options.avoidTolls;
-              }
+              populateAvoidOptions(options, input);
 
               if (options.drivingOptions?.departureTime) {
                 input.DepartureTime = options.drivingOptions.departureTime.toISOString();
+              }
+
+              // Google provides a max of 3 total route alternatives, so if enabled, we need to set
+              // CalculateRoutesRequest.MaxAlternatives to 2 because these are counted on top of the
+              // default route that is calculated
+              if (options.provideRouteAlternatives) {
+                input.MaxAlternatives = 2;
               }
 
               if ("waypoints" in options) {
@@ -263,13 +259,10 @@ export class MigrationDirectionsService {
           geometry: leg.Geometry,
           steps: googleSteps,
           start_location: new MigrationLatLng(
-            leg.VehicleLegDetails.Departure.Place.Position[1],
-            leg.VehicleLegDetails.Departure.Place.Position[0],
+            legDetails.Departure.Place.Position[1],
+            legDetails.Departure.Place.Position[0],
           ), // start_location of leg, not entire route
-          end_location: new MigrationLatLng(
-            leg.VehicleLegDetails.Arrival.Place.Position[1],
-            leg.VehicleLegDetails.Arrival.Place.Position[0],
-          ), // end_location of leg, not entire route
+          end_location: new MigrationLatLng(legDetails.Arrival.Place.Position[1], legDetails.Arrival.Place.Position[0]), // end_location of leg, not entire route
           start_address: originResponse.formatted_address,
           end_address: destinationResponse.formatted_address,
         });

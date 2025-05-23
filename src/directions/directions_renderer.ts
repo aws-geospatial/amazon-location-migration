@@ -8,6 +8,7 @@ const ASCII_CODE_A = 65;
 
 export class MigrationDirectionsRenderer {
   #directions;
+  #routeIndex = 0;
   #markers: MigrationMarker[];
   #map: MigrationMap;
   #markerOptions;
@@ -17,9 +18,17 @@ export class MigrationDirectionsRenderer {
   #suppressPolylines = false;
   #onDirectionsChangedListeners = [];
   #onceDirectionsChangedListeners = [];
-  #routeIds = [];
+  #legRenderIds = [];
+
+  // Keep a static index so we can have multiple directions renderers
+  // with sources and layers on the same map that can be differentiated
+  // by the rendererIndex
+  private static counter = 0;
+  private readonly rendererIndex: number;
 
   constructor(options?) {
+    this.rendererIndex = MigrationDirectionsRenderer.counter++;
+
     this.#markers = [];
 
     this.setOptions(options);
@@ -51,22 +60,25 @@ export class MigrationDirectionsRenderer {
     return this.#map;
   }
 
+  getRouteIndex(): number {
+    return this.#routeIndex;
+  }
+
   setMap(map) {
     // If we're being removed from the map, clear the directions first
     if (!map) {
-      this._clearDirections();
+      this._clearRoute();
     }
 
     this.#map = map;
+
+    this._updateRouteDrawing();
   }
 
   setDirections(directions) {
-    // TODO: Currently only support one route for directions
-    if (directions.routes.length !== 1) {
-      return;
-    }
-
     this.#directions = directions;
+
+    this._updateRouteDrawing();
 
     if (this.#onDirectionsChangedListeners.length != 0) {
       this.#onDirectionsChangedListeners.forEach((listener) => {
@@ -79,11 +91,84 @@ export class MigrationDirectionsRenderer {
         this.#onceDirectionsChangedListeners.pop().handler();
       }
     }
+  }
 
+  setOptions(options: google.maps.DirectionsRendererOptions | null) {
+    if (!options) {
+      return;
+    }
+
+    if ("markerOptions" in options) {
+      this.#markerOptions = options.markerOptions;
+    }
+
+    if ("preserveViewport" in options) {
+      this.#preserveViewport = options.preserveViewport;
+    }
+
+    if ("directions" in options) {
+      this.setDirections(options.directions);
+    }
+
+    if ("suppressMarkers" in options) {
+      this.#suppressMarkers = options.suppressMarkers;
+    }
+
+    if ("suppressPolylines" in options) {
+      this.#suppressPolylines = options.suppressPolylines;
+    }
+
+    if ("polylineOptions" in options) {
+      this.#polylineOptions = options.polylineOptions;
+    }
+
+    if ("routeIndex" in options) {
+      this.#routeIndex = options.routeIndex;
+    }
+
+    if ("map" in options) {
+      this.setMap(options.map);
+    }
+  }
+
+  setRouteIndex(routeIndex: number): void {
+    this.#routeIndex = routeIndex;
+
+    this._updateRouteDrawing();
+  }
+
+  _clearRoute() {
+    if (this.#markers.length) {
+      this.#markers.forEach(function (marker) {
+        marker.remove();
+      });
+      this.#markers = [];
+    }
+    if (this.#legRenderIds.length) {
+      const maplibreMap = this.#map._getMap();
+      this.#legRenderIds.forEach(function (legId) {
+        maplibreMap.removeLayer(legId);
+        maplibreMap.removeSource(legId);
+      });
+      this.#legRenderIds = [];
+    }
+  }
+
+  _updateRouteDrawing() {
     // First, remove any pre-existing drawn route and its markers
-    this._clearDirections();
+    this._clearRoute();
 
-    const route = directions.routes[0];
+    // Early exit if nothing to draw (e.g. if directions were set to null)
+    if (!this.#directions || !this.#map) {
+      return;
+    }
+
+    // Google doesn't throw an error if you set a route index out of range, it just doesn't render anything
+    if (this.#routeIndex >= this.#directions.routes.length) {
+      return;
+    }
+
+    const route = this.#directions.routes[this.#routeIndex];
 
     // Adjust the map to fit to the bounds for this route if preserveViewport option is not set to true
     if (this.#preserveViewport === false) {
@@ -103,7 +188,7 @@ export class MigrationDirectionsRenderer {
 
       // TODO: Detect geometry type instead of just doing LineString
       if (this.#suppressPolylines === false) {
-        const routeId = "route" + i;
+        const routeId = `directions-renderer-${this.rendererIndex}-route-${this.#routeIndex}-leg-${i}`;
         maplibreMap.addSource(routeId, {
           type: "geojson",
           data: {
@@ -140,7 +225,7 @@ export class MigrationDirectionsRenderer {
           paint: paintOptions,
         });
 
-        this.#routeIds.push(routeId);
+        this.#legRenderIds.push(routeId);
       }
 
       // Add markers for the start location of the current leg
@@ -171,53 +256,6 @@ export class MigrationDirectionsRenderer {
       endMarkerOptions.map = this.#map;
       const endMarker = new MigrationMarker(endMarkerOptions);
       this.#markers.push(endMarker);
-    }
-  }
-
-  setOptions(options?) {
-    if (options !== undefined && "map" in options) {
-      this.setMap(options.map);
-    }
-
-    if (options !== undefined && "markerOptions" in options) {
-      this.#markerOptions = options.markerOptions;
-    }
-
-    if (options !== undefined && "preserveViewport" in options) {
-      this.#preserveViewport = options.preserveViewport;
-    }
-
-    if (options !== undefined && "directions" in options) {
-      this.setDirections(options.directions);
-    }
-
-    if (options !== undefined && "suppressMarkers" in options) {
-      this.#suppressMarkers = options.suppressMarkers;
-    }
-
-    if (options !== undefined && "suppressPolylines" in options) {
-      this.#suppressPolylines = options.suppressPolylines;
-    }
-
-    if (options !== undefined && "polylineOptions" in options) {
-      this.#polylineOptions = options.polylineOptions;
-    }
-  }
-
-  _clearDirections() {
-    if (this.#markers.length) {
-      this.#markers.forEach(function (marker) {
-        marker.remove();
-      });
-      this.#markers = [];
-    }
-    if (this.#routeIds.length) {
-      const maplibreMap = this.#map._getMap();
-      this.#routeIds.forEach(function (routeId) {
-        maplibreMap.removeLayer(routeId);
-        maplibreMap.removeSource(routeId);
-      });
-      this.#routeIds = [];
     }
   }
 
