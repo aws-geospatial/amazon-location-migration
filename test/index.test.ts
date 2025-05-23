@@ -5,10 +5,9 @@
 // retrieving its configuration from the URLSearchParams
 const testAPIKey = "123456789";
 const testMapName = "TestMap";
-const testRouteCalculator = "TestRouteCalculator";
 const testCallback = "testCallback";
 const testCurrentScript = document.createElement("src") as HTMLScriptElement;
-testCurrentScript.src = `amazonLocationMigrationSDK.js?callback=${testCallback}&map=${testMapName}&routeCalculator=${testRouteCalculator}&apiKey=${testAPIKey}`;
+testCurrentScript.src = `amazonLocationMigrationSDK.js?callback=${testCallback}&map=${testMapName}apiKey=${testAPIKey}`;
 
 // Override the document.currentScript with our fake HTMLScriptElement
 Object.defineProperty(document, "currentScript", {

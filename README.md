@@ -37,7 +37,7 @@ If your application uses the [dynamic library import](https://developers.google.
 To use the migration SDK, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?region={{REGION}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
+<script src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?region={{REGION}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
 ```
 
 If there are any resources that your application doesn't use, you can omit those query parameters. Only the `region` and `apiKey` are required.
@@ -75,7 +75,7 @@ To use the migration SDK, you replace that line with the following (with your AW
 ```html
 <script
   async
-  src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?callback=initMap&region={{REGION}}&routeCalculator={{ROUTE_CALCULATOR}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
+  src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?callback=initMap&region={{REGION}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
 ></script>
 ```
 
