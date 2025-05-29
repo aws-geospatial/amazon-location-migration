@@ -18,7 +18,8 @@
 
 let map;
 let userLocation, originLocation, destinationLocation;
-let placesService, directionsService, directionsRenderer, geocoder;
+let placesService, directionsService, mainDirectionRenderer, geocoder;
+let alternativeDirectionsRenderers = [];
 let predictionItems = [];
 let markers = [];
 let searchBarAutocomplete, originAutocomplete, destinationAutocomplete;
@@ -77,8 +78,34 @@ async function initMap(center) {
   const { DirectionsRenderer, DirectionsService, TravelMode } = await google.maps.importLibrary("routes");
   travelMode = TravelMode;
   directionsService = new DirectionsService();
-  directionsRenderer = new DirectionsRenderer();
-  directionsRenderer.setMap(map);
+
+  // Setup our directions renderers
+  // Google can show at most 3 different possible routes, so we have 3 alternate route
+  // renderers as well as the main directions renderer
+  mainDirectionRenderer = new DirectionsRenderer({
+    map,
+    polylineOptions: {
+      strokeColor: "#0D4AFF",
+      strokeOpacity: 0.6,
+      strokeWeight: 8,
+    },
+  });
+
+  // For the 3 alternate route renderers, we have a slightly lower opacity and we don't
+  // need to render the markers, since the main directions renderer will handle that
+  for (let i = 0; i < 3; i++) {
+    alternativeDirectionsRenderers.push(
+      new DirectionsRenderer({
+        map,
+        polylineOptions: {
+          strokeColor: "#73B9FF",
+          strokeOpacity: 0.5,
+          strokeWeight: 8,
+        },
+        suppressMarkers: true,
+      }),
+    );
+  }
 
   // Setup seach/query input
   const searchBarInput = document.getElementById("search-bar-input");
@@ -222,7 +249,10 @@ async function initMap(center) {
     $("#places-container").show();
 
     // Clear the directions from the map
-    directionsRenderer.setMap(null);
+    alternativeDirectionsRenderers.forEach((renderer) => {
+      renderer.setMap(null);
+    });
+    mainDirectionRenderer.setMap(null);
 
     inDirectionsMode = false;
   });
@@ -241,8 +271,13 @@ function calculateRoute() {
   // Make sure we reattach our directions renderer to the map (if needed),
   // since to clear out the directions (e.g. navigating back to details panel) we
   // have to set the map to null
-  if (!directionsRenderer.getMap()) {
-    directionsRenderer.setMap(map);
+  alternativeDirectionsRenderers.forEach((renderer) => {
+    if (!renderer.getMap()) {
+      renderer.setMap(map);
+    }
+  });
+  if (!mainDirectionRenderer.getMap()) {
+    mainDirectionRenderer.setMap(map);
   }
 
   directionsService
@@ -250,9 +285,18 @@ function calculateRoute() {
       origin: originLocation,
       destination: destinationLocation,
       travelMode: travelMode.DRIVING,
+      provideRouteAlternatives: true,
     })
     .then((response) => {
-      directionsRenderer.setDirections(response);
+      // Update the alterative route renderers first
+      alternativeDirectionsRenderers.forEach((renderer, index) => {
+        renderer.setDirections(response);
+        renderer.setRouteIndex(index);
+      });
+
+      // Update the main directions renderer last so it will be rendered on top
+      mainDirectionRenderer.setDirections(response);
+      mainDirectionRenderer.setRouteIndex(0);
     })
     .catch((error) => window.alert("Directions request failed due to " + error));
 }
