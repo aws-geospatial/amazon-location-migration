@@ -3851,3 +3851,266 @@ test("should call getDistanceMatrix with options avoidHighways set to true", (do
     done();
   });
 });
+
+test("should have copyrights field in route response", (done) =>{
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
+
+  const request = {
+    origin: origin,
+    destination: destination,
+    travelMode: TravelMode.DRIVING,
+  };
+
+  directionsService.route(request).then((response) => {
+    const routes = response.routes;
+    expect(routes.length).toStrictEqual(1);
+
+    const route = routes[0];
+    expect(route.copyrights).toBeDefined();
+    expect(route.copyrights).toStrictEqual("© AWS, HERE");
+
+    done();
+  });
+});
+
+describe("test summary field in route response", () => {
+  test("should have summary field with road name when available", (done) => {
+    const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+    const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
+
+    const request = {
+      origin: origin,
+      destination: destination,
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      const routes = response.routes;
+      expect(routes.length).toStrictEqual(1);
+
+      const route = routes[0];
+
+      expect(route.summary).toBeDefined();
+      expect(route.summary).toStrictEqual("Guadalupe St");
+
+      done();
+    });
+  });
+
+  test("should have empty summary field when no road name is available", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          MajorRoadLabels: [],
+          Legs: []
+        }]
+      })
+    );
+
+    const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+    const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
+
+    const request = {
+      origin: origin,
+      destination: destination,
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      const routes = response.routes;
+      expect(routes.length).toStrictEqual(1);
+
+      const route = routes[0];
+      // Verify that summary field exists but is empty when no road name is available
+      expect(route.summary).toBeDefined();
+      expect(route.summary).toStrictEqual("");
+
+      done();
+    });
+  });
+
+  test("should have summary field with road name when all properties are available", (done) => {
+    // Mock response with complete road name data
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          MajorRoadLabels: [{
+            RoadName: {
+              Value: "Main Street"
+            }
+          }],
+          Legs: []
+        }]
+      })
+    );
+
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("Main Street");
+      done();
+    });
+  });
+
+  test("should have empty summary when MajorRoadLabels is undefined", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          // MajorRoadLabels: [],
+          Legs: []
+        }]
+      })
+    );
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("");
+      done();
+    });
+  });
+
+  test("should have empty summary when MajorRoadLabels array is empty", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          MajorRoadLabels: [],
+          Legs: []
+        }]
+      })
+    );
+
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("");
+      done();
+    });
+  });
+
+  test("should have empty summary when RoadName is undefined", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          MajorRoadLabels: [{}],
+          Legs: []
+        }]
+      })
+    );
+
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("");
+      done();
+    });
+  });
+
+  test("should have empty summary when RoadName.Value is undefined", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          MajorRoadLabels: [{
+            RoadName: {}
+          }],
+          Legs: []
+        }]
+      })
+    );
+
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("");
+      done();
+    });
+  });
+
+  test("should have empty summary when RoadName.Value is null", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          MajorRoadLabels: [{
+            RoadName: {
+              Value: null
+            }
+          }],
+          Legs: []
+        }]
+      })
+    );
+
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("");
+      done();
+    });
+  });
+
+  test("should have empty summary when route is undefined", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [null]
+      })
+    );
+
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("");
+      done();
+    });
+  });
+
+  test("should have empty summary when MajorRoadLabels is null", (done) => {
+    mockedRoutesClientSend.mockImplementationOnce(() =>
+      Promise.resolve({
+        Routes: [{
+          MajorRoadLabels: null,
+          Legs: []
+        }]
+      })
+    );
+
+    const request = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+
+    directionsService.route(request).then((response) => {
+      expect(response.routes[0].summary).toStrictEqual("");
+      done();
+    });
+  });
+
+});
