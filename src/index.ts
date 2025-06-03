@@ -58,25 +58,12 @@ maplibreGeocoderStyle.setAttribute(
 );
 document.head.appendChild(maplibreGeocoderStyle);
 
-// Parse URL params from the query string this script was imported with so we can retrieve
-// params (e.g. API key)
-const currentScript = document.currentScript as HTMLScriptElement;
-const currentScriptSrc = currentScript.src;
-const queryString = currentScriptSrc.substring(currentScriptSrc.indexOf("?"));
-const urlParams = new URLSearchParams(queryString);
+// Top-level entry point that initializes the migration SDK (e.g. populates the Google APIs)
+const migrationInit = async function (apiKey: string, region?: string, postMigrationCallback?: string) {
+  // The region is optional (us-west-2 by default)
+  const defaultRegion = "us-west-2";
+  region = region || defaultRegion;
 
-// API key is required to be passed in, so if it's not we need to log an error and bail out
-// TODO: Add cognito support as well
-const apiKey = urlParams.get("apiKey");
-
-// Optional, the region to be used (us-west-2 by default)
-const defaultRegion = "us-west-2";
-const region = urlParams.get("region") || defaultRegion;
-
-// Optional, will invoke after migrationInit has finished executing
-const postMigrationCallback = urlParams.get("callback");
-
-const migrationInit = async function () {
   // Pass our region and API key to our Migration Map class so that it can build the style URL
   MigrationMap.prototype._apiKey = apiKey;
   MigrationMap.prototype._region = region;
@@ -249,9 +236,63 @@ const migrationInit = async function () {
     },
   };
 
+  // Invoke the optional postMigrationCallback, which is a string passed in that corresponds to the
+  // name of a function stored at the global window scope
   if (postMigrationCallback) {
     window[postMigrationCallback]();
   }
 };
 
-migrationInit();
+// If our script was imported in browser, then parse URL params from the query string this script was imported
+// with so we can retrieve params (e.g. API key)
+const currentScript = document.currentScript as HTMLScriptElement;
+if (currentScript) {
+  const currentScriptSrc = currentScript.src;
+  const queryString = currentScriptSrc.substring(currentScriptSrc.indexOf("?"));
+  const urlParams = new URLSearchParams(queryString);
+
+  // API key is required to be passed in, so if it's not we need to log an error and bail out
+  const apiKey = urlParams.get("apiKey");
+
+  // Optional, the region to be used
+  const region = urlParams.get("region");
+
+  // Optional, will invoke after migrationInit has finished executing
+  const postMigrationCallback = urlParams.get("callback");
+
+  migrationInit(apiKey, region, postMigrationCallback);
+}
+
+export interface LoaderOptions {
+  apiKey: string;
+  region?: string;
+}
+
+// Mimic the @googlemaps/js-api-loader interface so that users can also import google
+// through a typical module import
+export class Loader {
+  #apiKey: string;
+  #region: string;
+
+  constructor({ apiKey, region }: LoaderOptions) {
+    this.#apiKey = apiKey;
+    this.#region = region;
+  }
+
+  // One of two ways the @googlemaps/js-api-loader loads the Google APIs, which follows their importLibrary
+  // pattern where you return a Promise to dynamically import a specific library, so we just need to
+  // initialize our migration SDK and then return the existing importLibrary Promise
+  async importLibrary(name: string) {
+    await migrationInit(this.#apiKey, this.#region);
+    return window.google.maps.importLibrary(name);
+  }
+
+  // The other way is to just load everything into the top level google namespace
+  load() {
+    return new Promise((resolve) => {
+      migrationInit(this.#apiKey, this.#region).then(() => {
+        resolve(window.google);
+      });
+    });
+  }
+}

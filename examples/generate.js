@@ -8,18 +8,18 @@ const Mustache = require("mustache");
 // Retrieve the user's config for the placeholder values
 const exampleConfig = require("./config.json");
 
-// Find all of the templated html files in our examples
-const templateFiles = globSync("./examples/**/*.template.html");
+// Find all of the templated files in our examples
+const templateFiles = globSync("./examples/*/**/*.template.*");
 
-// Generate .html files from all of our templates, after replacing the placeholder values
+// Generate files from all of our templates, after replacing the placeholder values
 for (const file of templateFiles) {
   const template = fs.readFileSync(file).toString();
 
-  // Generate our new html using mustache to replace the templated values
-  const generatedHtml = Mustache.render(template, exampleConfig);
+  // Generate our new file using mustache to replace the templated values
+  const generatedFile = Mustache.render(template, exampleConfig);
 
-  console.log(`Generating html from template: ${file}`);
+  console.log(`Generating file from template: ${file}`);
 
   const generatedFileName = file.replace(".template", "");
-  fs.writeFileSync(generatedFileName, generatedHtml);
+  fs.writeFileSync(generatedFileName, generatedFile);
 }
