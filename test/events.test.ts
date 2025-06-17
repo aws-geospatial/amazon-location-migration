@@ -38,6 +38,41 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+const mockDirectionsResult = {
+  routes: [
+    {
+      bounds: {
+        getNorthEast: () => ({ lat: () => 1, lng: () => 1 }),
+        getSouthWest: () => ({ lat: () => 0, lng: () => 0 }),
+      },
+      legs: [
+        {
+          start_location: {
+            lat: () => 0,
+            lng: () => 0,
+          },
+          end_location: {
+            lat: () => 1,
+            lng: () => 1,
+          },
+          steps: [],
+          distance: { text: "1 km", value: 1000 },
+          duration: { text: "1 min", value: 60 },
+        },
+      ],
+      overview_path: [
+        { lat: () => 0, lng: () => 0 },
+        { lat: () => 1, lng: () => 1 },
+      ],
+      overview_polyline: { points: "test_polyline" },
+      warnings: [],
+      waypoint_order: [],
+    },
+  ],
+  geocoded_waypoints: [],
+  status: "OK",
+} as unknown as google.maps.DirectionsResult;
+
 test("should call handler after close when addListener", () => {
   // mock infowindow so that we can mock on so that we can mock close
   const mockInfoWindow = {
@@ -402,24 +437,8 @@ test("should call handler after directions_changed when addListenerOnce", () => 
   });
   const handlerSpy = jest.fn();
   addListenerOnce(testDirectionsRenderer, "directions_changed", handlerSpy);
-  const directions = {
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  };
 
-  testDirectionsRenderer.setDirections(directions);
+  testDirectionsRenderer.setDirections(mockDirectionsResult);
   expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
 

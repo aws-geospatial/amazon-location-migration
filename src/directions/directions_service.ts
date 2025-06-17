@@ -24,7 +24,9 @@ import {
   parseOrFindLocations,
   ParseOrFindLocationResponse,
   populateAvoidOptions,
+  convertCoordinates,
 } from "./helpers";
+import polyline from "@mapbox/polyline";
 
 const KILOMETERS_TO_METERS_CONSTANT = 1000;
 // place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
@@ -194,6 +196,7 @@ export class MigrationDirectionsService {
     waypointResponses?,
   ) {
     const googleRoutes: google.maps.DirectionsRoute[] = [];
+    const routeLineString: number[][] = [];
     response.Routes.forEach((route) => {
       let bounds = new MigrationLatLngBounds();
       const googleLegs = [];
@@ -206,7 +209,7 @@ export class MigrationDirectionsService {
         steps.forEach((step: RouteVehicleTravelStep | RoutePedestrianTravelStep, stepIndex) => {
           // Retrieve the start and end locations for each step from the leg geometry:
           //    For every step before the final step, the end position is the next step's starting position
-          //    For the the final step, the end position is the last position in the leg geometry
+          //    For the final step, the end position is the last position in the leg geometry
           const geometryOffset = step.GeometryOffset;
           const startPosition = legGeometry[geometryOffset];
           const startLocation = new MigrationLatLng(startPosition[1], startPosition[0]);
@@ -267,17 +270,26 @@ export class MigrationDirectionsService {
           start_address: originResponse.formatted_address,
           end_address: destinationResponse.formatted_address,
         });
+
+        if (legGeometry) {
+          // Directions API's overview_path is an array of LatLngs representing the entire course of this route.
+          // Amazon Location provides a Geometry.LineString array for each leg in a route.
+          // To be compatible with Directions API, we will concatenate each leg's Geometry.LineString coordinates
+          routeLineString.push(...legGeometry);
+        }
       });
+
+      const convertedCoords = convertCoordinates(routeLineString);
 
       const googleRoute: google.maps.DirectionsRoute = {
         bounds: bounds,
         legs: googleLegs,
         copyrights: AWS_COPYRIGHT,
         summary: this._getSummary(route),
+        overview_path: this._getOverviewPath(convertedCoords),
+        overview_polyline: this._getOverviewPolyline(convertedCoords),
+        warnings: [], // Amazon Location does not provide similar warnings as Google's Directions API
         // TODO: These are not currently supported, but are required in the response
-        overview_path: [],
-        overview_polyline: "",
-        warnings: [],
         waypoint_order: [],
       };
 
@@ -393,5 +405,13 @@ export class MigrationDirectionsService {
     }
     geocodedWaypoint["geocoder_status"] = DirectionsStatus.OK;
     return "place_id" in geocodedWaypoint || "types" in geocodedWaypoint ? geocodedWaypoint : null;
+  }
+
+  _getOverviewPath(convertedCoords: [number, number][]): google.maps.LatLng[] {
+    return convertedCoords.map((coord) => new MigrationLatLng(coord[0], coord[1]));
+  }
+
+  _getOverviewPolyline(convertedCoords: [number, number][]): string {
+    return polyline.encode(convertedCoords);
   }
 }

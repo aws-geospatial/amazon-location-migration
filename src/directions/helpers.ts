@@ -202,3 +202,10 @@ export function getReverseGeocodedAddresses(
       callback(new Array(positions.length).fill(""));
     });
 }
+
+// Helper function to convert coordinates
+// Amazon Location Service uses [longitude, latitude] format
+// Google Maps API expects LatLng objects with (latitude, longitude)
+export function convertCoordinates(routeLineString: number[][]): [number, number][] {
+  return routeLineString.map((coord) => [coord[1], coord[0]]);
+}

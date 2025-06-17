@@ -2079,6 +2079,50 @@ const testLng = -97.7457518;
 
 jest.spyOn(console, "error").mockImplementation(() => {});
 
+global.structuredClone = jest.fn((obj) => JSON.parse(JSON.stringify(obj)));
+
+const mockDirectionsWithoutBoundsResult = {
+  routes: [
+    {
+      bounds: null,
+      legs: [
+        {
+          start_location: {
+            lat: () => 0,
+            lng: () => 0,
+          },
+          end_location: {
+            lat: () => 1,
+            lng: () => 1,
+          },
+          steps: [],
+          distance: { text: "1 km", value: 1000 },
+          duration: { text: "1 min", value: 60 },
+        },
+      ],
+      overview_path: [
+        { lat: () => 0, lng: () => 0 },
+        { lat: () => 1, lng: () => 1 },
+      ],
+      overview_polyline: { points: "test_polyline" },
+      warnings: [],
+      waypoint_order: [],
+    },
+  ],
+  geocoded_waypoints: [],
+  status: "OK",
+} as unknown as google.maps.DirectionsResult;
+
+// DirectionRoute's overview_polyline uses Polyline library, therefore we are mocking this.
+jest.mock("@mapbox/polyline", () => {
+  const mockEncodeFn = jest.fn(() => "test_encoded_polyline");
+  return {
+    default: {
+      encode: mockEncodeFn,
+    },
+  };
+});
+
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -2126,6 +2170,11 @@ test("should set directionsrenderer directions option", () => {
               end_location: { lat: 1, lng: 1 },
             },
           ],
+          overview_path: [
+            { lat: () => 0, lng: () => 0 },
+            { lat: () => 1, lng: () => 1 },
+          ],
+          overview_polyline: { points: "test_polyline_1" },
         },
       ],
     },
@@ -2133,22 +2182,25 @@ test("should set directionsrenderer directions option", () => {
 
   expect(testDirectionsRenderer).not.toBeNull();
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-1-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-1-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [0, 0],
+          [1, 1],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-1-route-0-leg-0",
+    id: "directions-renderer-1-route-0",
     type: "line",
-    source: "directions-renderer-1-route-0-leg-0",
+    source: "directions-renderer-1-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2176,40 +2228,28 @@ test("should call setDirections method on directionsrenderer", () => {
     markerOptions: {},
   });
 
-  testDirectionsRenderer.setDirections({
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  });
+  testDirectionsRenderer.setDirections(mockDirectionsWithoutBoundsResult);
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-2-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-2-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [0, 0],
+          [1, 1],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-2-route-0-leg-0",
+    id: "directions-renderer-2-route-0",
     type: "line",
-    source: "directions-renderer-2-route-0-leg-0",
+    source: "directions-renderer-2-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2235,57 +2275,62 @@ test("should call setDirections method on directionsrenderer twice", () => {
     markerOptions: {},
   });
 
-  testDirectionsRenderer.setDirections({
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  });
+  testDirectionsRenderer.setDirections(mockDirectionsWithoutBoundsResult);
 
-  testDirectionsRenderer.setDirections({
+  const anotherMockDirectionResult = {
     routes: [
       {
         bounds: null,
         legs: [
           {
-            geometry: {
-              LineString: 0,
+            start_location: {
+              lat: () => 2,
+              lng: () => 2,
             },
-            start_location: { lat: 2, lng: 2 },
-            end_location: { lat: 3, lng: 3 },
+            end_location: {
+              lat: () => 3,
+              lng: () => 3,
+            },
+            steps: [],
+            distance: { text: "1 km", value: 1000 },
+            duration: { text: "1 min", value: 60 },
           },
         ],
+        overview_path: [
+          { lat: () => 2, lng: () => 2 },
+          { lat: () => 3, lng: () => 3 },
+        ],
+        overview_polyline: { points: "test_polyline_2" },
+        warnings: [],
+        waypoint_order: [],
       },
     ],
-  });
+    geocoded_waypoints: [],
+    status: "OK",
+  } as unknown as google.maps.DirectionsResult;
+
+  testDirectionsRenderer.setDirections(anotherMockDirectionResult);
 
   expect(mockAddSource).toHaveBeenCalledTimes(2);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-3-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-3-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [0, 0],
+          [1, 1],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(2);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-3-route-0-leg-0",
+    id: "directions-renderer-3-route-0",
     type: "line",
-    source: "directions-renderer-3-route-0-leg-0",
+    source: "directions-renderer-3-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2317,40 +2362,28 @@ test("should call setDirections method on directionsrenderer with all polylineOp
     },
   });
 
-  testDirectionsRenderer.setDirections({
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  });
+  testDirectionsRenderer.setDirections(mockDirectionsWithoutBoundsResult);
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-4-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-4-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [0, 0],
+          [1, 1],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-4-route-0-leg-0",
+    id: "directions-renderer-4-route-0",
     type: "line",
-    source: "directions-renderer-4-route-0-leg-0",
+    source: "directions-renderer-4-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2379,40 +2412,28 @@ test("should call setDirections method on directionsrenderer with polylineOption
     },
   });
 
-  testDirectionsRenderer.setDirections({
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  });
+  testDirectionsRenderer.setDirections(mockDirectionsWithoutBoundsResult);
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-5-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-5-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [0, 0],
+          [1, 1],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-5-route-0-leg-0",
+    id: "directions-renderer-5-route-0",
     type: "line",
-    source: "directions-renderer-5-route-0-leg-0",
+    source: "directions-renderer-5-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2441,40 +2462,28 @@ test("should call setDirections method on directionsrenderer with polylineOption
     },
   });
 
-  testDirectionsRenderer.setDirections({
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  });
+  testDirectionsRenderer.setDirections(mockDirectionsWithoutBoundsResult);
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-6-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-6-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [0, 0],
+          [1, 1],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-6-route-0-leg-0",
+    id: "directions-renderer-6-route-0",
     type: "line",
-    source: "directions-renderer-6-route-0-leg-0",
+    source: "directions-renderer-6-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2498,28 +2507,12 @@ test("should call getDirections method on directionsrenderer", () => {
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
   });
-  const directions = {
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  };
 
-  testDirectionsRenderer.setDirections(directions);
+  testDirectionsRenderer.setDirections(mockDirectionsWithoutBoundsResult);
 
   const result = testDirectionsRenderer.getDirections();
 
-  expect(result).toBe(directions);
+  expect(result).toBe(mockDirectionsWithoutBoundsResult);
 });
 
 test("should clear directions when directionsrenderer removed from map", () => {
@@ -2542,6 +2535,11 @@ test("should clear directions when directionsrenderer removed from map", () => {
               end_location: { lat: 1, lng: 1 },
             },
           ],
+          overview_path: [
+            { lat: () => 0, lng: () => 0 },
+            { lat: () => 1, lng: () => 1 },
+          ],
+          overview_polyline: { points: "test_polyline_1" },
         },
       ],
     },
@@ -2604,34 +2602,63 @@ test("should allow calling setDirections with multiple routes", () => {
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
   });
+
   const directions = {
     routes: [
       {
         bounds: null,
         legs: [
           {
-            geometry: {
-              LineString: 0,
+            start_location: {
+              lat: () => 0,
+              lng: () => 0,
             },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            end_location: {
+              lat: () => 1,
+              lng: () => 1,
+            },
+            steps: [],
+            distance: { text: "1 km", value: 1000 },
+            duration: { text: "1 min", value: 60 },
           },
         ],
+        overview_path: [
+          { lat: () => 0, lng: () => 0 },
+          { lat: () => 1, lng: () => 1 },
+        ],
+        overview_polyline: { points: "test_polyline" },
+        warnings: [],
+        waypoint_order: [],
       },
       {
         bounds: null,
         legs: [
           {
-            geometry: {
-              LineString: 0,
+            start_location: {
+              lat: () => 0,
+              lng: () => 0,
             },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            end_location: {
+              lat: () => 1,
+              lng: () => 1,
+            },
+            steps: [],
+            distance: { text: "1 km", value: 1000 },
+            duration: { text: "1 min", value: 60 },
           },
         ],
+        overview_path: [
+          { lat: () => 0, lng: () => 0 },
+          { lat: () => 1, lng: () => 1 },
+        ],
+        overview_polyline: { points: "test_polyline" },
+        warnings: [],
+        waypoint_order: [],
       },
     ],
-  };
+    geocoded_waypoints: [],
+    status: "OK",
+  } as unknown as google.maps.DirectionsResult;
 
   testDirectionsRenderer.setDirections(directions);
 
@@ -2647,96 +2674,82 @@ test("should not render if route index is out of bounds", () => {
     map: testMap,
     routeIndex: 3,
   });
+
   const directions = {
     routes: [
       {
-        bounds: null,
+        bounds: {
+          getNorthEast: () => ({ lat: () => 1, lng: () => 1 }),
+          getSouthWest: () => ({ lat: () => 0, lng: () => 0 }),
+        },
         legs: [
           {
-            geometry: {
-              LineString: 0,
+            start_location: {
+              lat: () => 0,
+              lng: () => 0,
             },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
+            end_location: {
+              lat: () => 2,
+              lng: () => 2,
+            },
             steps: [
               {
-                start_location: { lat: 0, lng: 0 },
-                end_location: { lat: 1, lng: 1 },
+                start_location: {
+                  lat: () => 0,
+                  lng: () => 0,
+                },
+                end_location: {
+                  lat: () => 1,
+                  lng: () => 1,
+                },
               },
             ],
+            distance: { text: "1 km", value: 1000 },
+            duration: { text: "1 min", value: 60 },
           },
           {
-            geometry: {
-              LineString: 0,
+            start_location: {
+              lat: () => 0,
+              lng: () => 0,
             },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
+            end_location: {
+              lat: () => 2,
+              lng: () => 2,
+            },
             steps: [
               {
-                start_location: { lat: 1, lng: 1 },
-                end_location: { lat: 2, lng: 2 },
+                start_location: {
+                  lat: () => 1,
+                  lng: () => 1,
+                },
+                end_location: {
+                  lat: () => 2,
+                  lng: () => 2,
+                },
               },
             ],
+            distance: { text: "1 km", value: 1000 },
+            duration: { text: "1 min", value: 60 },
           },
         ],
+        overview_path: [
+          { lat: () => 0, lng: () => 0 },
+          { lat: () => 2, lng: () => 2 },
+        ],
+        overview_polyline: { points: "test_polyline" },
+        warnings: [],
+        waypoint_order: [],
       },
     ],
-  };
+    geocoded_waypoints: [],
+    status: "OK",
+  } as unknown as google.maps.DirectionsResult;
 
   testDirectionsRenderer.setDirections(directions);
 
   // Sources and layers shouldn't be added since the route index is out of bounds
   expect(mockAddSource).toHaveBeenCalledTimes(0);
   expect(mockAddLayer).toHaveBeenCalledTimes(0);
-});
-
-test("should call setDirections with a route that contains multiple legs and create multiple markers", () => {
-  const testMap = new MigrationMap(null, {
-    center: { lat: testLat, lng: testLng },
-    zoom: 9,
-  });
-  const testDirectionsRenderer = new MigrationDirectionsRenderer({
-    map: testMap,
-  });
-  const directions = {
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
-            steps: [
-              {
-                start_location: { lat: 0, lng: 0 },
-                end_location: { lat: 1, lng: 1 },
-              },
-            ],
-          },
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
-            steps: [
-              {
-                start_location: { lat: 1, lng: 1 },
-                end_location: { lat: 2, lng: 2 },
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  };
-
-  testDirectionsRenderer.setDirections(directions);
-
-  expect(testDirectionsRenderer._getMarkers().length).toBe(3);
 });
 
 test("should call addEventListener method on directionsrenderer", () => {
@@ -2749,24 +2762,8 @@ test("should call addEventListener method on directionsrenderer", () => {
   });
   const handlerSpy = jest.fn();
   testDirectionsRenderer.addListener("directions_changed", handlerSpy);
-  const directions = {
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
-      },
-    ],
-  };
 
-  testDirectionsRenderer.setDirections(directions);
+  testDirectionsRenderer.setDirections(mockDirectionsWithoutBoundsResult);
   expect(handlerSpy).toHaveBeenCalledTimes(1);
 });
 
@@ -2790,49 +2787,50 @@ test("should get new directions in handler when directions_changed event", (done
     center: { lat: testLat, lng: testLng },
     zoom: 9,
   });
-  const firstDirections = {
+
+  const mockSecondDirectionsResult = {
     routes: [
       {
         bounds: null,
         legs: [
           {
-            geometry: {
-              LineString: 0,
+            start_location: {
+              lat: () => 2,
+              lng: () => 2,
             },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            end_location: {
+              lat: () => 3,
+              lng: () => 3,
+            },
+            steps: [],
+            distance: { text: "1 km", value: 1000 },
+            duration: { text: "1 min", value: 60 },
           },
         ],
-      },
-    ],
-  };
-  const secondDirections = {
-    routes: [
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 2, lng: 2 },
-            end_location: { lat: 3, lng: 3 },
-          },
+        overview_path: [
+          { lat: () => 2, lng: () => 2 },
+          { lat: () => 3, lng: () => 3 },
         ],
+        overview_polyline: { points: "test_polyline" },
+        warnings: [],
+        waypoint_order: [],
       },
     ],
-  };
+    geocoded_waypoints: [],
+    status: "OK",
+  } as unknown as google.maps.DirectionsResult;
+
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
-    directions: firstDirections,
+    directions: mockDirectionsWithoutBoundsResult,
   });
   const handler = () => {
     // directions should be set to new directions by the time you can call 'getDirections'
-    expect(testDirectionsRenderer.getDirections()).toBe(secondDirections);
+    expect(testDirectionsRenderer.getDirections()).toBe(mockSecondDirectionsResult);
     done();
   };
   testDirectionsRenderer.addListener("directions_changed", handler);
-  testDirectionsRenderer.setDirections(secondDirections);
+  testDirectionsRenderer.setDirections(mockSecondDirectionsResult);
 });
 
 test("should return route with origin as LatLng and destination as LatLng", (done) => {

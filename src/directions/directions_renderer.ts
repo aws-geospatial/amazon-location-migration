@@ -75,7 +75,7 @@ export class MigrationDirectionsRenderer {
     this._updateRouteDrawing();
   }
 
-  setDirections(directions) {
+  setDirections(directions: google.maps.DirectionsResult | null) {
     this.#directions = directions;
 
     this._updateRouteDrawing();
@@ -177,76 +177,67 @@ export class MigrationDirectionsRenderer {
     }
 
     const maplibreMap = this.#map._getMap();
-    for (let i = 0; i < route.legs.length; i++) {
-      const leg = route.legs[i];
 
-      // leg.geometry is a new field we've added, because Google doesn't provide the polyline
-      // for the leg as a whole, only for the individual steps, but our API (currently) only provides
-      // a polyline for the entire leg.
-      // TODO: Once we've removed this, we can change the input param of setDirections to be typed (directions: google.maps.DirectionsResult | null)
-      const geometry = leg.geometry;
+    // Draw single polyline for the entire route
+    // TODO: Detect geometry type instead of just doing LineString
+    if (this.#suppressPolylines === false) {
+      const routeId = `directions-renderer-${this.rendererIndex}-route-${this.#routeIndex}`;
 
-      // TODO: Detect geometry type instead of just doing LineString
-      if (this.#suppressPolylines === false) {
-        const routeId = `directions-renderer-${this.rendererIndex}-route-${this.#routeIndex}-leg-${i}`;
-        maplibreMap.addSource(routeId, {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: geometry.LineString,
-            },
+      // Add source using the complete route geometry
+      maplibreMap.addSource(routeId, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: route.overview_path.map((latLng) => [latLng.lng(), latLng.lat()]),
           },
-        });
-        // 8 weight, 0.5 opacity, "#73B9FF" color for default, 3 weight, 1 opacity, "Black" color used when one property is set
-        const paintOptions = {};
-        if (this.#polylineOptions) {
-          paintOptions["line-color"] = this.#polylineOptions.strokeColor ? this.#polylineOptions.strokeColor : "Black";
-          paintOptions["line-width"] = this.#polylineOptions.strokeWeight ? this.#polylineOptions.strokeWeight : 3;
-          paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
-        } else {
-          // default line
-          paintOptions["line-color"] = "#73B9FF";
-          paintOptions["line-width"] = 8;
-          paintOptions["line-opacity"] = 0.5;
-        }
+        },
+      });
 
-        maplibreMap.addLayer({
-          id: routeId,
-          type: "line",
-          source: routeId,
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-            visibility: this.#polylineOptions && this.#polylineOptions.visible == false ? "none" : "visible",
-          },
-          paint: paintOptions,
-        });
-
-        this.#legRenderIds.push(routeId);
+      // 8 weight, 0.5 opacity, "#73B9FF" color for default, 3 weight, 1 opacity, "Black" color used when one property is set
+      const paintOptions = {};
+      if (this.#polylineOptions) {
+        paintOptions["line-color"] = this.#polylineOptions.strokeColor ? this.#polylineOptions.strokeColor : "Black";
+        paintOptions["line-width"] = this.#polylineOptions.strokeWeight ? this.#polylineOptions.strokeWeight : 3;
+        paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
+      } else {
+        // default line
+        paintOptions["line-color"] = "#73B9FF";
+        paintOptions["line-width"] = 8;
+        paintOptions["line-opacity"] = 0.5;
       }
 
-      // Add markers for the start location of the current leg
-      if (this.#suppressMarkers === false) {
-        const startLocation = leg.start_location;
+      // Add the route layer
+      maplibreMap.addLayer({
+        id: routeId,
+        type: "line",
+        source: routeId,
+        layout: {
+          "line-join": "round",
+          "line-cap": "round",
+          visibility: this.#polylineOptions?.visible === false ? "none" : "visible",
+        },
+        paint: paintOptions,
+      });
 
-        const startMarkerOptions =
-          this.#markerOptions === undefined
-            ? { label: String.fromCharCode(ASCII_CODE_A + i) }
-            : structuredClone(this.#markerOptions);
-        startMarkerOptions.position = startLocation;
-        startMarkerOptions.map = this.#map;
-        const startMarker = new MigrationMarker(startMarkerOptions);
-        this.#markers.push(startMarker);
-      }
-
-      // TODO: Add default info windows once location information is passed into route result
+      this.#legRenderIds.push(routeId);
     }
 
-    // Add final marker for end location of enture route
+    // Add markers (if not suppressed)
     if (this.#suppressMarkers === false) {
+      // Add start marker
+      const firstLeg = route.legs[0];
+      const startMarkerOptions =
+        this.#markerOptions === undefined
+          ? { label: String.fromCharCode(ASCII_CODE_A) }
+          : structuredClone(this.#markerOptions);
+      startMarkerOptions.position = firstLeg.start_location;
+      startMarkerOptions.map = this.#map;
+      this.#markers.push(new MigrationMarker(startMarkerOptions));
+
+      // Add end marker
       const lastLeg = route.legs[route.legs.length - 1];
       const endMarkerOptions =
         this.#markerOptions === undefined
@@ -254,9 +245,9 @@ export class MigrationDirectionsRenderer {
           : structuredClone(this.#markerOptions);
       endMarkerOptions.position = lastLeg.end_location;
       endMarkerOptions.map = this.#map;
-      const endMarker = new MigrationMarker(endMarkerOptions);
-      this.#markers.push(endMarker);
+      this.#markers.push(new MigrationMarker(endMarkerOptions));
     }
+    // TODO: Add default info windows once location information is passed into route result
   }
 
   _getMarkers() {
