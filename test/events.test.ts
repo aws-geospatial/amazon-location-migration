@@ -42,19 +42,13 @@ const mockDirectionsResult = {
   routes: [
     {
       bounds: {
-        getNorthEast: () => ({ lat: () => 1, lng: () => 1 }),
-        getSouthWest: () => ({ lat: () => 0, lng: () => 0 }),
+        getNorthEast: () => ({ lat: 1, lng: 1 }),
+        getSouthWest: () => ({ lat: 0, lng: 0 }),
       },
       legs: [
         {
-          start_location: {
-            lat: () => 0,
-            lng: () => 0,
-          },
-          end_location: {
-            lat: () => 1,
-            lng: () => 1,
-          },
+          start_location: { lat: 0, lng: 0 },
+          end_location: { lat: 1, lng: 1 },
           steps: [],
           distance: { text: "1 km", value: 1000 },
           duration: { text: "1 min", value: 60 },

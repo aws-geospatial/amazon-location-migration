@@ -204,8 +204,8 @@ export function getReverseGeocodedAddresses(
 }
 
 // Helper function to convert coordinates
-// Amazon Location Service uses [longitude, latitude] format
-// Google Maps API expects LatLng objects with (latitude, longitude)
+// Amazon Location Service uses (latitude, longitude) format whereas
+// Google Maps API expects LatLng objects with (longitude, latitude)
 export function convertCoordinates(routeLineString: number[][]): [number, number][] {
   return routeLineString.map((coord) => [coord[1], coord[0]]);
 }

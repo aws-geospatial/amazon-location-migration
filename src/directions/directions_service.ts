@@ -26,7 +26,7 @@ import {
   populateAvoidOptions,
   convertCoordinates,
 } from "./helpers";
-import polyline from "@mapbox/polyline";
+import { encodeFromLngLatArray } from "@aws/polyline";
 
 const KILOMETERS_TO_METERS_CONSTANT = 1000;
 // place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
@@ -196,8 +196,8 @@ export class MigrationDirectionsService {
     waypointResponses?,
   ) {
     const googleRoutes: google.maps.DirectionsRoute[] = [];
-    const routeLineString: number[][] = [];
     response.Routes.forEach((route) => {
+      const routeLineString: number[][] = [];
       let bounds = new MigrationLatLngBounds();
       const googleLegs = [];
       route.Legs.forEach((leg) => {
@@ -287,7 +287,7 @@ export class MigrationDirectionsService {
         copyrights: AWS_COPYRIGHT,
         summary: this._getSummary(route),
         overview_path: this._getOverviewPath(convertedCoords),
-        overview_polyline: this._getOverviewPolyline(convertedCoords),
+        overview_polyline: this._getOverviewPolyline(routeLineString),
         warnings: [], // Amazon Location does not provide similar warnings as Google's Directions API
         // TODO: These are not currently supported, but are required in the response
         waypoint_order: [],
@@ -408,10 +408,10 @@ export class MigrationDirectionsService {
   }
 
   _getOverviewPath(convertedCoords: [number, number][]): google.maps.LatLng[] {
-    return convertedCoords.map((coord) => new MigrationLatLng(coord[0], coord[1]));
+    return convertedCoords.map((coord) => new MigrationLatLng(coord[1], coord[0]));
   }
 
-  _getOverviewPolyline(convertedCoords: [number, number][]): string {
-    return polyline.encode(convertedCoords);
+  _getOverviewPolyline(routeLineString: number[][]): string {
+    return encodeFromLngLatArray(routeLineString);
   }
 }

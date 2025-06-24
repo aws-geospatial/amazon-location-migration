@@ -2087,20 +2087,15 @@ const mockDirectionsWithoutBoundsResult = {
       bounds: null,
       legs: [
         {
-          start_location: {
-            lat: () => 0,
-            lng: () => 0,
-          },
-          end_location: {
-            lat: () => 1,
-            lng: () => 1,
-          },
+          start_location: { lat: 0, lng: 0 },
+          end_location: { lat: 1, lng: 1 },
           steps: [],
           distance: { text: "1 km", value: 1000 },
           duration: { text: "1 min", value: 60 },
         },
       ],
       overview_path: [
+        // overview_path needs to have LatLongObject so renderer can use these functions
         { lat: () => 0, lng: () => 0 },
         { lat: () => 1, lng: () => 1 },
       ],
@@ -2114,14 +2109,9 @@ const mockDirectionsWithoutBoundsResult = {
 } as unknown as google.maps.DirectionsResult;
 
 // DirectionRoute's overview_polyline uses Polyline library, therefore we are mocking this.
-jest.mock("@mapbox/polyline", () => {
-  const mockEncodeFn = jest.fn(() => "test_encoded_polyline");
-  return {
-    default: {
-      encode: mockEncodeFn,
-    },
-  };
-});
+jest.mock("@aws/polyline", () => ({
+  encodeFromLngLatArray: jest.fn(() => "test_encoded_polyline"),
+}));
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -2283,14 +2273,8 @@ test("should call setDirections method on directionsrenderer twice", () => {
         bounds: null,
         legs: [
           {
-            start_location: {
-              lat: () => 2,
-              lng: () => 2,
-            },
-            end_location: {
-              lat: () => 3,
-              lng: () => 3,
-            },
+            start_location: { lat: 2, lng: 2 },
+            end_location: { lat: 3, lng: 3 },
             steps: [],
             distance: { text: "1 km", value: 1000 },
             duration: { text: "1 min", value: 60 },
@@ -2609,14 +2593,8 @@ test("should allow calling setDirections with multiple routes", () => {
         bounds: null,
         legs: [
           {
-            start_location: {
-              lat: () => 0,
-              lng: () => 0,
-            },
-            end_location: {
-              lat: () => 1,
-              lng: () => 1,
-            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
             steps: [],
             distance: { text: "1 km", value: 1000 },
             duration: { text: "1 min", value: 60 },
@@ -2634,14 +2612,8 @@ test("should allow calling setDirections with multiple routes", () => {
         bounds: null,
         legs: [
           {
-            start_location: {
-              lat: () => 0,
-              lng: () => 0,
-            },
-            end_location: {
-              lat: () => 1,
-              lng: () => 1,
-            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 1, lng: 1 },
             steps: [],
             distance: { text: "1 km", value: 1000 },
             duration: { text: "1 min", value: 60 },
@@ -2679,53 +2651,29 @@ test("should not render if route index is out of bounds", () => {
     routes: [
       {
         bounds: {
-          getNorthEast: () => ({ lat: () => 1, lng: () => 1 }),
-          getSouthWest: () => ({ lat: () => 0, lng: () => 0 }),
+          getNorthEast: () => ({ lat: 1, lng: 1 }),
+          getSouthWest: () => ({ lat: 0, lng: 0 }),
         },
         legs: [
           {
-            start_location: {
-              lat: () => 0,
-              lng: () => 0,
-            },
-            end_location: {
-              lat: () => 2,
-              lng: () => 2,
-            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 2, lng: 2 },
             steps: [
               {
-                start_location: {
-                  lat: () => 0,
-                  lng: () => 0,
-                },
-                end_location: {
-                  lat: () => 1,
-                  lng: () => 1,
-                },
+                start_location: { lat: 0, lng: 0 },
+                end_location: { lat: 1, lng: 1 },
               },
             ],
             distance: { text: "1 km", value: 1000 },
             duration: { text: "1 min", value: 60 },
           },
           {
-            start_location: {
-              lat: () => 0,
-              lng: () => 0,
-            },
-            end_location: {
-              lat: () => 2,
-              lng: () => 2,
-            },
+            start_location: { lat: 0, lng: 0 },
+            end_location: { lat: 2, lng: 2 },
             steps: [
               {
-                start_location: {
-                  lat: () => 1,
-                  lng: () => 1,
-                },
-                end_location: {
-                  lat: () => 2,
-                  lng: () => 2,
-                },
+                start_location: { lat: 1, lng: 1 },
+                end_location: { lat: 2, lng: 2 },
               },
             ],
             distance: { text: "1 km", value: 1000 },
@@ -2794,14 +2742,8 @@ test("should get new directions in handler when directions_changed event", (done
         bounds: null,
         legs: [
           {
-            start_location: {
-              lat: () => 2,
-              lng: () => 2,
-            },
-            end_location: {
-              lat: () => 3,
-              lng: () => 3,
-            },
+            start_location: { lat: 2, lng: 2 },
+            end_location: { lat: 3, lng: 3 },
             steps: [],
             distance: { text: "1 km", value: 1000 },
             duration: { text: "1 min", value: 60 },

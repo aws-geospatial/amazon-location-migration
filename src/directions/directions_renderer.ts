@@ -5,6 +5,9 @@ import { AddListenerResponse } from "../common";
 import { MigrationMap, MigrationMarker } from "../maps";
 
 const ASCII_CODE_A = 65;
+const DEFAULT_LINE_COLOR = "#73B9FF";
+const DEFAULT_LINE_OPACITY = 0.5;
+const DEFAULT_LINE_WIDTH = 8;
 
 export class MigrationDirectionsRenderer {
   #directions;
@@ -178,12 +181,10 @@ export class MigrationDirectionsRenderer {
 
     const maplibreMap = this.#map._getMap();
 
-    // Draw single polyline for the entire route
+    // Draw single LineString for the entire route
     // TODO: Detect geometry type instead of just doing LineString
     if (this.#suppressPolylines === false) {
       const routeId = `directions-renderer-${this.rendererIndex}-route-${this.#routeIndex}`;
-
-      // Add source using the complete route geometry
       maplibreMap.addSource(routeId, {
         type: "geojson",
         data: {
@@ -191,11 +192,10 @@ export class MigrationDirectionsRenderer {
           properties: {},
           geometry: {
             type: "LineString",
-            coordinates: route.overview_path.map((latLng) => [latLng.lng(), latLng.lat()]),
+            coordinates: route.overview_path.map((coord) => [coord.lat(), coord.lng()]),
           },
         },
       });
-
       // 8 weight, 0.5 opacity, "#73B9FF" color for default, 3 weight, 1 opacity, "Black" color used when one property is set
       const paintOptions = {};
       if (this.#polylineOptions) {
@@ -204,9 +204,9 @@ export class MigrationDirectionsRenderer {
         paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
       } else {
         // default line
-        paintOptions["line-color"] = "#73B9FF";
-        paintOptions["line-width"] = 8;
-        paintOptions["line-opacity"] = 0.5;
+        paintOptions["line-color"] = DEFAULT_LINE_COLOR;
+        paintOptions["line-width"] = DEFAULT_LINE_WIDTH;
+        paintOptions["line-opacity"] = DEFAULT_LINE_OPACITY;
       }
 
       // Add the route layer
@@ -217,27 +217,33 @@ export class MigrationDirectionsRenderer {
         layout: {
           "line-join": "round",
           "line-cap": "round",
-          visibility: this.#polylineOptions?.visible === false ? "none" : "visible",
+          visibility: this.#polylineOptions && this.#polylineOptions.visible == false ? "none" : "visible",
         },
         paint: paintOptions,
       });
 
       this.#legRenderIds.push(routeId);
+
+      // TODO: Add default info windows once location information is passed into route result
     }
 
     // Add markers (if not suppressed)
+
+    // Add first marker for the start location of the current route
     if (this.#suppressMarkers === false) {
-      // Add start marker
       const firstLeg = route.legs[0];
       const startMarkerOptions =
         this.#markerOptions === undefined
-          ? { label: String.fromCharCode(ASCII_CODE_A) }
+          ? { label: String.fromCharCode(ASCII_CODE_A) } // ASCII_CODE_A + 0 where 0 is the index of first leg
           : structuredClone(this.#markerOptions);
       startMarkerOptions.position = firstLeg.start_location;
       startMarkerOptions.map = this.#map;
-      this.#markers.push(new MigrationMarker(startMarkerOptions));
+      const startMarker = new MigrationMarker(startMarkerOptions);
+      this.#markers.push(startMarker);
+    }
 
-      // Add end marker
+    // Add final marker for end location of entire route
+    if (this.#suppressMarkers === false) {
       const lastLeg = route.legs[route.legs.length - 1];
       const endMarkerOptions =
         this.#markerOptions === undefined
@@ -245,9 +251,9 @@ export class MigrationDirectionsRenderer {
           : structuredClone(this.#markerOptions);
       endMarkerOptions.position = lastLeg.end_location;
       endMarkerOptions.map = this.#map;
-      this.#markers.push(new MigrationMarker(endMarkerOptions));
+      const endMarker = new MigrationMarker(endMarkerOptions);
+      this.#markers.push(endMarker);
     }
-    // TODO: Add default info windows once location information is passed into route result
   }
 
   _getMarkers() {
