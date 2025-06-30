@@ -192,7 +192,7 @@ export class MigrationDirectionsRenderer {
           properties: {},
           geometry: {
             type: "LineString",
-            coordinates: route.overview_path.map((coord) => [coord.lat(), coord.lng()]),
+            coordinates: route.overview_path.map((coord) => [coord.lng(), coord.lat()]),
           },
         },
       });

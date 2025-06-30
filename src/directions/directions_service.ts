@@ -408,7 +408,8 @@ export class MigrationDirectionsService {
   }
 
   _getOverviewPath(convertedCoords: [number, number][]): google.maps.LatLng[] {
-    return convertedCoords.map((coord) => new MigrationLatLng(coord[1], coord[0]));
+    // convertedCoords is already in  [lat,lng], now create google.maps.LatLng objects
+    return convertedCoords.map((coord) => new MigrationLatLng(coord[0], coord[1]));
   }
 
   _getOverviewPolyline(routeLineString: number[][]): string {
