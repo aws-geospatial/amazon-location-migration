@@ -182,7 +182,6 @@ export class MigrationDirectionsRenderer {
     const maplibreMap = this.#map._getMap();
 
     // Draw single LineString for the entire route
-    // TODO: Detect geometry type instead of just doing LineString
     if (this.#suppressPolylines === false) {
       const routeId = `directions-renderer-${this.rendererIndex}-route-${this.#routeIndex}`;
       maplibreMap.addSource(routeId, {
@@ -227,32 +226,32 @@ export class MigrationDirectionsRenderer {
       // TODO: Add default info windows once location information is passed into route result
     }
 
-    // Add markers (if not suppressed)
-
-    // Add first marker for the start location of the current route
+    /**
+     * Add markers (if not suppressed) Each route has several legs, each leg start location is alphabetically marked on
+     * map and end location, which is the last leg's end_location is marked with last alphabet in order.
+     *
+     * For Example: If there are 3 legs, start location will be marked with A, B, C and end location will be marked with
+     * D. **
+     */
     if (this.#suppressMarkers === false) {
-      const firstLeg = route.legs[0];
-      const startMarkerOptions =
-        this.#markerOptions === undefined
-          ? { label: String.fromCharCode(ASCII_CODE_A) } // ASCII_CODE_A + 0 where 0 is the index of first leg
-          : structuredClone(this.#markerOptions);
-      startMarkerOptions.position = firstLeg.start_location;
-      startMarkerOptions.map = this.#map;
-      const startMarker = new MigrationMarker(startMarkerOptions);
-      this.#markers.push(startMarker);
-    }
+      route.legs.forEach((leg, index) => {
+        const markerOptions = this.#markerOptions
+          ? structuredClone(this.#markerOptions)
+          : { label: String.fromCharCode(ASCII_CODE_A + index) };
+        markerOptions.position = leg.start_location;
+        markerOptions.map = this.#map;
+        this.#markers.push(new MigrationMarker(markerOptions));
+      });
 
-    // Add final marker for end location of entire route
-    if (this.#suppressMarkers === false) {
+      // Add final marker for the end location
       const lastLeg = route.legs[route.legs.length - 1];
-      const endMarkerOptions =
-        this.#markerOptions === undefined
-          ? { label: String.fromCharCode(ASCII_CODE_A + route.legs.length) }
-          : structuredClone(this.#markerOptions);
+      const endMarkerOptions = this.#markerOptions
+        ? structuredClone(this.#markerOptions)
+        : { label: String.fromCharCode(ASCII_CODE_A + route.legs.length) };
       endMarkerOptions.position = lastLeg.end_location;
       endMarkerOptions.map = this.#map;
-      const endMarker = new MigrationMarker(endMarkerOptions);
-      this.#markers.push(endMarker);
+
+      this.#markers.push(new MigrationMarker(endMarkerOptions));
     }
   }
 

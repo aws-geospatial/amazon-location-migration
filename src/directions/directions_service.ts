@@ -24,7 +24,7 @@ import {
   parseOrFindLocations,
   ParseOrFindLocationResponse,
   populateAvoidOptions,
-  convertCoordinates,
+  lngLatToLatLngCoords,
 } from "./helpers";
 import { encodeFromLngLatArray } from "@aws/polyline";
 
@@ -197,7 +197,7 @@ export class MigrationDirectionsService {
   ) {
     const googleRoutes: google.maps.DirectionsRoute[] = [];
     response.Routes.forEach((route) => {
-      const routeLineString: number[][] = [];
+      const lngLatRouteCoords: number[][] = [];
       let bounds = new MigrationLatLngBounds();
       const googleLegs = [];
       route.Legs.forEach((leg) => {
@@ -275,19 +275,19 @@ export class MigrationDirectionsService {
           // Directions API's overview_path is an array of LatLngs representing the entire course of this route.
           // Amazon Location provides a Geometry.LineString array for each leg in a route.
           // To be compatible with Directions API, we will concatenate each leg's Geometry.LineString coordinates
-          routeLineString.push(...legGeometry);
+          lngLatRouteCoords.push(...legGeometry);
         }
       });
 
-      const convertedCoords = convertCoordinates(routeLineString);
+      const latLngRouteCoords = lngLatToLatLngCoords(lngLatRouteCoords);
 
       const googleRoute: google.maps.DirectionsRoute = {
         bounds: bounds,
         legs: googleLegs,
         copyrights: AWS_COPYRIGHT,
         summary: this._getSummary(route),
-        overview_path: this._getOverviewPath(convertedCoords),
-        overview_polyline: this._getOverviewPolyline(routeLineString),
+        overview_path: this._getOverviewPath(latLngRouteCoords),
+        overview_polyline: this._getOverviewPolyline(lngLatRouteCoords),
         warnings: [], // Amazon Location does not provide similar warnings as Google's Directions API
         // TODO: These are not currently supported, but are required in the response
         waypoint_order: [],
@@ -407,12 +407,12 @@ export class MigrationDirectionsService {
     return "place_id" in geocodedWaypoint || "types" in geocodedWaypoint ? geocodedWaypoint : null;
   }
 
-  _getOverviewPath(convertedCoords: [number, number][]): google.maps.LatLng[] {
-    // convertedCoords is already in  [lat,lng], now create google.maps.LatLng objects
-    return convertedCoords.map((coord) => new MigrationLatLng(coord[0], coord[1]));
+  _getOverviewPath(latLngRouteCoords: [number, number][]): google.maps.LatLng[] {
+    // create google.maps.LatLng objects from latLngRouteCoords
+    return latLngRouteCoords.map((coord) => new MigrationLatLng(coord[0], coord[1]));
   }
 
-  _getOverviewPolyline(routeLineString: number[][]): string {
-    return encodeFromLngLatArray(routeLineString);
+  _getOverviewPolyline(lngLatRouteCoords: number[][]): string {
+    return encodeFromLngLatArray(lngLatRouteCoords);
   }
 }
