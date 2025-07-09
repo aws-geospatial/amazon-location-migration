@@ -269,10 +269,6 @@ export function getUnitSystem(
     return options.unitSystem;
   }
 
-  if (!originPoint || originPoint.length != 2) {
-    return UnitSystem.METRIC;
-  }
-
   // We do not need to flip these coordinates since originPoint is already in Lng Lat format
   const flag = isPointInImperialCountry(originPoint);
   return flag ? UnitSystem.IMPERIAL : UnitSystem.METRIC;
@@ -313,9 +309,9 @@ export function isPointInImperialCountry(coordinates: number[]): boolean {
  */
 export function formatDistanceBasedOnUnitSystem(meters: number, unitSystem: UnitSystem): string {
   const kilometers = meters / 1000;
-  const miles = kilometers * KILOMETERS_TO_MILES_CONSTANT;
 
   if (unitSystem === UnitSystem.IMPERIAL) {
+    const miles = kilometers * KILOMETERS_TO_MILES_CONSTANT;
     return formatImperialDistance(miles);
   }
   return formatMetricDistance(kilometers, meters);

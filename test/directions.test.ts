@@ -2055,8 +2055,6 @@ import {
   CalculateRouteMatrixCommand,
   CalculateRoutesRequest,
   RouteTravelMode,
-  CalculateRoutesResponse,
-  GeometryFormat,
 } from "@aws-sdk/client-geo-routes";
 
 const directionsService = new MigrationDirectionsService();
