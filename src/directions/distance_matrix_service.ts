@@ -50,10 +50,11 @@ export class MigrationDistanceMatrixService {
                 Position: destination.position,
               }));
 
-              // Combine all positions and convert from [lat,lng] to [lng,lat] using LngLat
+              // Combine all positions (parseOrFindLocations returns origin.Position and destination.Position
+              // in Lng Lat format so we do not need to convert here)
               const allPositions: LngLat[] = [
-                ...origins.map((origin) => new LngLat(origin.Position[1], origin.Position[0])),
-                ...destinations.map((destination) => new LngLat(destination.Position[1], destination.Position[0])),
+                ...origins.map((origin) => new LngLat(origin.Position[0], origin.Position[1])),
+                ...destinations.map((destination) => new LngLat(destination.Position[0], destination.Position[1])),
               ];
 
               const input: CalculateRouteMatrixRequest = {

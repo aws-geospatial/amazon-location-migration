@@ -272,8 +272,9 @@ export function getUnitSystem(
   if (!originPoint || originPoint.length != 2) {
     return UnitSystem.METRIC;
   }
-  const coordinates = [originPoint[1], originPoint[0]]; // flip from Google's LongLat to Amazon's LatLong
-  const flag = isPointInImperialCountry(coordinates);
+
+  // We do not need to flip these coordinates since originPoint is already in Lng Lat format
+  const flag = isPointInImperialCountry(originPoint);
   return flag ? UnitSystem.IMPERIAL : UnitSystem.METRIC;
 }
 
