@@ -3853,3 +3853,405 @@ test("should call getDistanceMatrix with options avoidHighways set to true", (do
     done();
   });
 });
+
+test("should have copyrights field in route response", (done) => {
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
+
+  const request = {
+    origin: origin,
+    destination: destination,
+    travelMode: TravelMode.DRIVING,
+  };
+
+  directionsService.route(request).then((response) => {
+    const routes = response.routes;
+    expect(routes.length).toStrictEqual(1);
+
+    const route = routes[0];
+    expect(route.copyrights).toBeDefined();
+    expect(route.copyrights).toStrictEqual("© AWS, HERE");
+
+    done();
+  });
+});
+
+describe("test summary field in route response", () => {
+  let defaultRequest;
+
+  beforeEach(() => {
+    defaultRequest = {
+      origin: new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]),
+      destination: new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]),
+      travelMode: TravelMode.DRIVING,
+    };
+  });
+
+  describe("single road cases", () => {
+    test("should show single road name when it's the only road", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: { Value: "Only Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Only Road");
+        done();
+      });
+    });
+
+    test("should show single road name when it's the only valid road among multiple", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [
+                { RoadName: { Value: null } },
+                { RoadName: { Value: "Valid Road" } },
+                { RoadName: { Value: undefined } },
+              ],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Valid Road");
+        done();
+      });
+    });
+  });
+
+  describe("two roads cases", () => {
+    test("should show both road names when two different roads are available", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: { Value: "First Road" } }, { RoadName: { Value: "Last Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("First Road and Last Road");
+        done();
+      });
+    });
+
+    test("should show single road name when both roads are identical", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: { Value: "Same Road" } }, { RoadName: { Value: "Same Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Same Road");
+        done();
+      });
+    });
+
+    test("should show first road name when second is invalid", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: { Value: "First Road" } }, { RoadName: { Value: undefined } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("First Road");
+        done();
+      });
+    });
+
+    test("should show second road name when first is invalid", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: { Value: null } }, { RoadName: { Value: "Second Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Second Road");
+        done();
+      });
+    });
+  });
+
+  describe("multiple roads cases", () => {
+    test("should show first and last valid roads when there are three roads", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [
+                { RoadName: { Value: "First Road" } },
+                { RoadName: { Value: "Middle Road" } },
+                { RoadName: { Value: "Last Road" } },
+              ],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("First Road and Last Road");
+        done();
+      });
+    });
+
+    test("should show first and last valid roads when middle roads are invalid", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [
+                { RoadName: { Value: "First Road" } },
+                { RoadName: { Value: null } },
+                { RoadName: { Value: undefined } },
+                { RoadName: { Value: "Last Road" } },
+              ],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("First Road and Last Road");
+        done();
+      });
+    });
+
+    test("should show valid road names when first and last are invalid", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [
+                { RoadName: { Value: null } },
+                { RoadName: { Value: "Second Road" } },
+                { RoadName: { Value: "Third Road" } },
+                { RoadName: { Value: undefined } },
+              ],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Second Road and Third Road");
+        done();
+      });
+    });
+  });
+
+  describe("invalid input cases", () => {
+    test("should have summary field defined", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: { Value: "Test Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        const routes = response.routes;
+        expect(routes.length).toStrictEqual(1);
+        expect(response.routes[0].summary).toBeDefined();
+        done();
+      });
+    });
+
+    test("should return empty string when MajorRoadLabels is undefined", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("");
+        done();
+      });
+    });
+
+    test("should return empty string when MajorRoadLabels is null", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: null,
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("");
+        done();
+      });
+    });
+
+    test("should return empty string when MajorRoadLabels is empty array", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("");
+        done();
+      });
+    });
+  });
+
+  describe("edge cases for label mapping", () => {
+    test("should handle null label in MajorRoadLabels", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [null, { RoadName: { Value: "Valid Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Valid Road");
+        done();
+      });
+    });
+
+    test("should handle undefined label in MajorRoadLabels", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [undefined, { RoadName: { Value: "Valid Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Valid Road");
+        done();
+      });
+    });
+
+    test("should handle null RoadName in label", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: null }, { RoadName: { Value: "Valid Road" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("Valid Road");
+        done();
+      });
+    });
+
+    test("should handle array with all invalid labels", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [
+                null,
+                undefined,
+                { RoadName: null },
+                { RoadName: undefined },
+                { RoadName: { Value: null } },
+                { RoadName: { Value: undefined } },
+                {},
+              ],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("");
+        done();
+      });
+    });
+
+    test("should handle mixed valid and invalid labels", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [
+                null,
+                { RoadName: { Value: "First Valid" } },
+                undefined,
+                { RoadName: null },
+                { RoadName: { Value: "Second Valid" } },
+                { RoadName: undefined },
+              ],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("First Valid and Second Valid");
+        done();
+      });
+    });
+  });
+});

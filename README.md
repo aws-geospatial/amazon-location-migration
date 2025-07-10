@@ -6,18 +6,11 @@ The Amazon Location Migration SDK provides a bridge that allows you to migrate e
 
 ## Usage
 
-In order to use the SDK, you will first need to create Amazon Location Service resources based on what kinds of Google Maps API calls your application uses.
-Please follow the instructions linked below based on your applications needs:
-
-- Maps - https://docs.aws.amazon.com/location/latest/developerguide/map-prerequisites.html
-- Places - https://docs.aws.amazon.com/location/latest/developerguide/places-prerequisites.html
-- Routes - https://docs.aws.amazon.com/location/latest/developerguide/routes-prerequisites.html
-
-Once you have created your resources, you can create an API key and give it access to the resources you've created:
+In order to use the SDK, all you need to do is create an API key, which can be done by following these instructions:
 
 https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html
 
-Now that you have your resources and API key, you can replace your Google Maps JavaScript API import with the SDK. Here are examples based on which Google import method your application uses:
+Once you have your API key, you can replace your Google Maps JavaScript API import with the SDK. Here are examples based on which Google import method your application uses:
 
 ### Dynamic Library Import
 
@@ -34,13 +27,11 @@ If your application uses the [dynamic library import](https://developers.google.
 </script>
 ```
 
-To use the migration SDK, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
+To use the migration SDK, you replace that line with the following (with your AWS region and API key filled in):
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?region={{REGION}}&apiKey={{AMAZON_LOCATION_API_KEY}}"></script>
 ```
-
-If there are any resources that your application doesn't use, you can omit those query parameters. Only the `region` and `apiKey` are required.
 
 The import is the only change you need to make in your client code. The rest of your code will function as-is but will now be making Amazon Location Service API requests, such as the example below:
 
@@ -70,7 +61,7 @@ If your application uses the [legacy direct script loading tag](https://develope
 ></script>
 ```
 
-To use the migration SDK, you replace that line with the following (with your AWS region, resource name(s) and API key filled in):
+To use the migration SDK, you replace that line with the following (with your AWS region and API key filled in):
 
 ```html
 <script
@@ -78,8 +69,6 @@ To use the migration SDK, you replace that line with the following (with your AW
   src="https://cdn.jsdelivr.net/npm/@aws/amazon-location-migration-sdk/dist/amazonLocationMigrationSDK.min.js?callback=initMap&region={{REGION}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
 ></script>
 ```
-
-If there are any resources that your application doesn't use, you can omit those query parameters. Only the `region` and `apiKey` are required.
 
 The import is the only change you need to make in your client code. The rest of your code will function as-is but will now be making Amazon Location Service API requests, such as the example below:
 
@@ -94,6 +83,66 @@ function initMap() {
 }
 
 window.initMap = initMap;
+```
+
+### NPM js-api-loader usage
+
+If your application uses the [NPM js-api-loader](https://developers.google.com/maps/documentation/javascript/load-maps-js-api#js-api-loader) package, your current import looks something like this:
+
+```javascript
+import { Loader } from "@googlemaps/js-api-loader";
+
+const loader = new Loader({
+  apiKey: "YOUR_API_KEY",
+  version: "weekly",
+  ...additionalOptions,
+});
+
+loader.load().then(async () => {
+  const { Map } = await google.maps.importLibrary("maps");
+
+  map = new Map(document.getElementById("map"), {
+    center: { lat: 30.268193, lng: -97.7457518 },
+    zoom: 8,
+  });
+});
+```
+
+To use the migration SDK, you just need to replace the `apiKey` field with your Amazon Location API key and also add a field replace to specify your `region` (unless you are using `us-west-2`, which it will use by default if no `region` is passed).
+The logic when you call `load` and beyond remains the same:
+
+```javascript
+import { Loader } from "@googlemaps/js-api-loader";
+
+const loader = new Loader({
+  apiKey: "AMAZON_LOCATION_API_KEY",
+  region: "AMAZON_LOCATION_REGION",
+  version: "weekly",
+  ...additionalOptions,
+});
+
+loader.load().then(async () => {
+  const { Map } = await google.maps.importLibrary("maps");
+
+  map = new Map(document.getElementById("map"), {
+    center: { lat: 30.268193, lng: -97.7457518 },
+    zoom: 8,
+  });
+});
+```
+
+The migration SDK also supports using `loader.importLibrary()` to load libraries:
+
+```javascript
+const loader = new Loader({
+  apiKey: "YOUR_API_KEY",
+  version: "weekly",
+  ...additionalOptions,
+});
+
+loader.importLibrary("maps").then(({ Map }) => {
+  new Map(document.getElementById("map"), mapOptions);
+});
 ```
 
 ## Supported Google APIs

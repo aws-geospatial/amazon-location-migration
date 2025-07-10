@@ -11,6 +11,7 @@ import {
   RoutePedestrianTravelStep,
   RouteTravelMode,
   RouteVehicleTravelStep,
+  Route,
 } from "@aws-sdk/client-geo-routes";
 
 import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../common";
@@ -28,7 +29,7 @@ import {
 
 // place_id and types needed for geocoded_waypoints response property, formatted_address needed for leg start_address and end_address
 const ROUTE_FIND_LOCATION_FIELDS = ["geometry", "place_id", "types", "formatted_address"];
-
+const AWS_COPYRIGHT = "© AWS, HERE";
 export class MigrationDirectionsService {
   // This will be populated by the top level module
   // that creates our GeoRoutes client
@@ -285,11 +286,11 @@ export class MigrationDirectionsService {
       const googleRoute: google.maps.DirectionsRoute = {
         bounds: bounds,
         legs: googleLegs,
+        copyrights: AWS_COPYRIGHT,
+        summary: this._getSummary(route),
         // TODO: These are not currently supported, but are required in the response
-        copyrights: "",
         overview_path: [],
         overview_polyline: "",
-        summary: "",
         warnings: [],
         waypoint_order: [],
       };
@@ -312,6 +313,55 @@ export class MigrationDirectionsService {
     }
 
     return googleResponse;
+  }
+
+  /**
+   * Gets a summary string of the route based on major road names.
+   *
+   * Behavior:
+   *
+   * - Returns empty string if no road labels exist or no valid road names are found
+   * - Returns a single road name if only one valid road name exists
+   * - Returns a single road name if first and last valid road names are identical
+   * - Returns "Road A and Road B" format when first and last valid road names are different
+   *
+   * Examples:
+   *
+   * - [null, "Second", "Third"] -> "Second and Third"
+   * - ["First", null, "Third"] -> "First and Third"
+   * - [null, "Same", "Same"] -> "Same"
+   * - ["Only"] -> "Only"
+   * - [null, undefined, "Valid"] -> "Valid"
+   * - [null, undefined] -> ""
+   *
+   * @param route The route containing MajorRoadLabels
+   * @returns Formatted summary string of the route
+   */
+  private _getSummary(route: Route): string {
+    if (!route.MajorRoadLabels) {
+      return "";
+    }
+
+    // Get valid road names, filtering out undefined/null values
+    const validRoads = route.MajorRoadLabels.map((label) => label?.RoadName?.Value).filter((roadName) => roadName);
+
+    if (!validRoads.length) {
+      return "";
+    }
+
+    if (validRoads.length === 1) {
+      return validRoads[0];
+    }
+
+    const firstValidRoad = validRoads[0];
+    const lastValidRoad = validRoads[validRoads.length - 1];
+
+    if (firstValidRoad === lastValidRoad) {
+      return firstValidRoad;
+    }
+
+    // Return combination of first and last valid roads
+    return `${firstValidRoad} and ${lastValidRoad}`;
   }
 
   _constructGeocodedWaypointsFromResponses(
