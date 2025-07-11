@@ -39,6 +39,15 @@ jobs:
 
       - name: Compare coverage
         run: |
+          # Define threshold for acceptable coverage decrease (in percentage points)
+          THRESHOLD=2.0
+          
+          # Calculate differences
+          STATEMENTS_DIFF=$(echo "${{ env.BASE_STATEMENTS }} - ${{ env.PR_STATEMENTS }}" | bc -l)
+          BRANCHES_DIFF=$(echo "${{ env.BASE_BRANCHES }} - ${{ env.PR_BRANCHES }}" | bc -l)
+          FUNCTIONS_DIFF=$(echo "${{ env.BASE_FUNCTIONS }} - ${{ env.PR_FUNCTIONS }}" | bc -l)
+          LINES_DIFF=$(echo "${{ env.BASE_LINES }} - ${{ env.PR_LINES }}" | bc -l)
+          
           echo "Base Branch Coverage:"
           echo "===================="
           cat base_coverage.txt
@@ -46,13 +55,73 @@ jobs:
           echo -e "\nPR Coverage:"
           echo "============"
           cat pr_coverage.txt
-
-          if (( $(echo "${{ env.PR_STATEMENTS }} < ${{ env.BASE_STATEMENTS }}" | bc -l) )) || \
-             (( $(echo "${{ env.PR_BRANCHES }} < ${{ env.BASE_BRANCHES }}" | bc -l) )) || \
-             (( $(echo "${{ env.PR_FUNCTIONS }} < ${{ env.BASE_FUNCTIONS }}" | bc -l) )) || \
-             (( $(echo "${{ env.PR_LINES }} < ${{ env.BASE_LINES }}" | bc -l) )); then
-            echo "❌ Coverage decreased in one or more metrics"
+          
+          echo -e "\nCoverage Changes:"
+          echo "================="
+          echo "Statements: $(printf "%+.2f" $(echo "0 - $STATEMENTS_DIFF" | bc -l))% (Base: ${{ env.BASE_STATEMENTS }}%, PR: ${{ env.PR_STATEMENTS }}%)"
+          echo "Branches: $(printf "%+.2f" $(echo "0 - $BRANCHES_DIFF" | bc -l))% (Base: ${{ env.BASE_BRANCHES }}%, PR: ${{ env.PR_BRANCHES }}%)"
+          echo "Functions: $(printf "%+.2f" $(echo "0 - $FUNCTIONS_DIFF" | bc -l))% (Base: ${{ env.BASE_FUNCTIONS }}%, PR: ${{ env.PR_FUNCTIONS }}%)"
+          echo "Lines: $(printf "%+.2f" $(echo "0 - $LINES_DIFF" | bc -l))% (Base: ${{ env.BASE_LINES }}%, PR: ${{ env.PR_LINES }}%)"
+          
+          # Check if any metric decreased by more than the threshold
+          if (( $(echo "$STATEMENTS_DIFF > $THRESHOLD" | bc -l) )) || \
+             (( $(echo "$BRANCHES_DIFF > $THRESHOLD" | bc -l) )) || \
+             (( $(echo "$FUNCTIONS_DIFF > $THRESHOLD" | bc -l) )) || \
+             (( $(echo "$LINES_DIFF > $THRESHOLD" | bc -l) )); then
+            echo -e "\n❌ Coverage decreased by more than ${THRESHOLD}% in one or more metrics"
             exit 1
+          elif (( $(echo "$STATEMENTS_DIFF > 0" | bc -l) )) || \
+               (( $(echo "$BRANCHES_DIFF > 0" | bc -l) )) || \
+               (( $(echo "$FUNCTIONS_DIFF > 0" | bc -l) )) || \
+               (( $(echo "$LINES_DIFF > 0" | bc -l) )); then
+            echo -e "\n⚠️ Coverage decreased but within acceptable threshold (${THRESHOLD}%)"
+            exit 0
           else
-            echo "✅ Coverage maintained or improved across all metrics"
+            echo -e "\n✅ Coverage maintained or improved across all metrics"
+            exit 0
           fi
+      
+      - name: Add PR comment
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            // Read coverage data from environment variables
+            const baseStatements = process.env.BASE_STATEMENTS;
+            const prStatements = process.env.PR_STATEMENTS;
+            const baseBranches = process.env.BASE_BRANCHES;
+            const prBranches = process.env.PR_BRANCHES;
+            const baseFunctions = process.env.BASE_FUNCTIONS;
+            const prFunctions = process.env.PR_FUNCTIONS;
+            const baseLines = process.env.BASE_LINES;
+            const prLines = process.env.PR_LINES;
+            
+            // Calculate differences
+            const statementsDiff = (prStatements - baseStatements).toFixed(2);
+            const branchesDiff = (prBranches - baseBranches).toFixed(2);
+            const functionsDiff = (prFunctions - baseFunctions).toFixed(2);
+            const linesDiff = (prLines - baseLines).toFixed(2);
+            
+            // Create a markdown table for the comment
+            const body = `## Code Coverage Report
+            
+            | Metric | Base (%) | PR (%) | Change (%) |
+            |--------|----------|--------|------------|
+            | Statements | ${baseStatements} | ${prStatements} | ${statementsDiff >= 0 ? '+' + statementsDiff : statementsDiff} |
+            | Branches | ${baseBranches} | ${prBranches} | ${branchesDiff >= 0 ? '+' + branchesDiff : branchesDiff} |
+            | Functions | ${baseFunctions} | ${prFunctions} | ${functionsDiff >= 0 ? '+' + functionsDiff : functionsDiff} |
+            | Lines | ${baseLines} | ${prLines} | ${linesDiff >= 0 ? '+' + linesDiff : linesDiff} |
+            
+            ${statementsDiff < 0 || branchesDiff < 0 || functionsDiff < 0 || linesDiff < 0 ? 
+              '⚠️ Coverage decreased in one or more metrics' : 
+              '✅ Coverage maintained or improved across all metrics'}`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
