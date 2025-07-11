@@ -87,6 +87,7 @@ export class MigrationDirectionsService {
                 input.MaxAlternatives = 2;
               }
 
+              // Call Amazon Location RouteCalculation API with waypoints
               if ("waypoints" in options) {
                 // Array of DirectionsWaypoint
                 parseOrFindLocations(
@@ -104,33 +105,16 @@ export class MigrationDirectionsService {
                       };
                     });
 
-                    const command = new CalculateRoutesCommand(input);
-
-                    this._client
-                      .send(command)
-                      .then((response) => {
-                        const googleResponse = this._convertAmazonResponseToGoogleResponse(
-                          response,
-                          options,
-                          originResponse,
-                          destinationResponse,
-                          waypointResponses,
-                        );
-
-                        // if a callback was given, invoke it before resolving the promise
-                        if (callback) {
-                          callback(googleResponse, DirectionsStatus.OK);
-                        }
-
-                        resolve(googleResponse);
-                      })
-                      .catch((error) => {
-                        console.error(error);
-
-                        reject({
-                          status: DirectionsStatus.UNKNOWN_ERROR,
-                        });
-                      });
+                    this._executeRouteCalculation(
+                      resolve,
+                      reject,
+                      input,
+                      options,
+                      originResponse,
+                      destinationResponse,
+                      callback,
+                      waypointResponses,
+                    );
                   })
                   .catch((error) => {
                     console.error(error);
@@ -140,32 +124,16 @@ export class MigrationDirectionsService {
                     });
                   });
               } else {
-                const command = new CalculateRoutesCommand(input);
-
-                this._client
-                  .send(command)
-                  .then((response) => {
-                    const googleResponse = this._convertAmazonResponseToGoogleResponse(
-                      response,
-                      options,
-                      originResponse,
-                      destinationResponse,
-                    );
-
-                    // if a callback was given, invoke it before resolving the promise
-                    if (callback) {
-                      callback(googleResponse, DirectionsStatus.OK);
-                    }
-
-                    resolve(googleResponse);
-                  })
-                  .catch((error) => {
-                    console.error(error);
-
-                    reject({
-                      status: DirectionsStatus.UNKNOWN_ERROR,
-                    });
-                  });
+                // Call Amazon Location RouteCalculation API without waypoints
+                this._executeRouteCalculation(
+                  resolve,
+                  reject,
+                  input,
+                  options,
+                  originResponse,
+                  destinationResponse,
+                  callback,
+                );
               }
             })
             .catch((error) => {
@@ -184,6 +152,63 @@ export class MigrationDirectionsService {
           });
         });
     });
+  }
+
+  /**
+   * Helper function to execute route calculation and handle responses
+   *
+   * This function encapsulates the common logic for calculating routes:
+   *
+   * 1. Creates and sends a CalculateRoutesCommand
+   * 2. Converts Amazon Location response to Google Maps format
+   * 3. Handles callbacks and promise resolution
+   *
+   * @param resolve - The resolve function from the outer Promise in "route"
+   * @param reject - The reject function from the outer Promise in "route"
+   * @param input - The input parameters for the CalculateRoutesCommand
+   * @param options - The original "route" request options
+   * @param originResponse - The resolved origin location
+   * @param destinationResponse - The resolved destination location
+   * @param callback - Optional callback function to be called with the result
+   * @param waypointResponses - Optional array of resolved waypoint locations
+   */
+  private _executeRouteCalculation(
+    resolve: (value: google.maps.DirectionsResult) => void,
+    reject: (reason?: any) => void,
+    input: CalculateRoutesRequest,
+    options: google.maps.DirectionsRequest,
+    originResponse: ParseOrFindLocationResponse,
+    destinationResponse: ParseOrFindLocationResponse,
+    callback?,
+    waypointResponses?: ParseOrFindLocationResponse[],
+  ): void {
+    const command = new CalculateRoutesCommand(input);
+
+    this._client
+      .send(command)
+      .then((response) => {
+        const googleResponse = this._convertAmazonResponseToGoogleResponse(
+          response,
+          options,
+          originResponse,
+          destinationResponse,
+          waypointResponses,
+        );
+
+        // if a callback was given, invoke it before resolving the promise
+        if (callback) {
+          callback(googleResponse, DirectionsStatus.OK);
+        }
+
+        resolve(googleResponse);
+      })
+      .catch((error) => {
+        console.error(error);
+
+        reject({
+          status: DirectionsStatus.UNKNOWN_ERROR,
+        });
+      });
   }
 
   _convertAmazonResponseToGoogleResponse(
