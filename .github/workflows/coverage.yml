@@ -42,6 +42,9 @@ jobs:
           # Define threshold for acceptable coverage decrease (in percentage points)
           THRESHOLD=2.0
 
+          # Export threshold to environment for use in other steps
+          echo "THRESHOLD=$THRESHOLD" >> $GITHUB_ENV
+
           # Calculate differences
           STATEMENTS_DIFF=$(echo "${{ env.BASE_STATEMENTS }} - ${{ env.PR_STATEMENTS }}" | bc -l)
           BRANCHES_DIFF=$(echo "${{ env.BASE_BRANCHES }} - ${{ env.PR_BRANCHES }}" | bc -l)
@@ -81,9 +84,10 @@ jobs:
             exit 0
           fi
 
-      - name: Add PR comment
+      - name: Add PR comment for decreased coverage within threshold
         uses: actions/github-script@v6
-        if: always()
+        # Only post a comment if coverage decreased but is within acceptable threshold
+        if: success() && (env.PR_STATEMENTS < env.BASE_STATEMENTS || env.PR_BRANCHES < env.BASE_BRANCHES || env.PR_FUNCTIONS < env.BASE_FUNCTIONS || env.PR_LINES < env.BASE_LINES)
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -115,9 +119,7 @@ jobs:
             | Functions | ${baseFunctions} | ${prFunctions} | ${functionsDiff >= 0 ? '+' + functionsDiff : functionsDiff} |
             | Lines | ${baseLines} | ${prLines} | ${linesDiff >= 0 ? '+' + linesDiff : linesDiff} |
 
-            ${statementsDiff < 0 || branchesDiff < 0 || functionsDiff < 0 || linesDiff < 0 ? 
-              '⚠️ Coverage decreased in one or more metrics' : 
-              '✅ Coverage maintained or improved across all metrics'}`;
+            ⚠️ Coverage decreased but is within the acceptable threshold (${process.env.THRESHOLD}%)`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
