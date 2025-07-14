@@ -6,6 +6,7 @@ import { LngLat } from "maplibre-gl";
 import {
   createPolygons,
   formatDistanceBasedOnUnitSystem,
+  formatSecondsAsGoogleDurationText,
   getReverseGeocodedAddresses,
   getUnitSystem,
   isPointInPolygons,
@@ -736,5 +737,43 @@ describe("getUnitSystem", () => {
     const result = getUnitSystem(options, response);
 
     expect(result).toBe(UnitSystem.METRIC);
+  });
+});
+
+describe("formatSecondsAsGoogleDurationText", () => {
+  test("formats seconds less than a minute", () => {
+    expect(formatSecondsAsGoogleDurationText(30)).toBe("1 min");
+    expect(formatSecondsAsGoogleDurationText(59)).toBe("1 min");
+  });
+
+  test("formats seconds to minutes", () => {
+    expect(formatSecondsAsGoogleDurationText(60)).toBe("1 min");
+    expect(formatSecondsAsGoogleDurationText(61)).toBe("2 mins");
+    expect(formatSecondsAsGoogleDurationText(119)).toBe("2 mins");
+    expect(formatSecondsAsGoogleDurationText(120)).toBe("2 mins");
+    expect(formatSecondsAsGoogleDurationText(600)).toBe("10 mins");
+  });
+
+  test("formats seconds to hours and minutes", () => {
+    expect(formatSecondsAsGoogleDurationText(3600)).toBe("1 hour");
+    expect(formatSecondsAsGoogleDurationText(3601)).toBe("1 hour 1 min");
+    expect(formatSecondsAsGoogleDurationText(3660)).toBe("1 hour 1 min");
+    expect(formatSecondsAsGoogleDurationText(3720)).toBe("1 hour 2 mins");
+    expect(formatSecondsAsGoogleDurationText(7200)).toBe("2 hours");
+    expect(formatSecondsAsGoogleDurationText(7260)).toBe("2 hours 1 min");
+    expect(formatSecondsAsGoogleDurationText(7320)).toBe("2 hours 2 mins");
+  });
+
+  test("formats seconds to days, hours, and minutes", () => {
+    expect(formatSecondsAsGoogleDurationText(86400)).toBe("1 day");
+    expect(formatSecondsAsGoogleDurationText(86401)).toBe("1 day 1 min");
+    expect(formatSecondsAsGoogleDurationText(86460)).toBe("1 day 1 min");
+    expect(formatSecondsAsGoogleDurationText(90000)).toBe("1 day 1 hour");
+    expect(formatSecondsAsGoogleDurationText(90060)).toBe("1 day 1 hour 1 min");
+    expect(formatSecondsAsGoogleDurationText(90120)).toBe("1 day 1 hour 2 mins");
+    expect(formatSecondsAsGoogleDurationText(172800)).toBe("2 days");
+    expect(formatSecondsAsGoogleDurationText(172801)).toBe("2 days 1 min");
+    expect(formatSecondsAsGoogleDurationText(176400)).toBe("2 days 1 hour");
+    expect(formatSecondsAsGoogleDurationText(176460)).toBe("2 days 1 hour 1 min");
   });
 });
