@@ -172,16 +172,16 @@ describe("directionsService route waypoint optimization tests", () => {
       expect(optimizeInput.Origin).toEqual([-97.7289, 30.2784]);
       expect(optimizeInput.Destination).toEqual([-97.7431, 30.2672]);
       expect(optimizeInput.Waypoints).toHaveLength(3);
-      
+
       // Verify that the waypoints in the OptimizeWaypoints request have the correct IDs
       expect(optimizeInput.Waypoints[0].Id).toBe("0");
       expect(optimizeInput.Waypoints[1].Id).toBe("1");
       expect(optimizeInput.Waypoints[2].Id).toBe("2");
-      
+
       // Verify that the waypoints in the OptimizeWaypoints request have the correct positions
       expect(optimizeInput.Waypoints[0].Position).toEqual([-97.7481, 30.2983]); // waypoint1
-      expect(optimizeInput.Waypoints[1].Position).toEqual([-97.75, 30.25]);     // waypoint2
-      expect(optimizeInput.Waypoints[2].Position).toEqual([-97.76, 30.28]);     // waypoint3
+      expect(optimizeInput.Waypoints[1].Position).toEqual([-97.75, 30.25]); // waypoint2
+      expect(optimizeInput.Waypoints[2].Position).toEqual([-97.76, 30.28]); // waypoint3
 
       // Verify CalculateRoutes API was called with optimized waypoints
       expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(CalculateRoutesCommand));
@@ -189,19 +189,19 @@ describe("directionsService route waypoint optimization tests", () => {
 
       // Waypoints should be in the optimized order (based on the mock response)
       expect(routeInput.Waypoints).toEqual([
-        { Position: [-97.75, 30.25], PassThrough: false },   // waypoint2 (index 2 in optimized order)
+        { Position: [-97.75, 30.25], PassThrough: false }, // waypoint2 (index 2 in optimized order)
         { Position: [-97.7481, 30.2983], PassThrough: false }, // waypoint1 (index 0 in optimized order)
-        { Position: [-97.76, 30.28], PassThrough: false },   // waypoint3 (index 1 in optimized order)
+        { Position: [-97.76, 30.28], PassThrough: false }, // waypoint3 (index 1 in optimized order)
       ]);
-      
+
       // Verify the waypoints are in the correct order by checking each one individually
-      expect(routeInput.Waypoints[0].Position).toEqual([-97.75, 30.25]);     // waypoint2
+      expect(routeInput.Waypoints[0].Position).toEqual([-97.75, 30.25]); // waypoint2
       expect(routeInput.Waypoints[1].Position).toEqual([-97.7481, 30.2983]); // waypoint1
-      expect(routeInput.Waypoints[2].Position).toEqual([-97.76, 30.28]);     // waypoint3
+      expect(routeInput.Waypoints[2].Position).toEqual([-97.76, 30.28]); // waypoint3
 
       // Verify the response contains the correct waypoint_order
       expect(response.routes[0].waypoint_order).toEqual([2, 0, 1]);
-      
+
       // Verify that the waypoint_order array corresponds to the correct reordering
       // Original order: [waypoint1, waypoint2, waypoint3]
       // Optimized order: [waypoint2, waypoint1, waypoint3]
@@ -209,9 +209,9 @@ describe("directionsService route waypoint optimization tests", () => {
       const originalWaypoints = [
         { query: "waypoint1", position: [-97.7481, 30.2983] },
         { query: "waypoint2", position: [-97.75, 30.25] },
-        { query: "waypoint3", position: [-97.76, 30.28] }
+        { query: "waypoint3", position: [-97.76, 30.28] },
       ];
-      
+
       const optimizedOrder = response.routes[0].waypoint_order;
       expect(originalWaypoints[optimizedOrder[0]].query).toBe("waypoint3");
       expect(originalWaypoints[optimizedOrder[1]].query).toBe("waypoint1");
@@ -248,7 +248,7 @@ describe("directionsService route waypoint optimization tests", () => {
         { Position: [-97.75, 30.25], PassThrough: false },
         { Position: [-97.76, 30.28], PassThrough: false },
       ]);
-      
+
       // Verify that the waypoint_order array is empty since no optimization was performed
       expect(response.routes[0].waypoint_order).toEqual([]);
 
@@ -312,41 +312,41 @@ describe("directionsService route waypoint optimization tests", () => {
     });
   });
 });
-  test("should handle OptimizeWaypoints API failure", (done) => {
-    // Mock the client to reject the OptimizeWaypoints call
-    mockedRoutesClientSend.mockImplementationOnce(() => {
-      return Promise.reject(new Error("OptimizeWaypoints API error"));
-    });
-
-    const request: google.maps.DirectionsRequest = {
-      origin: { query: "origin" },
-      destination: { query: "destination" },
-      travelMode: TravelMode.DRIVING,
-      optimizeWaypoints: true,
-      waypoints: [
-        { location: { query: "waypoint1" } },
-        { location: { query: "waypoint2" } },
-        { location: { query: "waypoint3" } },
-      ],
-    };
-
-    // Spy on console.error
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-
-    directionsService.route(request).catch((error) => {
-      // Verify OptimizeWaypoints API was called
-      expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(OptimizeWaypointsCommand));
-      
-      // Verify error was logged
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
-      
-      // Verify the promise was rejected with the correct status
-      expect(error).toEqual({
-        status: DirectionsStatus.UNKNOWN_ERROR,
-      });
-      
-      // Clean up
-      consoleErrorSpy.mockRestore();
-      done();
-    });
+test("should handle OptimizeWaypoints API failure", (done) => {
+  // Mock the client to reject the OptimizeWaypoints call
+  mockedRoutesClientSend.mockImplementationOnce(() => {
+    return Promise.reject(new Error("OptimizeWaypoints API error"));
   });
+
+  const request: google.maps.DirectionsRequest = {
+    origin: { query: "origin" },
+    destination: { query: "destination" },
+    travelMode: TravelMode.DRIVING,
+    optimizeWaypoints: true,
+    waypoints: [
+      { location: { query: "waypoint1" } },
+      { location: { query: "waypoint2" } },
+      { location: { query: "waypoint3" } },
+    ],
+  };
+
+  // Spy on console.error
+  const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+  directionsService.route(request).catch((error) => {
+    // Verify OptimizeWaypoints API was called
+    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(OptimizeWaypointsCommand));
+
+    // Verify error was logged
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
+
+    // Verify the promise was rejected with the correct status
+    expect(error).toEqual({
+      status: DirectionsStatus.UNKNOWN_ERROR,
+    });
+
+    // Clean up
+    consoleErrorSpy.mockRestore();
+    done();
+  });
+});
