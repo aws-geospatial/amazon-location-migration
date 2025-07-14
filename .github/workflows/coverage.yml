@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [main]
 
-# Add permissions to allow commenting on PRs
-permissions:
-  pull-requests: write
-
 jobs:
   coverage:
     runs-on: ubuntu-latest
