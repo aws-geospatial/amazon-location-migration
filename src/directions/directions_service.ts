@@ -7,6 +7,8 @@ import {
   CalculateRoutesRequest,
   CalculateRoutesResponse,
   GeometryFormat,
+  OptimizeWaypointsCommand,
+  OptimizeWaypointsRequest,
   RouteLegAdditionalFeature,
   RoutePedestrianTravelStep,
   RouteTravelMode,
@@ -96,25 +98,105 @@ export class MigrationDirectionsService {
                   ROUTE_FIND_LOCATION_FIELDS,
                 )
                   .then((waypointResponses) => {
-                    input.Waypoints = waypointResponses.map((locationResponse, index) => {
-                      const googleWaypoint = options.waypoints[index];
-                      const stopover = googleWaypoint.stopover ?? true; // Google treats each waypoint as a stop by default
-                      return {
-                        Position: locationResponse.position,
-                        PassThrough: !stopover,
-                      };
-                    });
+                    // Check if any waypoints have stopover set to false, if any are set to false, then do not optimize waypoints per Google's behavior.
+                    const hasPassThroughWaypoints = options.waypoints.some((waypoint) => waypoint.stopover === false);
 
-                    this._executeRouteCalculation(
-                      resolve,
-                      reject,
-                      input,
-                      options,
-                      originResponse,
-                      destinationResponse,
-                      callback,
-                      waypointResponses,
-                    );
+                    // Call Amazon Location RouteCalculation API with optimized waypoints if options contain "optimizeWaypoints" option and "optimizeWaypoints" is true,
+                    // but only if none of the waypoints are pass-through (stopover = false). To do this, we will first need to call Amazon Location OptimizeWaypoints API
+                    // to optimize the passed in waypoints.
+                    if (
+                      "optimizeWaypoints" in options &&
+                      options.optimizeWaypoints &&
+                      !hasPassThroughWaypoints &&
+                      options.waypoints.length > 0
+                    ) {
+                      // Create OptimizeWaypoints input.
+                      const optimizeWaypointsInput: OptimizeWaypointsRequest = {
+                        Origin: departurePosition, // required
+                        Destination: destinationPosition,
+                      };
+
+                      // Add waypoints to OptimizeWaypoints input. Add an Id for each waypoint as this Id will be used in the waypoint_order property in the Google response.
+                      optimizeWaypointsInput.Waypoints = waypointResponses.map((waypoint, index) => {
+                        return {
+                          Position: waypoint.position, // required
+                          Id: index.toString(), // convert the numeric index to a string as Id is defined to be a string
+                        };
+                      });
+
+                      // Create OptimizeWaypointsCommand with input that was configured above
+                      const optimizeWaypointsCommand = new OptimizeWaypointsCommand(optimizeWaypointsInput);
+
+                      // Call Amazon Location OptimizeWaypoint API and convert the response to be consumed by Amazon Location CalculateRoutes API
+                      // whose response will be used to construct Google route API response.
+                      this._client
+                        .send(optimizeWaypointsCommand)
+                        .then((optimizedWaypointResponse) => {
+                          // Set ordered waypoints input to be consumed by CalculateRoutes API.
+                          // We need to filter out Origin and Destination waypoints before mapping.
+                          input.Waypoints = optimizedWaypointResponse.OptimizedWaypoints.filter(
+                            (locationResponse) =>
+                              locationResponse.Id !== "Origin" && locationResponse.Id !== "Destination",
+                          ).map((locationResponse) => {
+                            return {
+                              Position: locationResponse.Position,
+                              PassThrough: false, // Google does not support optimizing waypoints if any waypoints are noted as passthrough
+                            };
+                          });
+
+                          // Create a waypoint order array based on the optimizedWaypointResponse.Id values.
+                          // Filter out Origin and Destination waypoints and only include numeric IDs.
+                          const waypointOrder = optimizedWaypointResponse.OptimizedWaypoints.filter(
+                            (waypoint) => waypoint.Id !== "Origin" && waypoint.Id !== "Destination",
+                          ).map((waypoint) => parseInt(waypoint.Id)); // Parse the int as Id is defined to be a string.
+
+                          // Reorder waypointResponses based on the optimized order. We will use reorderedWaypointResponses in our CalculateRoutes API call.
+                          const reorderedWaypointResponses = waypointOrder.map(
+                            (originalIndex) => waypointResponses[originalIndex],
+                          );
+
+                          // Call CalculateRoutes API with optimized waypoints
+                          this._executeRouteCalculation(
+                            resolve,
+                            reject,
+                            input,
+                            options,
+                            originResponse,
+                            destinationResponse,
+                            callback,
+                            reorderedWaypointResponses,
+                            waypointOrder,
+                          );
+                        })
+                        .catch((error) => {
+                          console.error(error);
+
+                          reject({
+                            status: DirectionsStatus.UNKNOWN_ERROR,
+                          });
+                        });
+                    } else {
+                      input.Waypoints = waypointResponses.map((locationResponse, index) => {
+                        const googleWaypoint = options.waypoints[index];
+                        const stopover = googleWaypoint.stopover ?? true; // Google treats each waypoint as a stop by default
+                        return {
+                          Position: locationResponse.position,
+                          PassThrough: !stopover,
+                        };
+                      });
+
+                      // Call CalculateRoutes API with optimized waypoints
+                      this._executeRouteCalculation(
+                        resolve,
+                        reject,
+                        input,
+                        options,
+                        originResponse,
+                        destinationResponse,
+                        callback,
+                        waypointResponses,
+                      );
+                    }
                   })
                   .catch((error) => {
                     console.error(error);
@@ -171,6 +253,7 @@ export class MigrationDirectionsService {
    * @param destinationResponse - The resolved destination location
    * @param callback - Optional callback function to be called with the result
    * @param waypointResponses - Optional array of resolved waypoint locations
+   * @param waypointOrder - Optional array containing the order of waypoints after optimization
    */
   private _executeRouteCalculation(
     resolve: (value: google.maps.DirectionsResult) => void,
@@ -181,6 +264,7 @@ export class MigrationDirectionsService {
     destinationResponse: ParseOrFindLocationResponse,
     callback?,
     waypointResponses?: ParseOrFindLocationResponse[],
+    waypointOrder?: number[],
   ): void {
     const command = new CalculateRoutesCommand(input);
 
@@ -193,6 +277,7 @@ export class MigrationDirectionsService {
           originResponse,
           destinationResponse,
           waypointResponses,
+          waypointOrder,
         );
 
         // if a callback was given, invoke it before resolving the promise
@@ -217,6 +302,7 @@ export class MigrationDirectionsService {
     originResponse,
     destinationResponse,
     waypointResponses?,
+    waypointOrder?: number[],
   ) {
     const unitSystem = getUnitSystem(options, originResponse.position);
 
@@ -313,11 +399,11 @@ export class MigrationDirectionsService {
         legs: googleLegs,
         copyrights: AWS_COPYRIGHT,
         summary: this._getSummary(route),
+        waypoint_order: waypointOrder || [],
         // TODO: These are not currently supported, but are required in the response
         overview_path: [],
         overview_polyline: "",
         warnings: [],
-        waypoint_order: [],
       };
 
       googleRoutes.push(googleRoute);
