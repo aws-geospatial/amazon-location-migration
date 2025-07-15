@@ -10,6 +10,7 @@ import {
   GeoRoutesClient,
   OptimizeWaypointsCommand,
   OptimizeWaypointsRequest,
+  RouteTravelMode,
 } from "@aws-sdk/client-geo-routes";
 
 // Mock locations for testing
@@ -311,42 +312,92 @@ describe("directionsService route waypoint optimization tests", () => {
       done();
     });
   });
-});
-test("should handle OptimizeWaypoints API failure", (done) => {
-  // Mock the client to reject the OptimizeWaypoints call
-  mockedRoutesClientSend.mockImplementationOnce(() => {
-    return Promise.reject(new Error("OptimizeWaypoints API error"));
+
+  test("should apply travel mode, avoidance options, and departure time when optimizing waypoints", (done) => {
+    const departureTime = new Date();
+
+    const request: google.maps.DirectionsRequest = {
+      origin: originLocation,
+      destination: destinationLocation,
+      travelMode: TravelMode.WALKING, // Using WALKING mode
+      optimizeWaypoints: true,
+      avoidTolls: true,
+      avoidFerries: true,
+      avoidHighways: true,
+      drivingOptions: {
+        departureTime: departureTime,
+      },
+      waypoints: [{ location: waypoint1Location }, { location: waypoint2Location }, { location: waypoint3Location }],
+    };
+
+    directionsService.route(request).then(() => {
+      // Find the OptimizeWaypoints command in the mock calls
+      const optimizeCall = mockedRoutesClientSend.mock.calls.find(
+        (call) => call[0] instanceof OptimizeWaypointsCommand,
+      );
+      expect(optimizeCall).toBeDefined();
+      const optimizeInput = optimizeCall[0].input;
+
+      // Find the CalculateRoutes command in the mock calls
+      const routeCall = mockedRoutesClientSend.mock.calls.find((call) => call[0] instanceof CalculateRoutesCommand);
+      expect(routeCall).toBeDefined();
+      const routeInput = routeCall[0].input;
+
+      // Verify travel mode was set correctly in OptimizeWaypoints request
+      expect(optimizeInput.TravelMode).toBe(RouteTravelMode.PEDESTRIAN);
+
+      // Verify avoidance options were set correctly in OptimizeWaypoints request
+      expect(optimizeInput.Avoid).toBeDefined();
+      expect(optimizeInput.Avoid.TollRoads).toBe(true);
+      expect(optimizeInput.Avoid.Ferries).toBe(true);
+      expect(optimizeInput.Avoid.ControlledAccessHighways).toBe(true);
+
+      // Verify TollTransponders is not set for OptimizeWaypoints request
+      expect("TollTransponders" in optimizeInput.Avoid).toBe(false);
+
+      // Verify departure time was set correctly in CalculateRoutes request
+      expect(routeInput.DepartureTime).toBe(departureTime.toISOString());
+
+      done();
+    });
   });
 
-  const request: google.maps.DirectionsRequest = {
-    origin: { query: "origin" },
-    destination: { query: "destination" },
-    travelMode: TravelMode.DRIVING,
-    optimizeWaypoints: true,
-    waypoints: [
-      { location: { query: "waypoint1" } },
-      { location: { query: "waypoint2" } },
-      { location: { query: "waypoint3" } },
-    ],
-  };
-
-  // Spy on console.error
-  const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-
-  directionsService.route(request).catch((error) => {
-    // Verify OptimizeWaypoints API was called
-    expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(OptimizeWaypointsCommand));
-
-    // Verify error was logged
-    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
-
-    // Verify the promise was rejected with the correct status
-    expect(error).toEqual({
-      status: DirectionsStatus.UNKNOWN_ERROR,
+  test("should handle OptimizeWaypoints API failure", (done) => {
+    // Mock the client to reject the OptimizeWaypoints call
+    mockedRoutesClientSend.mockImplementationOnce(() => {
+      return Promise.reject(new Error("OptimizeWaypoints API error"));
     });
 
-    // Clean up
-    consoleErrorSpy.mockRestore();
-    done();
+    const request: google.maps.DirectionsRequest = {
+      origin: { query: "origin" },
+      destination: { query: "destination" },
+      travelMode: TravelMode.DRIVING,
+      optimizeWaypoints: true,
+      waypoints: [
+        { location: { query: "waypoint1" } },
+        { location: { query: "waypoint2" } },
+        { location: { query: "waypoint3" } },
+      ],
+    };
+
+    // Spy on console.error
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    directionsService.route(request).catch((error) => {
+      // Verify OptimizeWaypoints API was called
+      expect(mockedRoutesClientSend).toHaveBeenCalledWith(expect.any(OptimizeWaypointsCommand));
+
+      // Verify error was logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
+
+      // Verify the promise was rejected
+      expect(error).toEqual({
+        status: DirectionsStatus.UNKNOWN_ERROR,
+      });
+
+      // Clean up
+      consoleErrorSpy.mockRestore();
+      done();
+    });
   });
 });

@@ -12,10 +12,18 @@ import {
   isPointInPolygons,
   largeNumberFormatter,
   numberFormatter,
+  populateAvoidOptions,
+  populateTravelModeOption,
 } from "../src/directions/helpers";
 import { TravelMode } from "../src/directions";
 import * as turf from "@turf/turf";
 import { GeoPlacesClient, ReverseGeocodeCommand } from "@aws-sdk/client-geo-places";
+import {
+  CalculateRouteMatrixRequest,
+  CalculateRoutesRequest,
+  OptimizeWaypointsRequest,
+  RouteTravelMode,
+} from "@aws-sdk/client-geo-routes";
 import { UnitSystem } from "../src/directions";
 import { CountryGeoJSON } from "../src/directions/country_geojson/countryType";
 import { Position } from "geojson";
@@ -775,5 +783,147 @@ describe("formatSecondsAsGoogleDurationText", () => {
     expect(formatSecondsAsGoogleDurationText(172801)).toBe("2 days 1 min");
     expect(formatSecondsAsGoogleDurationText(176400)).toBe("2 days 1 hour");
     expect(formatSecondsAsGoogleDurationText(176460)).toBe("2 days 1 hour 1 min");
+  });
+
+  describe("populateTravelModeOption", () => {
+    test("should set TravelMode to CAR for DRIVING", () => {
+      const options: google.maps.DirectionsRequest = {
+        origin: { lat: 30.2784, lng: -97.7289 },
+        destination: { lat: 30.2672, lng: -97.7431 },
+        travelMode: TravelMode.DRIVING,
+      };
+
+      const input: CalculateRoutesRequest = {
+        Origin: [-97.7289, 30.2784],
+        Destination: [-97.7431, 30.2672],
+      };
+
+      populateTravelModeOption(options, input);
+
+      expect(input.TravelMode).toBe(RouteTravelMode.CAR);
+    });
+
+    test("should set TravelMode to PEDESTRIAN for WALKING", () => {
+      const options: google.maps.DirectionsRequest = {
+        origin: { lat: 30.2784, lng: -97.7289 },
+        destination: { lat: 30.2672, lng: -97.7431 },
+        travelMode: TravelMode.WALKING,
+      };
+
+      const input: CalculateRoutesRequest = {
+        Origin: [-97.7289, 30.2784],
+        Destination: [-97.7431, 30.2672],
+      };
+
+      populateTravelModeOption(options, input);
+
+      expect(input.TravelMode).toBe(RouteTravelMode.PEDESTRIAN);
+    });
+
+    test("should work with OptimizeWaypointsRequest", () => {
+      const options: google.maps.DirectionsRequest = {
+        origin: { lat: 30.2784, lng: -97.7289 },
+        destination: { lat: 30.2672, lng: -97.7431 },
+        travelMode: TravelMode.DRIVING,
+      };
+
+      const input: OptimizeWaypointsRequest = {
+        Origin: [-97.7289, 30.2784],
+        Destination: [-97.7431, 30.2672],
+      };
+
+      populateTravelModeOption(options, input);
+
+      expect(input.TravelMode).toBe(RouteTravelMode.CAR);
+    });
+  });
+
+  describe("populateAvoidOptions", () => {
+    test("should set avoidance options for CalculateRoutesRequest", () => {
+      const request: google.maps.DirectionsRequest = {
+        origin: { lat: 30.2784, lng: -97.7289 },
+        destination: { lat: 30.2672, lng: -97.7431 },
+        travelMode: TravelMode.DRIVING,
+        avoidTolls: true,
+        avoidFerries: true,
+        avoidHighways: true,
+      };
+
+      const input: CalculateRoutesRequest = {
+        Origin: [-97.7289, 30.2784],
+        Destination: [-97.7431, 30.2672],
+      };
+
+      populateAvoidOptions(request, input);
+
+      expect(input.Avoid).toBeDefined();
+      expect(input.Avoid.TollRoads).toBe(true);
+      expect(input.Avoid.TollTransponders).toBe(true);
+      expect(input.Avoid.Ferries).toBe(true);
+      expect(input.Avoid.ControlledAccessHighways).toBe(true);
+    });
+
+    test("should set avoidance options for OptimizeWaypointsRequest without TollTransponders", () => {
+      const request: google.maps.DirectionsRequest = {
+        origin: { lat: 30.2784, lng: -97.7289 },
+        destination: { lat: 30.2672, lng: -97.7431 },
+        travelMode: TravelMode.DRIVING,
+        avoidTolls: true,
+        avoidFerries: true,
+        avoidHighways: true,
+      };
+
+      const input: OptimizeWaypointsRequest = {
+        Origin: [-97.7289, 30.2784],
+        Destination: [-97.7431, 30.2672],
+      };
+
+      populateAvoidOptions(request, input, true); // true flag for OptimizeWaypointsRequest
+
+      expect(input.Avoid).toBeDefined();
+      expect(input.Avoid.TollRoads).toBe(true);
+      expect("TollTransponders" in input.Avoid).toBe(false);
+      expect(input.Avoid.Ferries).toBe(true);
+      expect(input.Avoid.ControlledAccessHighways).toBe(true);
+    });
+
+    test("should handle partial avoidance options", () => {
+      const request: google.maps.DirectionsRequest = {
+        origin: { lat: 30.2784, lng: -97.7289 },
+        destination: { lat: 30.2672, lng: -97.7431 },
+        travelMode: TravelMode.DRIVING,
+        avoidTolls: true,
+      };
+
+      const input: CalculateRoutesRequest = {
+        Origin: [-97.7289, 30.2784],
+        Destination: [-97.7431, 30.2672],
+      };
+
+      populateAvoidOptions(request, input);
+
+      expect(input.Avoid).toBeDefined();
+      expect(input.Avoid.TollRoads).toBe(true);
+      expect(input.Avoid.TollTransponders).toBe(true);
+      expect(input.Avoid.Ferries).toBeUndefined();
+      expect(input.Avoid.ControlledAccessHighways).toBeUndefined();
+    });
+
+    test("should not set any avoidance options if none specified", () => {
+      const request: google.maps.DirectionsRequest = {
+        origin: { lat: 30.2784, lng: -97.7289 },
+        destination: { lat: 30.2672, lng: -97.7431 },
+        travelMode: TravelMode.DRIVING,
+      };
+
+      const input: CalculateRoutesRequest = {
+        Origin: [-97.7289, 30.2784],
+        Destination: [-97.7431, 30.2672],
+      };
+
+      populateAvoidOptions(request, input);
+
+      expect(input.Avoid).toBeUndefined();
+    });
   });
 });

@@ -4,12 +4,19 @@
 import { MigrationLatLng, PlacesServiceStatus } from "../common";
 import { MigrationPlacesService } from "../places";
 import * as turf from "@turf/turf";
-import { UnitSystem } from "./defines";
+import { UnitSystem, TravelMode } from "./defines";
 import { usaGeoJson } from "./country_geojson/usa";
 import { myanmarGeoJson } from "./country_geojson/myanmar";
 import { liberiaGeoJson } from "./country_geojson/liberia";
 import { Position } from "geojson";
-import { CalculateRouteMatrixRequest, CalculateRoutesRequest } from "@aws-sdk/client-geo-routes";
+import {
+  CalculateRouteMatrixRequest,
+  CalculateRoutesRequest,
+  OptimizeWaypointsRequest,
+  RouteAvoidanceOptions,
+  RouteMatrixAvoidanceOptions,
+  RouteTravelMode,
+} from "@aws-sdk/client-geo-routes";
 import { GeoPlacesClient, ReverseGeocodeCommand, ReverseGeocodeRequest } from "@aws-sdk/client-geo-places";
 import { CountryGeoJSON } from "./country_geojson/countryType";
 
@@ -138,16 +145,24 @@ export function formatSecondsAsGoogleDurationText(seconds) {
  *
  * @param request - Google Maps API request object (DistanceMatrix or Directions)
  * @param input - Amazon Location Service request object to be populated
+ * @param isOptimizeWaypoints - Optional flag to indicate if this is an OptimizeWaypointsRequest (which doesn't support
+ *   TollTransponders)
  */
 export function populateAvoidOptions(
   request: google.maps.DistanceMatrixRequest | google.maps.DirectionsRequest,
-  input: CalculateRouteMatrixRequest | CalculateRoutesRequest,
+  input: CalculateRouteMatrixRequest | CalculateRoutesRequest | OptimizeWaypointsRequest,
+  isOptimizeWaypoints = false,
 ) {
   if (request.avoidTolls) {
     input.Avoid = {
       TollRoads: true,
-      TollTransponders: true,
     };
+
+    // Only add TollTransponders if not an OptimizeWaypointsRequest
+    if (!isOptimizeWaypoints) {
+      // Use type assertion to add TollTransponders option. If we don't, then we will get an error as OptimizeWaypointsRequest does not support this option.
+      (input.Avoid as RouteMatrixAvoidanceOptions | RouteAvoidanceOptions).TollTransponders = true;
+    }
   }
 
   if (request.avoidFerries) {
@@ -162,6 +177,31 @@ export function populateAvoidOptions(
       ...input.Avoid,
       ControlledAccessHighways: true,
     };
+  }
+}
+
+/**
+ * Populates the TravelMode option in the Amazon Location Service request based on the travelMode specified in the
+ * Google Maps request.
+ *
+ * @param options - The Google Maps request containing the travelMode option
+ * @param input - The Amazon Location Service request to be populated
+ */
+export function populateTravelModeOption(
+  options: google.maps.DirectionsRequest | google.maps.DistanceMatrixRequest,
+  input: CalculateRoutesRequest | CalculateRouteMatrixRequest | OptimizeWaypointsRequest,
+): void {
+  if ("travelMode" in options) {
+    switch (options.travelMode) {
+      case TravelMode.DRIVING: {
+        input.TravelMode = RouteTravelMode.CAR;
+        break;
+      }
+      case TravelMode.WALKING: {
+        input.TravelMode = RouteTravelMode.PEDESTRIAN;
+        break;
+      }
+    }
   }
 }
 
