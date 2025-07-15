@@ -1,0 +1,166 @@
+<html>
+  <head>
+    <title>Optimize Waypoints Example - Migration SDK</title>
+    <link rel="stylesheet" type="text/css" href="../common/style.css" />
+
+    <!-- Client logic example -->
+    <script type="text/javascript" src="./example.js"></script>
+    <style>
+      #floating-panel {
+        width: 100%;
+        max-width: 100%;
+        padding: 5px;
+        box-sizing: border-box;
+      }
+      .dropdown-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 5px;
+        width: 100%;
+      }
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        margin-right: 10px;
+      }
+      .dropdown-item select {
+        margin-left: 5px;
+      }
+      .controls-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        margin-top: 5px;
+        width: 100%;
+        gap: 20px;
+      }
+      .optimize-checkbox {
+        font-weight: bold;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      #waypoint-order {
+        background-color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        flex-grow: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: inline-block;
+        max-width: 600px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="floating-panel">
+      <div class="dropdown-row">
+        <div class="dropdown-item">
+          <b>Start: </b>
+          <select id="start">
+            <option value="austin, tx">Austin</option>
+            <option value="round rock, tx">Round Rock</option>
+            <option value="georgetown, tx">Georgetown</option>
+            <option value="san marcos, tx">San Marcos</option>
+            <option value="new braunfels, tx">New Braunfels</option>
+            <option value="bastrop, tx">Bastrop</option>
+            <option value="lockhart, tx">Lockhart</option>
+            <option value="buda, tx">Buda</option>
+            <option value="kyle, tx">Kyle</option>
+            <option value="pflugerville, tx">Pflugerville</option>
+            <option value="leander, tx">Leander</option>
+            <option value="cedar park, tx">Cedar Park</option>
+          </select>
+        </div>
+        <div class="dropdown-item">
+          <b>Waypoint 1: </b>
+          <select id="waypoint1">
+            <option value="-">-</option>
+            <option value="round rock, tx">Round Rock</option>
+            <option value="georgetown, tx">Georgetown</option>
+            <option value="san marcos, tx">San Marcos</option>
+            <option value="new braunfels, tx">New Braunfels</option>
+            <option value="bastrop, tx">Bastrop</option>
+            <option value="lockhart, tx">Lockhart</option>
+            <option value="buda, tx">Buda</option>
+            <option value="kyle, tx">Kyle</option>
+            <option value="pflugerville, tx">Pflugerville</option>
+            <option value="leander, tx">Leander</option>
+            <option value="cedar park, tx">Cedar Park</option>
+          </select>
+        </div>
+        <div class="dropdown-item">
+          <b>Waypoint 2: </b>
+          <select id="waypoint2">
+            <option value="-">-</option>
+            <option value="round rock, tx">Round Rock</option>
+            <option value="georgetown, tx">Georgetown</option>
+            <option value="san marcos, tx">San Marcos</option>
+            <option value="new braunfels, tx">New Braunfels</option>
+            <option value="bastrop, tx">Bastrop</option>
+            <option value="lockhart, tx">Lockhart</option>
+            <option value="buda, tx">Buda</option>
+            <option value="kyle, tx">Kyle</option>
+            <option value="pflugerville, tx">Pflugerville</option>
+            <option value="leander, tx">Leander</option>
+            <option value="cedar park, tx">Cedar Park</option>
+          </select>
+        </div>
+        <div class="dropdown-item">
+          <b>Waypoint 3: </b>
+          <select id="waypoint3">
+            <option value="-">-</option>
+            <option value="round rock, tx">Round Rock</option>
+            <option value="georgetown, tx">Georgetown</option>
+            <option value="san marcos, tx">San Marcos</option>
+            <option value="new braunfels, tx">New Braunfels</option>
+            <option value="bastrop, tx">Bastrop</option>
+            <option value="lockhart, tx">Lockhart</option>
+            <option value="buda, tx">Buda</option>
+            <option value="kyle, tx">Kyle</option>
+            <option value="pflugerville, tx">Pflugerville</option>
+            <option value="leander, tx">Leander</option>
+            <option value="cedar park, tx">Cedar Park</option>
+          </select>
+        </div>
+        <div class="dropdown-item">
+          <b>End: </b>
+          <select id="end">
+            <option value="austin, tx">Austin</option>
+            <option value="round rock, tx">Round Rock</option>
+            <option value="georgetown, tx">Georgetown</option>
+            <option value="san marcos, tx">San Marcos</option>
+            <option value="new braunfels, tx">New Braunfels</option>
+            <option value="bastrop, tx">Bastrop</option>
+            <option value="lockhart, tx">Lockhart</option>
+            <option value="buda, tx">Buda</option>
+            <option value="kyle, tx">Kyle</option>
+            <option value="pflugerville, tx">Pflugerville</option>
+            <option value="leander, tx">Leander</option>
+            <option value="cedar park, tx">Cedar Park</option>
+          </select>
+        </div>
+      </div>
+      <div class="controls-container">
+        <div class="optimize-checkbox">
+          <input type="checkbox" id="optimize" checked />
+          <label for="optimize">Optimize Waypoints</label>
+        </div>
+        <div id="waypoint-order">Select waypoints and calculate route</div>
+      </div>
+    </div>
+    <div id="map"></div>
+
+    <!-- Migration script import -->
+    <script
+      async
+      defer
+      src="../../dist/amazonLocationMigrationSDK.js?callback=initMap&region={{REGION}}&apiKey={{AMAZON_LOCATION_API_KEY}}"
+    ></script>
+  </body>
+</html>
