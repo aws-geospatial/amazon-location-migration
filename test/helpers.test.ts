@@ -18,12 +18,7 @@ import {
 import { TravelMode } from "../src/directions";
 import * as turf from "@turf/turf";
 import { GeoPlacesClient, ReverseGeocodeCommand } from "@aws-sdk/client-geo-places";
-import {
-  CalculateRouteMatrixRequest,
-  CalculateRoutesRequest,
-  OptimizeWaypointsRequest,
-  RouteTravelMode,
-} from "@aws-sdk/client-geo-routes";
+import { CalculateRoutesRequest, OptimizeWaypointsRequest, RouteTravelMode } from "@aws-sdk/client-geo-routes";
 import { UnitSystem } from "../src/directions";
 import { CountryGeoJSON } from "../src/directions/country_geojson/countryType";
 import { Position } from "geojson";

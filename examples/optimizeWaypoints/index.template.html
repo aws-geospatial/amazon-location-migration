@@ -6,155 +6,251 @@
     <!-- Client logic example -->
     <script type="text/javascript" src="./example.js"></script>
     <style>
-      #floating-panel {
-        width: 100%;
-        max-width: 100%;
-        padding: 5px;
-        box-sizing: border-box;
+      /* Basic reset and container styles */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
       }
-      .dropdown-row {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 10px;
-        align-items: center;
-        margin-bottom: 5px;
-        width: 100%;
-      }
-      .dropdown-item {
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-        margin-right: 10px;
-      }
-      .dropdown-item select {
-        margin-left: 5px;
-      }
-      .controls-container {
+      
+      /* Side-by-side layout: controls on left, map on right */
+      .container {
         display: flex;
         flex-direction: row;
-        justify-content: flex-start;
-        align-items: center;
-        margin-top: 5px;
-        width: 100%;
-        gap: 20px;
+        height: 100%;
       }
-      .optimize-checkbox {
-        font-weight: bold;
-        white-space: nowrap;
-        flex-shrink: 0;
+      
+      /* Control panel */
+      .controls {
+        background-color: #f8f8f8;
+        padding: 15px;
+        border-right: 1px solid #ddd;
+        width: 350px;
+        overflow-y: auto;
       }
-      #waypoint-order {
-        background-color: white;
-        padding: 5px 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      
+      /* Map container */
+      #map {
         flex-grow: 1;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        display: inline-block;
-        max-width: 600px;
+      }
+      
+      /* Form layout */
+      .form-section {
+        margin-bottom: 15px;
+      }
+      
+      .form-section h3 {
+        margin-top: 0;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 8px;
+      }
+      
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 12px;
+      }
+      
+      .form-label {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      
+      .form-control {
+        width: 100%;
+        padding: 6px;
+        box-sizing: border-box;
+      }
+      
+      /* Checkbox styles */
+      .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 10px 0;
+      }
+      
+      .checkbox-item {
+        display: flex;
+        align-items: center;
+      }
+      
+      .checkbox-item label {
+        margin-left: 5px;
+      }
+      
+      /* Button styles */
+      .btn {
+        padding: 8px 16px;
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        margin-top: 5px;
+      }
+      
+      .btn:hover {
+        background-color: #3367d6;
+      }
+      
+      /* Result display */
+      #waypoint-order {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
       }
     </style>
   </head>
   <body>
-    <div id="floating-panel">
-      <div class="dropdown-row">
-        <div class="dropdown-item">
-          <b>Start: </b>
-          <select id="start">
-            <option value="austin, tx">Austin</option>
-            <option value="round rock, tx">Round Rock</option>
-            <option value="georgetown, tx">Georgetown</option>
-            <option value="san marcos, tx">San Marcos</option>
-            <option value="new braunfels, tx">New Braunfels</option>
-            <option value="bastrop, tx">Bastrop</option>
-            <option value="lockhart, tx">Lockhart</option>
-            <option value="buda, tx">Buda</option>
-            <option value="kyle, tx">Kyle</option>
-            <option value="pflugerville, tx">Pflugerville</option>
-            <option value="leander, tx">Leander</option>
-            <option value="cedar park, tx">Cedar Park</option>
-          </select>
+    <div class="container">
+      <div class="controls">
+        <!-- Locations Section -->
+        <div class="form-section">
+          <h3>Route Locations</h3>
+          
+          <div class="form-group">
+            <label class="form-label" for="start">Start:</label>
+            <select id="start" class="form-control">
+              <option value="austin, tx">Austin</option>
+              <option value="round rock, tx">Round Rock</option>
+              <option value="georgetown, tx">Georgetown</option>
+              <option value="san marcos, tx">San Marcos</option>
+              <option value="new braunfels, tx">New Braunfels</option>
+              <option value="bastrop, tx">Bastrop</option>
+              <option value="lockhart, tx">Lockhart</option>
+              <option value="buda, tx">Buda</option>
+              <option value="kyle, tx">Kyle</option>
+              <option value="pflugerville, tx">Pflugerville</option>
+              <option value="leander, tx">Leander</option>
+              <option value="cedar park, tx">Cedar Park</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="waypoint1">Waypoint 1:</label>
+            <select id="waypoint1" class="form-control">
+              <option value="-">-</option>
+              <option value="round rock, tx">Round Rock</option>
+              <option value="georgetown, tx">Georgetown</option>
+              <option value="san marcos, tx">San Marcos</option>
+              <option value="new braunfels, tx">New Braunfels</option>
+              <option value="bastrop, tx">Bastrop</option>
+              <option value="lockhart, tx">Lockhart</option>
+              <option value="buda, tx">Buda</option>
+              <option value="kyle, tx">Kyle</option>
+              <option value="pflugerville, tx">Pflugerville</option>
+              <option value="leander, tx">Leander</option>
+              <option value="cedar park, tx">Cedar Park</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="waypoint2">Waypoint 2:</label>
+            <select id="waypoint2" class="form-control">
+              <option value="-">-</option>
+              <option value="round rock, tx">Round Rock</option>
+              <option value="georgetown, tx">Georgetown</option>
+              <option value="san marcos, tx">San Marcos</option>
+              <option value="new braunfels, tx">New Braunfels</option>
+              <option value="bastrop, tx">Bastrop</option>
+              <option value="lockhart, tx">Lockhart</option>
+              <option value="buda, tx">Buda</option>
+              <option value="kyle, tx">Kyle</option>
+              <option value="pflugerville, tx">Pflugerville</option>
+              <option value="leander, tx">Leander</option>
+              <option value="cedar park, tx">Cedar Park</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="waypoint3">Waypoint 3:</label>
+            <select id="waypoint3" class="form-control">
+              <option value="-">-</option>
+              <option value="round rock, tx">Round Rock</option>
+              <option value="georgetown, tx">Georgetown</option>
+              <option value="san marcos, tx">San Marcos</option>
+              <option value="new braunfels, tx">New Braunfels</option>
+              <option value="bastrop, tx">Bastrop</option>
+              <option value="lockhart, tx">Lockhart</option>
+              <option value="buda, tx">Buda</option>
+              <option value="kyle, tx">Kyle</option>
+              <option value="pflugerville, tx">Pflugerville</option>
+              <option value="leander, tx">Leander</option>
+              <option value="cedar park, tx">Cedar Park</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="end">End:</label>
+            <select id="end" class="form-control">
+              <option value="austin, tx">Austin</option>
+              <option value="round rock, tx">Round Rock</option>
+              <option value="georgetown, tx">Georgetown</option>
+              <option value="san marcos, tx">San Marcos</option>
+              <option value="new braunfels, tx">New Braunfels</option>
+              <option value="bastrop, tx">Bastrop</option>
+              <option value="lockhart, tx">Lockhart</option>
+              <option value="buda, tx">Buda</option>
+              <option value="kyle, tx">Kyle</option>
+              <option value="pflugerville, tx">Pflugerville</option>
+              <option value="leander, tx">Leander</option>
+              <option value="cedar park, tx">Cedar Park</option>
+            </select>
+          </div>
         </div>
-        <div class="dropdown-item">
-          <b>Waypoint 1: </b>
-          <select id="waypoint1">
-            <option value="-">-</option>
-            <option value="round rock, tx">Round Rock</option>
-            <option value="georgetown, tx">Georgetown</option>
-            <option value="san marcos, tx">San Marcos</option>
-            <option value="new braunfels, tx">New Braunfels</option>
-            <option value="bastrop, tx">Bastrop</option>
-            <option value="lockhart, tx">Lockhart</option>
-            <option value="buda, tx">Buda</option>
-            <option value="kyle, tx">Kyle</option>
-            <option value="pflugerville, tx">Pflugerville</option>
-            <option value="leander, tx">Leander</option>
-            <option value="cedar park, tx">Cedar Park</option>
-          </select>
-        </div>
-        <div class="dropdown-item">
-          <b>Waypoint 2: </b>
-          <select id="waypoint2">
-            <option value="-">-</option>
-            <option value="round rock, tx">Round Rock</option>
-            <option value="georgetown, tx">Georgetown</option>
-            <option value="san marcos, tx">San Marcos</option>
-            <option value="new braunfels, tx">New Braunfels</option>
-            <option value="bastrop, tx">Bastrop</option>
-            <option value="lockhart, tx">Lockhart</option>
-            <option value="buda, tx">Buda</option>
-            <option value="kyle, tx">Kyle</option>
-            <option value="pflugerville, tx">Pflugerville</option>
-            <option value="leander, tx">Leander</option>
-            <option value="cedar park, tx">Cedar Park</option>
-          </select>
-        </div>
-        <div class="dropdown-item">
-          <b>Waypoint 3: </b>
-          <select id="waypoint3">
-            <option value="-">-</option>
-            <option value="round rock, tx">Round Rock</option>
-            <option value="georgetown, tx">Georgetown</option>
-            <option value="san marcos, tx">San Marcos</option>
-            <option value="new braunfels, tx">New Braunfels</option>
-            <option value="bastrop, tx">Bastrop</option>
-            <option value="lockhart, tx">Lockhart</option>
-            <option value="buda, tx">Buda</option>
-            <option value="kyle, tx">Kyle</option>
-            <option value="pflugerville, tx">Pflugerville</option>
-            <option value="leander, tx">Leander</option>
-            <option value="cedar park, tx">Cedar Park</option>
-          </select>
-        </div>
-        <div class="dropdown-item">
-          <b>End: </b>
-          <select id="end">
-            <option value="austin, tx">Austin</option>
-            <option value="round rock, tx">Round Rock</option>
-            <option value="georgetown, tx">Georgetown</option>
-            <option value="san marcos, tx">San Marcos</option>
-            <option value="new braunfels, tx">New Braunfels</option>
-            <option value="bastrop, tx">Bastrop</option>
-            <option value="lockhart, tx">Lockhart</option>
-            <option value="buda, tx">Buda</option>
-            <option value="kyle, tx">Kyle</option>
-            <option value="pflugerville, tx">Pflugerville</option>
-            <option value="leander, tx">Leander</option>
-            <option value="cedar park, tx">Cedar Park</option>
-          </select>
+        
+        <!-- Options Section -->
+        <div class="form-section">
+          <h3>Route Options</h3>
+          
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="optimize" checked />
+              <label for="optimize">Optimize Waypoints</label>
+            </div>
+          </div>
+          
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="avoid-tolls" />
+              <label for="avoid-tolls">Avoid Tolls</label>
+            </div>
+            
+            <div class="checkbox-item">
+              <input type="checkbox" id="avoid-highways" />
+              <label for="avoid-highways">Avoid Highways</label>
+            </div>
+            
+            <div class="checkbox-item">
+              <input type="checkbox" id="avoid-ferries" />
+              <label for="avoid-ferries">Avoid Ferries</label>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="departure-time">Departure Time:</label>
+            <input type="datetime-local" id="departure-time" class="form-control" />
+          </div>
+          
+          <div class="form-group">
+            <button id="use-current-time" class="btn" style="background-color: #757575;">Use Current Time</button>
+          </div>
+          
+          <div class="form-group" style="margin-top: 15px;">
+            <button id="calculate-route" class="btn">Calculate Route</button>
+          </div>
+          
+          <div id="waypoint-order">Select waypoints and calculate route</div>
         </div>
       </div>
-      <div class="controls-container">
-        <div class="optimize-checkbox">
-          <input type="checkbox" id="optimize" checked />
-          <label for="optimize">Optimize Waypoints</label>
-        </div>
-        <div id="waypoint-order">Select waypoints and calculate route</div>
-      </div>
+      
+      <div id="map"></div>
     </div>
-    <div id="map"></div>
 
     <!-- Migration script import -->
     <script

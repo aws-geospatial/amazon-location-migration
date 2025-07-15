@@ -54,6 +54,8 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
     }
   }
 
+  console.log(waypoints);
+
   // make route call
   directionsService
     .route({
@@ -65,8 +67,13 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
       },
       travelMode: google.maps.TravelMode.DRIVING,
       waypoints: waypoints,
+      optimizeWaypoints: true,
     })
     .then((response) => {
+      console.log("geocoded_waypoints");
+      console.log(response.geocoded_waypoints);
+      console.log("esponse.routes[0].waypoint_order");
+      console.log(response.routes[0].waypoint_order);
       directionsRenderer.setDirections(response);
     })
     .catch((e) => window.alert("Directions request failed due to " + e));
