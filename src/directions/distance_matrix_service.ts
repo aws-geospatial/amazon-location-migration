@@ -7,17 +7,17 @@ import {
   RouteMatrixDestination,
   CalculateRouteMatrixCommand,
   CalculateRouteMatrixRequest,
-  RouteTravelMode,
 } from "@aws-sdk/client-geo-routes";
 
 import { MigrationPlacesService } from "../places";
 
-import { DistanceMatrixElementStatus, DistanceMatrixStatus, TravelMode } from "./defines";
+import { DistanceMatrixElementStatus, DistanceMatrixStatus } from "./defines";
 import {
   formatDistanceBasedOnUnitSystem,
   formatSecondsAsGoogleDurationText,
   parseOrFindLocations,
   populateAvoidOptions,
+  populateTravelModeOption,
   getReverseGeocodedAddresses,
   getUnitSystem,
   ParseOrFindLocationResponse,
@@ -69,19 +69,8 @@ export class MigrationDistanceMatrixService {
                 },
               };
 
-              if ("travelMode" in request) {
-                switch (request.travelMode) {
-                  case TravelMode.DRIVING: {
-                    input.TravelMode = RouteTravelMode.CAR;
-                    break;
-                  }
-                  case TravelMode.WALKING: {
-                    input.TravelMode = RouteTravelMode.PEDESTRIAN;
-                    break;
-                  }
-                }
-              }
-
+              // Apply travel mode and avoidance options
+              populateTravelModeOption(request, input);
               populateAvoidOptions(request, input);
 
               // Add departure time if specified

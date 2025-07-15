@@ -11,13 +11,11 @@ import {
   OptimizeWaypointsRequest,
   RouteLegAdditionalFeature,
   RoutePedestrianTravelStep,
-  RouteTravelMode,
   RouteVehicleTravelStep,
   Route,
 } from "@aws-sdk/client-geo-routes";
 
 import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../common";
-import { TravelMode } from "./defines";
 import { MigrationPlacesService } from "../places";
 import {
   formatDistanceBasedOnUnitSystem,
@@ -26,6 +24,7 @@ import {
   parseOrFindLocations,
   ParseOrFindLocationResponse,
   populateAvoidOptions,
+  populateTravelModeOption,
   getUnitSystem,
 } from "./helpers";
 
@@ -66,19 +65,8 @@ export class MigrationDirectionsService {
                 ],
               };
 
-              if ("travelMode" in options) {
-                switch (options.travelMode) {
-                  case TravelMode.DRIVING: {
-                    input.TravelMode = RouteTravelMode.CAR;
-                    break;
-                  }
-                  case TravelMode.WALKING: {
-                    input.TravelMode = RouteTravelMode.PEDESTRIAN;
-                    break;
-                  }
-                }
-              }
-
+              // Apply travel mode and avoidance options
+              populateTravelModeOption(options, input);
               populateAvoidOptions(options, input);
 
               if (options.drivingOptions?.departureTime) {
@@ -118,6 +106,14 @@ export class MigrationDirectionsService {
                         Origin: departurePosition, // required
                         Destination: destinationPosition,
                       };
+
+                      // Apply travel mode and avoidance options
+                      populateTravelModeOption(options, optimizeWaypointsInput);
+                      populateAvoidOptions(options, optimizeWaypointsInput, true); // true flag indicates this is an OptimizeWaypointsRequest
+
+                      if (options.drivingOptions?.departureTime) {
+                        input.DepartureTime = options.drivingOptions.departureTime.toISOString();
+                      }
 
                       // Add waypoints to OptimizeWaypoints input. Add an Id for each waypoint as this Id will be used in the waypoint_order property in the Google response.
                       optimizeWaypointsInput.Waypoints = waypointResponses.map((waypoint, index) => {
