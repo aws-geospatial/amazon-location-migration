@@ -257,7 +257,7 @@ export class MigrationDirectionsService {
    */
   private _executeRouteCalculation(
     resolve: (value: google.maps.DirectionsResult) => void,
-    reject: (reason?: any) => void,
+    reject: (reason?: { status: google.maps.DirectionsStatus }) => void,
     input: CalculateRoutesRequest,
     options: google.maps.DirectionsRequest,
     originResponse: ParseOrFindLocationResponse,
