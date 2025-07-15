@@ -2114,18 +2114,40 @@ test("should set directionsrenderer directions option", () => {
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
     directions: {
+      request: {
+        origin: testCoolPlaceLocation,
+        destination: testAnotherCoolPlaceLocation,
+        travelMode: TravelMode.DRIVING,
+      },
       routes: [
         {
-          bounds: null,
+          bounds: new MigrationLatLngBounds(
+            {
+              lat: 0,
+              lng: 0,
+            },
+            {
+              lat: 1,
+              lng: 1,
+            },
+          ),
+          copyrights: "",
           legs: [
             {
-              geometry: {
-                LineString: 0,
-              },
-              start_location: { lat: 0, lng: 0 },
-              end_location: { lat: 1, lng: 1 },
+              start_location: testCoolPlaceLocation,
+              start_address: "cool place, austin, tx",
+              end_address: "another cool place, austin, tx",
+              end_location: testAnotherCoolPlaceLocation,
+              steps: [],
+              traffic_speed_entry: [],
+              via_waypoints: [],
             },
           ],
+          overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+          overview_polyline: "",
+          summary: "",
+          warnings: [],
+          waypoint_order: [],
         },
       ],
     },
@@ -2133,22 +2155,25 @@ test("should set directionsrenderer directions option", () => {
 
   expect(testDirectionsRenderer).not.toBeNull();
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-1-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-1-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
+          [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-1-route-0-leg-0",
+    id: "directions-renderer-1-route-0",
     type: "line",
-    source: "directions-renderer-1-route-0-leg-0",
+    source: "directions-renderer-1-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2177,39 +2202,64 @@ test("should call setDirections method on directionsrenderer", () => {
   });
 
   testDirectionsRenderer.setDirections({
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-2-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-2-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
+          [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-2-route-0-leg-0",
+    id: "directions-renderer-2-route-0",
     type: "line",
-    source: "directions-renderer-2-route-0-leg-0",
+    source: "directions-renderer-2-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2236,56 +2286,103 @@ test("should call setDirections method on directionsrenderer twice", () => {
   });
 
   testDirectionsRenderer.setDirections({
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   });
 
   testDirectionsRenderer.setDirections({
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 2, lng: 2 },
-            end_location: { lat: 3, lng: 3 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(2);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-3-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-3-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
+          [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(2);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-3-route-0-leg-0",
+    id: "directions-renderer-3-route-0",
     type: "line",
-    source: "directions-renderer-3-route-0-leg-0",
+    source: "directions-renderer-3-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2318,39 +2415,64 @@ test("should call setDirections method on directionsrenderer with all polylineOp
   });
 
   testDirectionsRenderer.setDirections({
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-4-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-4-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
+          [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-4-route-0-leg-0",
+    id: "directions-renderer-4-route-0",
     type: "line",
-    source: "directions-renderer-4-route-0-leg-0",
+    source: "directions-renderer-4-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2380,39 +2502,64 @@ test("should call setDirections method on directionsrenderer with polylineOption
   });
 
   testDirectionsRenderer.setDirections({
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-5-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-5-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
+          [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-5-route-0-leg-0",
+    id: "directions-renderer-5-route-0",
     type: "line",
-    source: "directions-renderer-5-route-0-leg-0",
+    source: "directions-renderer-5-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2442,39 +2589,64 @@ test("should call setDirections method on directionsrenderer with polylineOption
   });
 
   testDirectionsRenderer.setDirections({
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   });
 
   expect(mockAddSource).toHaveBeenCalledTimes(1);
-  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-6-route-0-leg-0", {
+  expect(mockAddSource).toHaveBeenCalledWith("directions-renderer-6-route-0", {
     type: "geojson",
     data: {
       type: "Feature",
       properties: {},
       geometry: {
         type: "LineString",
-        coordinates: 0,
+        coordinates: [
+          [testCoolPlaceLocation.lng(), testCoolPlaceLocation.lat()],
+          [testAnotherCoolPlaceLocation.lng(), testAnotherCoolPlaceLocation.lat()],
+        ],
       },
     },
   });
   expect(mockAddLayer).toHaveBeenCalledTimes(1);
   expect(mockAddLayer).toHaveBeenCalledWith({
-    id: "directions-renderer-6-route-0-leg-0",
+    id: "directions-renderer-6-route-0",
     type: "line",
-    source: "directions-renderer-6-route-0-leg-0",
+    source: "directions-renderer-6-route-0",
     layout: {
       "line-join": "round",
       "line-cap": "round",
@@ -2498,19 +2670,41 @@ test("should call getDirections method on directionsrenderer", () => {
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
   });
-  const directions = {
+  const directions: google.maps.DirectionsResult = {
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };
@@ -2530,18 +2724,40 @@ test("should clear directions when directionsrenderer removed from map", () => {
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
     directions: {
+      request: {
+        origin: testCoolPlaceLocation,
+        destination: testAnotherCoolPlaceLocation,
+        travelMode: TravelMode.DRIVING,
+      },
       routes: [
         {
-          bounds: null,
+          bounds: new MigrationLatLngBounds(
+            {
+              lat: 0,
+              lng: 0,
+            },
+            {
+              lat: 1,
+              lng: 1,
+            },
+          ),
+          copyrights: "",
           legs: [
             {
-              geometry: {
-                LineString: 0,
-              },
-              start_location: { lat: 0, lng: 0 },
-              end_location: { lat: 1, lng: 1 },
+              start_location: testCoolPlaceLocation,
+              start_address: "cool place, austin, tx",
+              end_address: "another cool place, austin, tx",
+              end_location: testAnotherCoolPlaceLocation,
+              steps: [],
+              traffic_speed_entry: [],
+              via_waypoints: [],
             },
           ],
+          overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+          overview_polyline: "",
+          summary: "",
+          warnings: [],
+          waypoint_order: [],
         },
       ],
     },
@@ -2604,31 +2820,41 @@ test("should allow calling setDirections with multiple routes", () => {
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
   });
-  const directions = {
+  const directions: google.maps.DirectionsResult = {
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
-      },
-      {
-        bounds: null,
-        legs: [
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
-          },
-        ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };
@@ -2647,38 +2873,41 @@ test("should not render if route index is out of bounds", () => {
     map: testMap,
     routeIndex: 3,
   });
-  const directions = {
+  const directions: google.maps.DirectionsResult = {
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
-            steps: [
-              {
-                start_location: { lat: 0, lng: 0 },
-                end_location: { lat: 1, lng: 1 },
-              },
-            ],
-          },
-          {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
-            steps: [
-              {
-                start_location: { lat: 1, lng: 1 },
-                end_location: { lat: 2, lng: 2 },
-              },
-            ],
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };
@@ -2698,38 +2927,50 @@ test("should call setDirections with a route that contains multiple legs and cre
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
   });
-  const directions = {
+  const directions: google.maps.DirectionsResult = {
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
-            steps: [
-              {
-                start_location: { lat: 0, lng: 0 },
-                end_location: { lat: 1, lng: 1 },
-              },
-            ],
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 2, lng: 2 },
-            steps: [
-              {
-                start_location: { lat: 1, lng: 1 },
-                end_location: { lat: 2, lng: 2 },
-              },
-            ],
+            start_location: new MigrationLatLng(5, 6),
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: new MigrationLatLng(7, 8),
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };
@@ -2749,19 +2990,41 @@ test("should call addEventListener method on directionsrenderer", () => {
   });
   const handlerSpy = jest.fn();
   testDirectionsRenderer.addListener("directions_changed", handlerSpy);
-  const directions = {
+  const directions: google.maps.DirectionsResult = {
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };
@@ -2790,35 +3053,79 @@ test("should get new directions in handler when directions_changed event", (done
     center: { lat: testLat, lng: testLng },
     zoom: 9,
   });
-  const firstDirections = {
+  const firstDirections: google.maps.DirectionsResult = {
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            start_location: testCoolPlaceLocation,
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: testAnotherCoolPlaceLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };
-  const secondDirections = {
+  const secondDirections: google.maps.DirectionsResult = {
+    request: {
+      origin: testCoolPlaceLocation,
+      destination: testAnotherCoolPlaceLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 2, lng: 2 },
-            end_location: { lat: 3, lng: 3 },
+            start_location: new MigrationLatLng(5, 6),
+            start_address: "cool place, austin, tx",
+            end_address: "another cool place, austin, tx",
+            end_location: new MigrationLatLng(7, 8),
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [testCoolPlaceLocation, testAnotherCoolPlaceLocation],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };

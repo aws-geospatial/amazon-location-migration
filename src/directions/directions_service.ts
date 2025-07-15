@@ -42,7 +42,10 @@ export class MigrationDirectionsService {
   // been configured
   _placesService: MigrationPlacesService;
 
-  route(options: google.maps.DirectionsRequest, callback?) {
+  route(
+    options: google.maps.DirectionsRequest,
+    callback?: (a: google.maps.DirectionsResult | null, b: google.maps.DirectionsStatus) => void,
+  ) {
     return new Promise<google.maps.DirectionsResult>((resolve, reject) => {
       parseOrFindLocation(options.origin, this._placesService, ROUTE_FIND_LOCATION_FIELDS)
         .then((originResponse: ParseOrFindLocationResponse) => {
@@ -309,7 +312,8 @@ export class MigrationDirectionsService {
     const googleRoutes: google.maps.DirectionsRoute[] = [];
     response.Routes.forEach((route) => {
       let bounds = new MigrationLatLngBounds();
-      const googleLegs = [];
+      const overviewPath: google.maps.LatLng[] = [];
+      const googleLegs: google.maps.DirectionsLeg[] = [];
       route.Legs.forEach((leg) => {
         const legGeometry = leg.Geometry.LineString;
         const googleSteps: google.maps.DirectionsStep[] = [];
@@ -349,10 +353,10 @@ export class MigrationDirectionsService {
             start_point: startLocation,
             end_location: endLocation,
             end_point: endLocation,
+            instructions: step.Instruction,
             travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
             // TODO: These are not currently supported, but are required in the response
             encoded_lat_lngs: "",
-            instructions: "",
             maneuver: "",
             path: [],
             lat_lngs: [],
@@ -360,8 +364,14 @@ export class MigrationDirectionsService {
         });
 
         // Extend the bounds for all legs in this route to cover all of the geometry coordinates
+        // and update the overview path for the full route with the LatLng's for each of the legs
         bounds = legGeometry.reduce((bounds, coord) => {
-          return bounds.extend({ lat: coord[1], lng: coord[0] });
+          const latLng = new MigrationLatLng({
+            lat: coord[1],
+            lng: coord[0],
+          });
+          overviewPath.push(latLng);
+          return bounds.extend(latLng);
         }, bounds);
 
         const legOverview = legDetails.Summary.Overview;
@@ -382,7 +392,6 @@ export class MigrationDirectionsService {
             text: formatSecondsAsGoogleDurationText(legOverview.Duration),
             value: legOverview.Duration,
           },
-          geometry: leg.Geometry,
           steps: googleSteps,
           start_location: new MigrationLatLng(
             legDetails.Departure.Place.Position[1],
@@ -391,6 +400,9 @@ export class MigrationDirectionsService {
           end_location: new MigrationLatLng(legDetails.Arrival.Place.Position[1], legDetails.Arrival.Place.Position[0]), // end_location of leg, not entire route
           start_address: originResponse.formatted_address,
           end_address: destinationResponse.formatted_address,
+          traffic_speed_entry: [], // This is fully deprecated by Google and will always be empty
+          // TODO: These are not currently supported, but are required in the response
+          via_waypoints: [],
         });
       });
 
@@ -400,8 +412,8 @@ export class MigrationDirectionsService {
         copyrights: AWS_COPYRIGHT,
         summary: this._getSummary(route),
         waypoint_order: waypointOrder || [],
+        overview_path: overviewPath,
         // TODO: These are not currently supported, but are required in the response
-        overview_path: [],
         overview_polyline: "",
         warnings: [],
       };

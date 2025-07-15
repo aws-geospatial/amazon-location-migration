@@ -7,7 +7,7 @@ import { MigrationMap, MigrationMarker } from "../maps";
 const ASCII_CODE_A = 65;
 
 export class MigrationDirectionsRenderer {
-  #directions;
+  #directions: google.maps.DirectionsResult | null;
   #routeIndex = 0;
   #markers: MigrationMarker[];
   #map: MigrationMap;
@@ -18,7 +18,7 @@ export class MigrationDirectionsRenderer {
   #suppressPolylines = false;
   #onDirectionsChangedListeners = [];
   #onceDirectionsChangedListeners = [];
-  #legRenderIds = [];
+  #routeLayerId: string | null;
 
   // Keep a static index so we can have multiple directions renderers
   // with sources and layers on the same map that can be differentiated
@@ -52,7 +52,7 @@ export class MigrationDirectionsRenderer {
     }
   }
 
-  getDirections() {
+  getDirections(): google.maps.DirectionsResult | null {
     return this.#directions;
   }
 
@@ -75,7 +75,7 @@ export class MigrationDirectionsRenderer {
     this._updateRouteDrawing();
   }
 
-  setDirections(directions) {
+  setDirections(directions: google.maps.DirectionsResult | null): void {
     this.#directions = directions;
 
     this._updateRouteDrawing();
@@ -144,13 +144,11 @@ export class MigrationDirectionsRenderer {
       });
       this.#markers = [];
     }
-    if (this.#legRenderIds.length) {
+    if (this.#routeLayerId) {
       const maplibreMap = this.#map._getMap();
-      this.#legRenderIds.forEach(function (legId) {
-        maplibreMap.removeLayer(legId);
-        maplibreMap.removeSource(legId);
-      });
-      this.#legRenderIds = [];
+      maplibreMap.removeLayer(this.#routeLayerId);
+      maplibreMap.removeSource(this.#routeLayerId);
+      this.#routeLayerId = null;
     }
   }
 
@@ -176,57 +174,56 @@ export class MigrationDirectionsRenderer {
       this.#map.fitBounds(route.bounds, boundsPaddingInPixels);
     }
 
-    const maplibreMap = this.#map._getMap();
+    // TODO: Detect geometry type instead of just doing LineString
+    if (this.#suppressPolylines === false) {
+      // We need to get a list of LngLat[] coordinates as the LineString data geometry to pass to MapLibre
+      // from the overview_path passed in from Google's DirectionsRoute, which comes as a list
+      // of google.maps.LatLng instances
+      const coordinates = route.overview_path.map((latLng) => [latLng.lng(), latLng.lat()]);
+
+      // Unique layer ID for this particular directions renderer and route
+      this.#routeLayerId = `directions-renderer-${this.rendererIndex}-route-${this.#routeIndex}`;
+
+      const maplibreMap = this.#map._getMap();
+      maplibreMap.addSource(this.#routeLayerId, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: coordinates,
+          },
+        },
+      });
+      // 8 weight, 0.5 opacity, "#73B9FF" color for default, 3 weight, 1 opacity, "Black" color used when one property is set
+      const paintOptions = {};
+      if (this.#polylineOptions) {
+        paintOptions["line-color"] = this.#polylineOptions.strokeColor ? this.#polylineOptions.strokeColor : "Black";
+        paintOptions["line-width"] = this.#polylineOptions.strokeWeight ? this.#polylineOptions.strokeWeight : 3;
+        paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
+      } else {
+        // default line
+        paintOptions["line-color"] = "#73B9FF";
+        paintOptions["line-width"] = 8;
+        paintOptions["line-opacity"] = 0.5;
+      }
+
+      maplibreMap.addLayer({
+        id: this.#routeLayerId,
+        type: "line",
+        source: this.#routeLayerId,
+        layout: {
+          "line-join": "round",
+          "line-cap": "round",
+          visibility: this.#polylineOptions && this.#polylineOptions.visible == false ? "none" : "visible",
+        },
+        paint: paintOptions,
+      });
+    }
+
     for (let i = 0; i < route.legs.length; i++) {
       const leg = route.legs[i];
-
-      // leg.geometry is a new field we've added, because Google doesn't provide the polyline
-      // for the leg as a whole, only for the individual steps, but our API (currently) only provides
-      // a polyline for the entire leg.
-      // TODO: Once we've removed this, we can change the input param of setDirections to be typed (directions: google.maps.DirectionsResult | null)
-      const geometry = leg.geometry;
-
-      // TODO: Detect geometry type instead of just doing LineString
-      if (this.#suppressPolylines === false) {
-        const routeId = `directions-renderer-${this.rendererIndex}-route-${this.#routeIndex}-leg-${i}`;
-        maplibreMap.addSource(routeId, {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: geometry.LineString,
-            },
-          },
-        });
-        // 8 weight, 0.5 opacity, "#73B9FF" color for default, 3 weight, 1 opacity, "Black" color used when one property is set
-        const paintOptions = {};
-        if (this.#polylineOptions) {
-          paintOptions["line-color"] = this.#polylineOptions.strokeColor ? this.#polylineOptions.strokeColor : "Black";
-          paintOptions["line-width"] = this.#polylineOptions.strokeWeight ? this.#polylineOptions.strokeWeight : 3;
-          paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
-        } else {
-          // default line
-          paintOptions["line-color"] = "#73B9FF";
-          paintOptions["line-width"] = 8;
-          paintOptions["line-opacity"] = 0.5;
-        }
-
-        maplibreMap.addLayer({
-          id: routeId,
-          type: "line",
-          source: routeId,
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-            visibility: this.#polylineOptions && this.#polylineOptions.visible == false ? "none" : "visible",
-          },
-          paint: paintOptions,
-        });
-
-        this.#legRenderIds.push(routeId);
-      }
 
       // Add markers for the start location of the current leg
       if (this.#suppressMarkers === false) {

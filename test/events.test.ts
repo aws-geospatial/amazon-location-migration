@@ -15,8 +15,8 @@ jest.mock("@aws-sdk/client-geo-places", () => ({
 import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
 
 import { MigrationInfoWindow, MigrationMap, MigrationMarker } from "../src/maps";
-import { MigrationDirectionsRenderer } from "../src/directions";
-import { MigrationLatLng } from "../src/common";
+import { MigrationDirectionsRenderer, TravelMode } from "../src/directions";
+import { MigrationLatLng, MigrationLatLngBounds } from "../src/common";
 import { MigrationSearchBox, MigrationAutocomplete } from "../src/places";
 import { addListener, addListenerOnce, removeListener } from "../src/events";
 
@@ -27,7 +27,36 @@ MigrationSearchBox.prototype._client = new GeoPlacesClient();
 // We don't need to verify maplibre itself, we just need to verify that
 // the values we pass to our google migration classes get transformed
 // correctly and our called
-jest.mock("maplibre-gl");
+const mockAddControl = jest.fn();
+const mockFitBounds = jest.fn();
+const mockAddSource = jest.fn();
+const mockRemoveSource = jest.fn();
+const mockAddLayer = jest.fn();
+const mockRemoveLayer = jest.fn();
+const mockSetLngLat = jest.fn();
+const mockAddTo = jest.fn();
+const mockRemove = jest.fn();
+jest.mock("maplibre-gl", () => ({
+  ...jest.requireActual("maplibre-gl"),
+  Marker: jest.fn().mockImplementation(() => {
+    return {
+      _element: document.createElement("div"),
+      setLngLat: mockSetLngLat,
+      addTo: mockAddTo,
+      remove: mockRemove,
+    };
+  }),
+  Map: jest.fn().mockImplementation(() => {
+    return {
+      addControl: mockAddControl,
+      fitBounds: mockFitBounds,
+      addSource: mockAddSource,
+      removeSource: mockRemoveSource,
+      addLayer: mockAddLayer,
+      removeLayer: mockRemoveLayer,
+    };
+  }),
+}));
 
 const testPlaceLabel = "Austin, TX, USA";
 const testLat = 30.268193;
@@ -396,25 +425,50 @@ test("should call handler after dblclick when addListenerOnce", () => {
 
 test("should call handler after directions_changed when addListenerOnce", () => {
   const testMap = new MigrationMap(null, {});
+
   const testDirectionsRenderer = new MigrationDirectionsRenderer({
     map: testMap,
     suppressMarkers: true,
   });
   const handlerSpy = jest.fn();
   addListenerOnce(testDirectionsRenderer, "directions_changed", handlerSpy);
-  const directions = {
+  const startLocation = new MigrationLatLng({ lat: 0, lng: 0 });
+  const endLocation = new MigrationLatLng({ lat: 1, lng: 1 });
+  const directions: google.maps.DirectionsResult = {
+    request: {
+      destination: endLocation,
+      origin: startLocation,
+      travelMode: TravelMode.DRIVING,
+    },
     routes: [
       {
-        bounds: null,
+        bounds: new MigrationLatLngBounds(
+          {
+            lat: 0,
+            lng: 0,
+          },
+          {
+            lat: 1,
+            lng: 1,
+          },
+        ),
+        copyrights: "",
         legs: [
           {
-            geometry: {
-              LineString: 0,
-            },
-            start_location: { lat: 0, lng: 0 },
-            end_location: { lat: 1, lng: 1 },
+            end_address: "another cool place, austin, tx",
+            end_location: endLocation,
+            start_address: "cool place, austin, tx",
+            start_location: startLocation,
+            steps: [],
+            traffic_speed_entry: [],
+            via_waypoints: [],
           },
         ],
+        overview_path: [],
+        overview_polyline: "",
+        summary: "",
+        warnings: [],
+        waypoint_order: [],
       },
     ],
   };

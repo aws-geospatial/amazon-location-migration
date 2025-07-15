@@ -39,18 +39,18 @@
 | [request](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsResult.request)                               | :white_check_mark: |                                                                         |
 | [routes](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsResult.routes)                                 | :white_check_mark: | `DirectionsRoute` limitations noted [below](#directionsroute-interface) |
 | [available_travel_modes](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsResult.available_travel_modes) | :x:                |                                                                         |
-| [geocoded_waypoints](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsResult.geocoded_waypoints)         | :x:                |                                                                         |
+| [geocoded_waypoints](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsResult.geocoded_waypoints)         | :white_check_mark: |                                                                         |
 
 ### [DirectionsRoute interface](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute)
 
 | [Properties](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute-Properties)               | Supported          | Notes                                                               |
 | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------- |
 | [bounds](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.bounds)                       | :white_check_mark: |                                                                     |
-| [copyrights](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.copyrights)               | :x:                |                                                                     |
+| [copyrights](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.copyrights)               | :white_check_mark: |                                                                     |
 | [legs](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.legs)                           | :white_check_mark: | `DirectionsLeg` limitations noted [below](#directionsleg-interface) |
-| [overview_path](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.overview_path)         | :x:                |                                                                     |
+| [overview_path](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.overview_path)         | :white_check_mark: |                                                                     |
 | [overview_polyline](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.overview_polyline) | :x:                |                                                                     |
-| [summary](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.summary)                     | :x:                |                                                                     |
+| [summary](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.summary)                     | :white_check_mark: |                                                                     |
 | [warnings](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.warnings)                   | :x:                |                                                                     |
 | [waypoint_order](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.waypoint_order)       | :white_check_mark: |                                                                     |
 | [fare](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsRoute.fare)                           | :x:                |                                                                     |
@@ -78,7 +78,7 @@
 | [encoded_lat_lngs](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.encoded_lat_lngs) | :x:                |                                                                                                   |
 | [end_location](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.end_location)         | :white_check_mark: |                                                                                                   |
 | [end_point](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.end_point)               | :white_check_mark: |                                                                                                   |
-| [instructions](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.instructions)         | :x:                |                                                                                                   |
+| [instructions](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.instructions)         | :white_check_mark: |                                                                                                   |
 | [lat_lngs](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.lat_lngs)                 | :x:                |                                                                                                   |
 | [maneuver](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.maneuver)                 | :x:                |                                                                                                   |
 | [path](https://developers.google.com/maps/documentation/javascript/reference/directions#DirectionsStep.path)                         | :x:                |                                                                                                   |
@@ -118,8 +118,8 @@
 
 | [Properties](https://developers.google.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixResponse-Properties)                               | Supported          | Notes |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
-| [destinationAddresses](https://developers.google.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixResponse.destinationAddresses)           | :x:                |       |
-| [originAddresses](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixRequest.originAddresses) | :x:                |       |
+| [destinationAddresses](https://developers.google.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixResponse.destinationAddresses)           | :white_check_mark: |       |
+| [originAddresses](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixRequest.originAddresses) | :white_check_mark: |       |
 | [rows](https://developers.google.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixResponse.rows)                                           | :white_check_mark: |       |
 
 ### [DistanceMatrixResponseRow interface](https://developers.google.com/maps/documentation/javascript/reference/distance-matrix#DistanceMatrixResponseRow)
