@@ -15,6 +15,8 @@ import {
   Route,
 } from "@aws-sdk/client-geo-routes";
 
+import { encodeFromLngLatArray } from "@aws/polyline";
+
 import { DirectionsStatus, MigrationLatLng, MigrationLatLngBounds } from "../common";
 import { MigrationPlacesService } from "../places";
 import {
@@ -308,7 +310,7 @@ export class MigrationDirectionsService {
     const googleRoutes: google.maps.DirectionsRoute[] = [];
     response.Routes.forEach((route) => {
       let bounds = new MigrationLatLngBounds();
-      const overviewPath: google.maps.LatLng[] = [];
+      const routeCoordinates: number[][] = [];
       const googleLegs: google.maps.DirectionsLeg[] = [];
       route.Legs.forEach((leg) => {
         const legGeometry = leg.Geometry.LineString;
@@ -324,9 +326,18 @@ export class MigrationDirectionsService {
           const startPosition = legGeometry[geometryOffset];
           const startLocation = new MigrationLatLng(startPosition[1], startPosition[0]);
           const nextStepIndex = stepIndex + 1;
-          const endPosition =
-            nextStepIndex < numSteps ? legGeometry[steps[nextStepIndex].GeometryOffset] : legGeometry.at(-1);
+          const endGeometryOffset =
+            nextStepIndex < numSteps ? steps[nextStepIndex].GeometryOffset : legGeometry.length - 1;
+          const endPosition = legGeometry[endGeometryOffset];
           const endLocation = new MigrationLatLng(endPosition[1], endPosition[0]);
+
+          // path (and lat_lngs, which has been deprecated in favor of path) are an array of google.maps.LatLng instances
+          // for this particular step
+          // encoded_lat_lngs (and polyline, which has been deprecated in favor of encoded_lat_lngs) are encoded polylines
+          // for this particular step
+          const stepCoordinates = legGeometry.slice(geometryOffset, endGeometryOffset + 1); // The end index for splice is exclusive, hence the +1
+          const stepPath = this._getPath(stepCoordinates);
+          const stepPolyline = this._getPolyline(stepCoordinates);
 
           googleSteps.push({
             distance: {
@@ -349,26 +360,29 @@ export class MigrationDirectionsService {
             start_point: startLocation,
             end_location: endLocation,
             end_point: endLocation,
+            path: stepPath,
+            lat_lngs: stepPath,
+            encoded_lat_lngs: stepPolyline,
+            polyline: {
+              points: stepPolyline,
+            },
             instructions: step.Instruction,
             travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
             // TODO: These are not currently supported, but are required in the response
-            encoded_lat_lngs: "",
             maneuver: "",
-            path: [],
-            lat_lngs: [],
           });
         });
 
         // Extend the bounds for all legs in this route to cover all of the geometry coordinates
-        // and update the overview path for the full route with the LatLng's for each of the legs
+        // and update the overview coordinates for the full leg
         bounds = legGeometry.reduce((bounds, coord) => {
           const latLng = new MigrationLatLng({
             lat: coord[1],
             lng: coord[0],
           });
-          overviewPath.push(latLng);
           return bounds.extend(latLng);
         }, bounds);
+        routeCoordinates.push(...legGeometry);
 
         const legOverview = legDetails.Summary.Overview;
         googleLegs.push({
@@ -408,9 +422,9 @@ export class MigrationDirectionsService {
         copyrights: AWS_COPYRIGHT,
         summary: this._getSummary(route),
         waypoint_order: waypointOrder || [],
-        overview_path: overviewPath,
+        overview_path: this._getPath(routeCoordinates),
+        overview_polyline: this._getPolyline(routeCoordinates),
         // TODO: These are not currently supported, but are required in the response
-        overview_polyline: "",
         warnings: [],
       };
 
@@ -526,5 +540,14 @@ export class MigrationDirectionsService {
     }
     geocodedWaypoint["geocoder_status"] = DirectionsStatus.OK;
     return "place_id" in geocodedWaypoint || "types" in geocodedWaypoint ? geocodedWaypoint : null;
+  }
+
+  _getPath(coordinates: number[][]): google.maps.LatLng[] {
+    // Return list of google.maps.LatLng instances from [lng, lat] coordinates
+    return coordinates.map((coord) => new MigrationLatLng(coord[1], coord[0]));
+  }
+
+  _getPolyline(coordinates: number[][]): string {
+    return encodeFromLngLatArray(coordinates);
   }
 }

@@ -3382,6 +3382,271 @@ test("should return route with origin as LatLng and destination as LatLng with c
     });
 });
 
+// Helper method to convert array of google.maps.LatLng[] into an array of JSON objects so that we
+// can do equality checks easier
+const expandLatLngArray = (latLngs: google.maps.LatLng[]) => {
+  return latLngs.map((latLng) => latLng.toJSON());
+};
+
+test("should return route with steps that contain supported fields", (done) => {
+  const origin = new MigrationLatLng(testDeparturePosition[1], testDeparturePosition[0]);
+  const destination = new MigrationLatLng(testArrivalPosition[1], testArrivalPosition[0]);
+
+  const request = {
+    origin: origin,
+    destination: destination,
+    travelMode: TravelMode.DRIVING,
+  };
+
+  directionsService.route(request).then((response) => {
+    const routes = response.routes;
+
+    expect(routes.length).toStrictEqual(1);
+
+    const route = routes[0];
+    const legs = route.legs;
+    expect(route.overview_polyline).toStrictEqual(
+      "BmY8ty45Bn6lt6FgFTwMT0KjD4IzFwHzF8LzKwb3XoL7G8GjDgF7BoLjD8G7BgPAsTwC4I8BkSkD4IAgP7B8G4DsEA8fnL4IoGgKoGgUwM0K8G8LwH4I0Foa0PwgBoV0oBoa0PgKkcwRw-BgoBkhBoV8a8Q4DwCwWsOsnBgZgPsJ4mBgZgUwMoLvW4S7kB0FnLwRjmB8Q_iBwRnkBkNvbsJrTsE3IgK7V8GrOwHnQ4DjIsErJ8GrO0F7L4DjI4IjSoBvCwH_OgPnfwWjwB0KvWoG7L0FnLkDnGkIzPsTwMwHsEsEkD0KoG0F4D0PgK4SoLgFkD8GsEgUkN8LkIkSwMwM4IgP4IoG4DgZ0PsY0P4I0F4N4I8f0UgP4I8pB8asJoG0U0K8VsOkS8LgesTkrB4cgZoQsTjhBwHvMoGnL8zB72CwC_EoV7kBgKvR4S_iBwH3NsTzjB8L_YkD7G0F7L7LvH5MtI",
+    );
+
+    expect(legs.length).toStrictEqual(1);
+
+    const leg = legs[0];
+
+    const steps = leg.steps;
+    expect(steps.length).toStrictEqual(7);
+    expect(leg.start_location.equals(origin)).toStrictEqual(true);
+    expect(leg.end_location.equals(destination)).toStrictEqual(true);
+
+    expect(steps[0].start_location.toJSON()).toStrictEqual({
+      lat: 30.28707,
+      lng: -97.73354,
+    });
+    expect(steps[0].end_location.toJSON()).toStrictEqual({
+      lat: 30.29043,
+      lng: -97.73452,
+    });
+    expect(expandLatLngArray(steps[0].path)).toEqual([
+      { lat: 30.28707, lng: -97.73354 },
+      { lat: 30.28715, lng: -97.73355 },
+      { lat: 30.28735, lng: -97.73356 },
+      { lat: 30.28752, lng: -97.73361 },
+      { lat: 30.28766, lng: -97.7337 },
+      { lat: 30.28778, lng: -97.73379 },
+      { lat: 30.28797, lng: -97.73396 },
+      { lat: 30.28841, lng: -97.73434 },
+      { lat: 30.28859, lng: -97.73445 },
+      { lat: 30.2887, lng: -97.7345 },
+      { lat: 30.28878, lng: -97.73453 },
+      { lat: 30.28896, lng: -97.73458 },
+      { lat: 30.28907, lng: -97.73461 },
+      { lat: 30.28931, lng: -97.73461 },
+      { lat: 30.28962, lng: -97.73457 },
+      { lat: 30.28976, lng: -97.73454 },
+      { lat: 30.29005, lng: -97.73449 },
+      { lat: 30.29019, lng: -97.73449 },
+      { lat: 30.29043, lng: -97.73452 },
+    ]);
+    expect(expandLatLngArray(steps[0].path)).toEqual(expandLatLngArray(steps[0].lat_lngs));
+    expect(steps[0].encoded_lat_lngs).toStrictEqual(
+      "BmY8ty45Bn6lt6FgFTwMT0KjD4IzFwHzF8LzKwb3XoL7G8GjDgF7BoLjD8G7BgPAsTwC4I8BkSkD4IAgP7B",
+    );
+    expect(steps[0].encoded_lat_lngs).toStrictEqual(steps[0].polyline?.points);
+
+    expect(steps[1].start_location.toJSON()).toStrictEqual({
+      lat: 30.29043,
+      lng: -97.73452,
+    });
+    expect(steps[1].end_location.toJSON()).toStrictEqual({
+      lat: 30.29872,
+      lng: -97.7298,
+    });
+    expect(expandLatLngArray(steps[1].path)).toEqual([
+      { lat: 30.29043, lng: -97.73452 },
+      { lat: 30.29054, lng: -97.73446 },
+      { lat: 30.29061, lng: -97.73446 },
+      { lat: 30.29112, lng: -97.73464 },
+      { lat: 30.29126, lng: -97.73454 },
+      { lat: 30.29142, lng: -97.73444 },
+      { lat: 30.29174, lng: -97.73424 },
+      { lat: 30.29191, lng: -97.73413 },
+      { lat: 30.2921, lng: -97.73401 },
+      { lat: 30.29224, lng: -97.73392 },
+      { lat: 30.29266, lng: -97.73367 },
+      { lat: 30.29318, lng: -97.73333 },
+      { lat: 30.29383, lng: -97.73291 },
+      { lat: 30.29408, lng: -97.73275 },
+      { lat: 30.29453, lng: -97.73247 },
+      { lat: 30.29553, lng: -97.73183 },
+      { lat: 30.29606, lng: -97.73149 },
+      { lat: 30.29649, lng: -97.73122 },
+      { lat: 30.29655, lng: -97.73118 },
+      { lat: 30.29691, lng: -97.73095 },
+      { lat: 30.29754, lng: -97.73055 },
+      { lat: 30.29778, lng: -97.7304 },
+      { lat: 30.2984, lng: -97.73 },
+      { lat: 30.29872, lng: -97.7298 },
+    ]);
+    expect(expandLatLngArray(steps[1].path)).toEqual(expandLatLngArray(steps[1].lat_lngs));
+    expect(steps[1].encoded_lat_lngs).toStrictEqual(
+      "BmY8_445Bv3nt6F8G4DsEA8fnL4IoGgKoGgUwM0K8G8LwH4I0Foa0PwgBoV0oBoa0PgKkcwRw-BgoBkhBoV8a8Q4DwCwWsOsnBgZgPsJ4mBgZgUwM",
+    );
+    expect(steps[1].encoded_lat_lngs).toStrictEqual(steps[1].polyline?.points);
+
+    expect(steps[2].start_location.toJSON()).toStrictEqual({
+      lat: 30.29872,
+      lng: -97.7298,
+    });
+    expect(steps[2].end_location.toJSON()).toStrictEqual({
+      lat: 30.30275,
+      lng: -97.73816,
+    });
+    expect(expandLatLngArray(steps[2].path)).toEqual([
+      { lat: 30.29872, lng: -97.7298 },
+      { lat: 30.2989, lng: -97.73016 },
+      { lat: 30.2992, lng: -97.73075 },
+      { lat: 30.29929, lng: -97.73093 },
+      { lat: 30.29957, lng: -97.73154 },
+      { lat: 30.29984, lng: -97.7321 },
+      { lat: 30.30012, lng: -97.73268 },
+      { lat: 30.30033, lng: -97.73312 },
+      { lat: 30.30048, lng: -97.73343 },
+      { lat: 30.30055, lng: -97.73357 },
+      { lat: 30.30071, lng: -97.73392 },
+      { lat: 30.30082, lng: -97.73415 },
+      { lat: 30.30094, lng: -97.73441 },
+      { lat: 30.301, lng: -97.73454 },
+      { lat: 30.30107, lng: -97.73469 },
+      { lat: 30.30118, lng: -97.73492 },
+      { lat: 30.30127, lng: -97.73511 },
+      { lat: 30.30133, lng: -97.73524 },
+      { lat: 30.30147, lng: -97.73553 },
+      { lat: 30.30149, lng: -97.73557 },
+      { lat: 30.30161, lng: -97.73581 },
+      { lat: 30.30185, lng: -97.73631 },
+      { lat: 30.30221, lng: -97.73708 },
+      { lat: 30.30238, lng: -97.73744 },
+      { lat: 30.30248, lng: -97.73763 },
+      { lat: 30.30257, lng: -97.73781 },
+      { lat: 30.30262, lng: -97.73791 },
+      { lat: 30.30275, lng: -97.73816 },
+    ]);
+    expect(expandLatLngArray(steps[2].path)).toEqual(expandLatLngArray(steps[2].lat_lngs));
+    expect(steps[2].encoded_lat_lngs).toStrictEqual(
+      "BmYgmp55Bvw-s6FoLvW4S7kB0FnLwRjmB8Q_iBwRnkBkNvbsJrTsE3IgK7V8GrOwHnQ4DjIsErJ8GrO0F7L4DjI4IjSoBvCwH_OgPnfwWjwB0KvWoG7L0FnLkDnGkIzP",
+    );
+    expect(steps[2].encoded_lat_lngs).toStrictEqual(steps[2].polyline?.points);
+
+    expect(steps[3].start_location.toJSON()).toStrictEqual({
+      lat: 30.30275,
+      lng: -97.73816,
+    });
+    expect(steps[3].end_location.toJSON()).toStrictEqual({
+      lat: 30.31085,
+      lng: -97.73299,
+    });
+    expect(expandLatLngArray(steps[3].path)).toEqual([
+      { lat: 30.30275, lng: -97.73816 },
+      { lat: 30.30306, lng: -97.73796 },
+      { lat: 30.30318, lng: -97.73789 },
+      { lat: 30.30325, lng: -97.73784 },
+      { lat: 30.30342, lng: -97.73774 },
+      { lat: 30.30351, lng: -97.73768 },
+      { lat: 30.30376, lng: -97.73752 },
+      { lat: 30.30406, lng: -97.73734 },
+      { lat: 30.30414, lng: -97.73729 },
+      { lat: 30.30425, lng: -97.73722 },
+      { lat: 30.30457, lng: -97.73701 },
+      { lat: 30.30476, lng: -97.73688 },
+      { lat: 30.30505, lng: -97.73668 },
+      { lat: 30.30525, lng: -97.73654 },
+      { lat: 30.30549, lng: -97.7364 },
+      { lat: 30.30559, lng: -97.73634 },
+      { lat: 30.30599, lng: -97.73609 },
+      { lat: 30.30638, lng: -97.73584 },
+      { lat: 30.30652, lng: -97.73575 },
+      { lat: 30.30674, lng: -97.73561 },
+      { lat: 30.30725, lng: -97.73528 },
+      { lat: 30.30749, lng: -97.73514 },
+      { lat: 30.30816, lng: -97.73471 },
+      { lat: 30.30831, lng: -97.73461 },
+      { lat: 30.30864, lng: -97.73444 },
+      { lat: 30.30899, lng: -97.73421 },
+      { lat: 30.30928, lng: -97.73402 },
+      { lat: 30.30976, lng: -97.73371 },
+      { lat: 30.31045, lng: -97.73325 },
+      { lat: 30.31085, lng: -97.73299 },
+    ]);
+    expect(expandLatLngArray(steps[3].path)).toEqual(expandLatLngArray(steps[3].lat_lngs));
+    expect(steps[3].encoded_lat_lngs).toStrictEqual(
+      "BmY8hx55B_6ut6FsTwMwHsEsEkD0KoG0F4D0PgK4SoLgFkD8GsEgUkN8LkIkSwMwM4IgP4IoG4DgZ0PsY0P4I0F4N4I8f0UgP4I8pB8asJoG0U0K8VsOkS8LgesTkrB4cgZoQ",
+    );
+    expect(steps[3].encoded_lat_lngs).toStrictEqual(steps[3].polyline?.points);
+
+    expect(steps[4].start_location.toJSON()).toStrictEqual({
+      lat: 30.31085,
+      lng: -97.73299,
+    });
+    expect(steps[4].end_location.toJSON()).toStrictEqual({
+      lat: 30.31381,
+      lng: -97.73829,
+    });
+    expect(expandLatLngArray(steps[4].path)).toEqual([
+      { lat: 30.31085, lng: -97.73299 },
+      { lat: 30.31116, lng: -97.73352 },
+      { lat: 30.31128, lng: -97.73372 },
+      { lat: 30.31138, lng: -97.7339 },
+      { lat: 30.31221, lng: -97.73529 },
+      { lat: 30.31225, lng: -97.73537 },
+      { lat: 30.31259, lng: -97.73596 },
+      { lat: 30.31275, lng: -97.73624 },
+      { lat: 30.31305, lng: -97.7368 },
+      { lat: 30.31317, lng: -97.73702 },
+      { lat: 30.31348, lng: -97.73759 },
+      { lat: 30.31367, lng: -97.73799 },
+      { lat: 30.31372, lng: -97.7381 },
+      { lat: 30.31381, lng: -97.73829 },
+    ]);
+    expect(expandLatLngArray(steps[4].path)).toEqual(expandLatLngArray(steps[4].lat_lngs));
+    expect(steps[4].encoded_lat_lngs).toStrictEqual(
+      "BmYk8g65B73kt6FsTjhBwHvMoGnL8zB72CwC_EoV7kBgKvR4S_iBwH3NsTzjB8L_YkD7G0F7L",
+    );
+    expect(steps[4].encoded_lat_lngs).toStrictEqual(steps[4].polyline?.points);
+
+    expect(steps[5].start_location.toJSON()).toStrictEqual({
+      lat: 30.31381,
+      lng: -97.73829,
+    });
+    expect(steps[5].end_location.toJSON()).toStrictEqual({
+      lat: 30.313415,
+      lng: -97.738545,
+    });
+    expect(expandLatLngArray(steps[5].path)).toEqual([
+      { lat: 30.31381, lng: -97.73829 },
+      { lat: 30.31362, lng: -97.73841 },
+      { lat: 30.313415, lng: -97.738545 },
+    ]);
+    expect(expandLatLngArray(steps[5].path)).toEqual(expandLatLngArray(steps[5].lat_lngs));
+    expect(steps[5].encoded_lat_lngs).toStrictEqual("BmYk1m65Bjjvt6F7LvH5MtI");
+    expect(steps[5].encoded_lat_lngs).toStrictEqual(steps[5].polyline?.points);
+
+    expect(steps[6].start_location.toJSON()).toStrictEqual({
+      lat: 30.313415,
+      lng: -97.738545,
+    });
+    expect(steps[6].end_location.toJSON()).toStrictEqual({
+      lat: 30.313415,
+      lng: -97.738545,
+    });
+    expect(expandLatLngArray(steps[6].path)).toEqual([{ lat: 30.313415, lng: -97.738545 }]);
+    expect(expandLatLngArray(steps[6].path)).toEqual(expandLatLngArray(steps[6].lat_lngs));
+    expect(steps[6].encoded_lat_lngs).toStrictEqual("BmYu8l65Bhzvt6F");
+    expect(steps[6].encoded_lat_lngs).toStrictEqual(steps[6].polyline?.points);
+
+    done();
+  });
+});
+
 test("should call route with options avoidFerries set to true and avoidTolls set to true", (done) => {
   const request = {
     origin: {

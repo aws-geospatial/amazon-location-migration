@@ -5,6 +5,9 @@ import { AddListenerResponse } from "../common";
 import { MigrationMap, MigrationMarker } from "../maps";
 
 const ASCII_CODE_A = 65;
+const DEFAULT_LINE_COLOR = "#73B9FF";
+const DEFAULT_LINE_OPACITY = 0.5;
+const DEFAULT_LINE_WIDTH = 8;
 
 export class MigrationDirectionsRenderer {
   #directions: google.maps.DirectionsResult | null;
@@ -196,7 +199,8 @@ export class MigrationDirectionsRenderer {
           },
         },
       });
-      // 8 weight, 0.5 opacity, "#73B9FF" color for default, 3 weight, 1 opacity, "Black" color used when one property is set
+      // Use default settings if no polylineOptions are set
+      // If any polylineOptions are set, there are separate defaults for individual properties
       const paintOptions = {};
       if (this.#polylineOptions) {
         paintOptions["line-color"] = this.#polylineOptions.strokeColor ? this.#polylineOptions.strokeColor : "Black";
@@ -204,9 +208,9 @@ export class MigrationDirectionsRenderer {
         paintOptions["line-opacity"] = this.#polylineOptions.strokeOpacity ? this.#polylineOptions.strokeOpacity : 1;
       } else {
         // default line
-        paintOptions["line-color"] = "#73B9FF";
-        paintOptions["line-width"] = 8;
-        paintOptions["line-opacity"] = 0.5;
+        paintOptions["line-color"] = DEFAULT_LINE_COLOR;
+        paintOptions["line-width"] = DEFAULT_LINE_WIDTH;
+        paintOptions["line-opacity"] = DEFAULT_LINE_OPACITY;
       }
 
       maplibreMap.addLayer({
