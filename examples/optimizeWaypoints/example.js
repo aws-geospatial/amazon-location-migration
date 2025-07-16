@@ -20,16 +20,24 @@ function initMap() {
 
   directionsRenderer.setMap(map);
 
-  const onChangeHandler = function () {
+  // Set up the Calculate Route button
+  document.getElementById("calculate-route").addEventListener("click", function () {
     calculateAndDisplayRoute(directionsService, directionsRenderer);
-  };
+  });
 
-  document.getElementById("start").addEventListener("change", onChangeHandler);
-  document.getElementById("waypoint1").addEventListener("change", onChangeHandler);
-  document.getElementById("waypoint2").addEventListener("change", onChangeHandler);
-  document.getElementById("waypoint3").addEventListener("change", onChangeHandler);
-  document.getElementById("end").addEventListener("change", onChangeHandler);
-  document.getElementById("optimize").addEventListener("change", onChangeHandler);
+  // Set up the "Use Current Time" button
+  document.getElementById("use-current-time").addEventListener("click", function () {
+    const now = new Date();
+    // Format the date and time for the datetime-local input
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    document.getElementById("departure-time").value = formattedDateTime;
+  });
 }
 
 function calculateAndDisplayRoute(directionsService, directionsRenderer) {
@@ -51,6 +59,25 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
   // Check if optimization is enabled
   const optimizeWaypoints = document.getElementById("optimize").checked;
 
+  // Get avoidance options
+  const avoidTolls = document.getElementById("avoid-tolls").checked;
+  const avoidHighways = document.getElementById("avoid-highways").checked;
+  const avoidFerries = document.getElementById("avoid-ferries").checked;
+
+  // Get departure time
+  const departureTimeInput = document.getElementById("departure-time").value;
+  let departureTime = null;
+  if (departureTimeInput) {
+    departureTime = new Date(departureTimeInput);
+  }
+
+  // Prepare driving options if departure time is set
+  const drivingOptions = departureTime
+    ? {
+        departureTime: departureTime,
+      }
+    : undefined;
+
   // Make route call
   directionsService
     .route({
@@ -63,6 +90,10 @@ function calculateAndDisplayRoute(directionsService, directionsRenderer) {
       travelMode: google.maps.TravelMode.DRIVING,
       waypoints: waypoints,
       optimizeWaypoints: optimizeWaypoints,
+      avoidTolls: avoidTolls,
+      avoidHighways: avoidHighways,
+      avoidFerries: avoidFerries,
+      drivingOptions: drivingOptions,
     })
     .then((response) => {
       // Display the optimized order in the UI
