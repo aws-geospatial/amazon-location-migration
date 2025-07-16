@@ -3405,6 +3405,7 @@ test("should return route with steps that contain supported fields", (done) => {
 
     const route = routes[0];
     const legs = route.legs;
+    // The overview_polyline is an encoded polyline representation of the path for the full route
     expect(route.overview_polyline).toStrictEqual(
       "BmY8ty45Bn6lt6FgFTwMT0KjD4IzFwHzF8LzKwb3XoL7G8GjDgF7BoLjD8G7BgPAsTwC4I8BkSkD4IAgP7B8G4DsEA8fnL4IoGgKoGgUwM0K8G8LwH4I0Foa0PwgBoV0oBoa0PgKkcwRw-BgoBkhBoV8a8Q4DwCwWsOsnBgZgPsJ4mBgZgUwMoLvW4S7kB0FnLwRjmB8Q_iBwRnkBkNvbsJrTsE3IgK7V8GrOwHnQ4DjIsErJ8GrO0F7L4DjI4IjSoBvCwH_OgPnfwWjwB0KvWoG7L0FnLkDnGkIzPsTwMwHsEsEkD0KoG0F4D0PgK4SoLgFkD8GsEgUkN8LkIkSwMwM4IgP4IoG4DgZ0PsY0P4I0F4N4I8f0UgP4I8pB8asJoG0U0K8VsOkS8LgesTkrB4cgZoQsTjhBwHvMoGnL8zB72CwC_EoV7kBgKvR4S_iBwH3NsTzjB8L_YkD7G0F7L7LvH5MtI",
     );
@@ -4501,6 +4502,48 @@ describe("test summary field in route response", () => {
     });
   });
 
+  describe("single route cases", () => {
+    test("should show single route number when it's the only route number", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RouteNumber: { Value: "I-35" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("I-35");
+        done();
+      });
+    });
+
+    test("should show single route number when it's the only valid route number among multiple", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [
+                { RouteNumber: { Value: null } },
+                { RouteNumber: { Value: "I-35" } },
+                { RouteNumber: { Value: undefined } },
+              ],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("I-35");
+        done();
+      });
+    });
+  });
+
   describe("two roads cases", () => {
     test("should show both road names when two different roads are available", (done) => {
       mockedRoutesClientSend.mockImplementationOnce(() =>
@@ -4594,6 +4637,24 @@ describe("test summary field in route response", () => {
 
       directionsService.route(defaultRequest).then((response) => {
         expect(response.routes[0].summary).toStrictEqual("First Road and Last Road");
+        done();
+      });
+    });
+
+    test("should show road and route if both are valid", (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          Routes: [
+            {
+              MajorRoadLabels: [{ RoadName: { Value: "First Road" } }, { RouteNumber: { Value: "I-35" } }],
+              Legs: [],
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(defaultRequest).then((response) => {
+        expect(response.routes[0].summary).toStrictEqual("First Road and I-35");
         done();
       });
     });

@@ -449,7 +449,7 @@ export class MigrationDirectionsService {
   }
 
   /**
-   * Gets a summary string of the route based on major road names.
+   * Gets a summary string of the route based on major road or route names.
    *
    * Behavior:
    *
@@ -475,8 +475,10 @@ export class MigrationDirectionsService {
       return "";
     }
 
-    // Get valid road names, filtering out undefined/null values
-    const validRoads = route.MajorRoadLabels.map((label) => label?.RoadName?.Value).filter((roadName) => roadName);
+    // Get valid road or route names, filtering out undefined/null values
+    const validRoads = route.MajorRoadLabels.map((label) => label?.RoadName?.Value || label?.RouteNumber?.Value).filter(
+      (roadName) => roadName,
+    );
 
     if (!validRoads.length) {
       return "";
