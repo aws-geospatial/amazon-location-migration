@@ -7,19 +7,20 @@
     <script type="text/javascript" src="./example.js"></script>
     <style>
       /* Basic reset and container styles */
-      html, body {
+      html,
+      body {
         height: 100%;
         margin: 0;
         padding: 0;
       }
-      
+
       /* Side-by-side layout: controls on left, map on right */
       .container {
         display: flex;
         flex-direction: row;
         height: 100%;
       }
-      
+
       /* Control panel */
       .controls {
         background-color: #f8f8f8;
@@ -28,40 +29,40 @@
         width: 350px;
         overflow-y: auto;
       }
-      
+
       /* Map container */
       #map {
         flex-grow: 1;
       }
-      
+
       /* Form layout */
       .form-section {
         margin-bottom: 15px;
       }
-      
+
       .form-section h3 {
         margin-top: 0;
         border-bottom: 1px solid #ddd;
         padding-bottom: 8px;
       }
-      
+
       .form-group {
         display: flex;
         flex-direction: column;
         margin-bottom: 12px;
       }
-      
+
       .form-label {
         font-weight: bold;
         margin-bottom: 5px;
       }
-      
+
       .form-control {
         width: 100%;
         padding: 6px;
         box-sizing: border-box;
       }
-      
+
       /* Checkbox styles */
       .checkbox-group {
         display: flex;
@@ -69,16 +70,16 @@
         gap: 8px;
         margin: 10px 0;
       }
-      
+
       .checkbox-item {
         display: flex;
         align-items: center;
       }
-      
+
       .checkbox-item label {
         margin-left: 5px;
       }
-      
+
       /* Button styles */
       .btn {
         padding: 8px 16px;
@@ -91,11 +92,11 @@
         width: 100%;
         margin-top: 5px;
       }
-      
+
       .btn:hover {
         background-color: #3367d6;
       }
-      
+
       /* Result display */
       #waypoint-order {
         margin-top: 10px;
@@ -112,7 +113,7 @@
         <!-- Locations Section -->
         <div class="form-section">
           <h3>Route Locations</h3>
-          
+
           <div class="form-group">
             <label class="form-label" for="start">Start:</label>
             <select id="start" class="form-control">
@@ -130,7 +131,7 @@
               <option value="cedar park, tx">Cedar Park</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label" for="waypoint1">Waypoint 1:</label>
             <select id="waypoint1" class="form-control">
@@ -149,7 +150,7 @@
               <option value="cedar park, tx">Cedar Park</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label" for="waypoint2">Waypoint 2:</label>
             <select id="waypoint2" class="form-control">
@@ -168,7 +169,7 @@
               <option value="cedar park, tx">Cedar Park</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label" for="waypoint3">Waypoint 3:</label>
             <select id="waypoint3" class="form-control">
@@ -187,7 +188,7 @@
               <option value="cedar park, tx">Cedar Park</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label" for="end">End:</label>
             <select id="end" class="form-control">
@@ -206,52 +207,52 @@
             </select>
           </div>
         </div>
-        
+
         <!-- Options Section -->
         <div class="form-section">
           <h3>Route Options</h3>
-          
+
           <div class="checkbox-group">
             <div class="checkbox-item">
               <input type="checkbox" id="optimize" checked />
               <label for="optimize">Optimize Waypoints</label>
             </div>
           </div>
-          
+
           <div class="checkbox-group">
             <div class="checkbox-item">
               <input type="checkbox" id="avoid-tolls" />
               <label for="avoid-tolls">Avoid Tolls</label>
             </div>
-            
+
             <div class="checkbox-item">
               <input type="checkbox" id="avoid-highways" />
               <label for="avoid-highways">Avoid Highways</label>
             </div>
-            
+
             <div class="checkbox-item">
               <input type="checkbox" id="avoid-ferries" />
               <label for="avoid-ferries">Avoid Ferries</label>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label" for="departure-time">Departure Time:</label>
             <input type="datetime-local" id="departure-time" class="form-control" />
           </div>
-          
+
           <div class="form-group">
-            <button id="use-current-time" class="btn" style="background-color: #757575;">Use Current Time</button>
+            <button id="use-current-time" class="btn" style="background-color: #757575">Use Current Time</button>
           </div>
-          
-          <div class="form-group" style="margin-top: 15px;">
+
+          <div class="form-group" style="margin-top: 15px">
             <button id="calculate-route" class="btn">Calculate Route</button>
           </div>
-          
+
           <div id="waypoint-order">Select waypoints and calculate route</div>
         </div>
       </div>
-      
+
       <div id="map"></div>
     </div>
 
