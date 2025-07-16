@@ -1,0 +1,99 @@
+/* Basic reset and container styles */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Side-by-side layout: controls on left, map on right */
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+/* Control panel */
+.controls {
+  background-color: #f8f8f8;
+  padding: 15px;
+  border-right: 1px solid #ddd;
+  width: 350px;
+  overflow-y: auto;
+}
+
+/* Map container */
+#map {
+  flex-grow: 1;
+}
+
+/* Form layout */
+.form-section {
+  margin-bottom: 15px;
+}
+
+.form-section h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.form-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+/* Checkbox styles */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-item label {
+  margin-left: 5px;
+}
+
+/* Button styles */
+.btn {
+  padding: 8px 16px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.btn:hover {
+  background-color: #3367d6;
+}
+
+/* Result display */
+#waypoint-order {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
