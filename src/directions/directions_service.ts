@@ -109,7 +109,7 @@ export class MigrationDirectionsService {
 
                       // Apply travel mode and avoidance options
                       populateTravelModeOption(options, optimizeWaypointsInput);
-                      populateAvoidOptions(options, optimizeWaypointsInput, true); // true flag indicates this is an OptimizeWaypointsRequest
+                      populateAvoidOptions(options, optimizeWaypointsInput);
 
                       if (options.drivingOptions?.departureTime) {
                         input.DepartureTime = options.drivingOptions.departureTime.toISOString();

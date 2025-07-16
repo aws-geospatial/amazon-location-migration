@@ -352,9 +352,6 @@ describe("directionsService route waypoint optimization tests", () => {
       expect(optimizeInput.Avoid.Ferries).toBe(true);
       expect(optimizeInput.Avoid.ControlledAccessHighways).toBe(true);
 
-      // Verify TollTransponders is not set for OptimizeWaypoints request
-      expect("TollTransponders" in optimizeInput.Avoid).toBe(false);
-
       // Verify departure time was set correctly in CalculateRoutes request
       expect(routeInput.DepartureTime).toBe(departureTime.toISOString());
 

@@ -13,8 +13,6 @@ import {
   CalculateRouteMatrixRequest,
   CalculateRoutesRequest,
   OptimizeWaypointsRequest,
-  RouteAvoidanceOptions,
-  RouteMatrixAvoidanceOptions,
   RouteTravelMode,
 } from "@aws-sdk/client-geo-routes";
 import { GeoPlacesClient, ReverseGeocodeCommand, ReverseGeocodeRequest } from "@aws-sdk/client-geo-places";
@@ -145,24 +143,16 @@ export function formatSecondsAsGoogleDurationText(seconds) {
  *
  * @param request - Google Maps API request object (DistanceMatrix or Directions)
  * @param input - Amazon Location Service request object to be populated
- * @param isOptimizeWaypoints - Optional flag to indicate if this is an OptimizeWaypointsRequest (which doesn't support
- *   TollTransponders)
  */
 export function populateAvoidOptions(
   request: google.maps.DistanceMatrixRequest | google.maps.DirectionsRequest,
   input: CalculateRouteMatrixRequest | CalculateRoutesRequest | OptimizeWaypointsRequest,
-  isOptimizeWaypoints = false,
 ) {
   if (request.avoidTolls) {
     input.Avoid = {
       TollRoads: true,
+      TollTransponders: true, // This property is not used by the OptimizeWaypointsRequest as it is not supported. We will keep it here for ease of use and simplified extensibility.
     };
-
-    // Only add TollTransponders if not an OptimizeWaypointsRequest
-    if (!isOptimizeWaypoints) {
-      // Use type assertion to add TollTransponders option. If we don't, then we will get an error as OptimizeWaypointsRequest does not support this option.
-      (input.Avoid as RouteMatrixAvoidanceOptions | RouteAvoidanceOptions).TollTransponders = true;
-    }
   }
 
   if (request.avoidFerries) {
