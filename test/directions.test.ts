@@ -3453,6 +3453,7 @@ test("should return route with steps that contain supported fields", (done) => {
       "BmY8ty45Bn6lt6FgFTwMT0KjD4IzFwHzF8LzKwb3XoL7G8GjDgF7BoLjD8G7BgPAsTwC4I8BkSkD4IAgP7B",
     );
     expect(steps[0].encoded_lat_lngs).toStrictEqual(steps[0].polyline?.points);
+    expect(steps[0].maneuver).toStrictEqual("");
 
     expect(steps[1].start_location.toJSON()).toStrictEqual({
       lat: 30.29043,
@@ -3493,6 +3494,7 @@ test("should return route with steps that contain supported fields", (done) => {
       "BmY8_445Bv3nt6F8G4DsEA8fnL4IoGgKoGgUwM0K8G8LwH4I0Foa0PwgBoV0oBoa0PgKkcwRw-BgoBkhBoV8a8Q4DwCwWsOsnBgZgPsJ4mBgZgUwM",
     );
     expect(steps[1].encoded_lat_lngs).toStrictEqual(steps[1].polyline?.points);
+    expect(steps[1].maneuver).toStrictEqual("turn-right");
 
     expect(steps[2].start_location.toJSON()).toStrictEqual({
       lat: 30.29872,
@@ -3537,6 +3539,7 @@ test("should return route with steps that contain supported fields", (done) => {
       "BmYgmp55Bvw-s6FoLvW4S7kB0FnLwRjmB8Q_iBwRnkBkNvbsJrTsE3IgK7V8GrOwHnQ4DjIsErJ8GrO0F7L4DjI4IjSoBvCwH_OgPnfwWjwB0KvWoG7L0FnLkDnGkIzP",
     );
     expect(steps[2].encoded_lat_lngs).toStrictEqual(steps[2].polyline?.points);
+    expect(steps[2].maneuver).toStrictEqual("turn-left");
 
     expect(steps[3].start_location.toJSON()).toStrictEqual({
       lat: 30.30275,
@@ -3583,6 +3586,7 @@ test("should return route with steps that contain supported fields", (done) => {
       "BmY8hx55B_6ut6FsTwMwHsEsEkD0KoG0F4D0PgK4SoLgFkD8GsEgUkN8LkIkSwMwM4IgP4IoG4DgZ0PsY0P4I0F4N4I8f0UgP4I8pB8asJoG0U0K8VsOkS8LgesTkrB4cgZoQ",
     );
     expect(steps[3].encoded_lat_lngs).toStrictEqual(steps[3].polyline?.points);
+    expect(steps[3].maneuver).toStrictEqual("turn-right");
 
     expect(steps[4].start_location.toJSON()).toStrictEqual({
       lat: 30.31085,
@@ -3613,6 +3617,7 @@ test("should return route with steps that contain supported fields", (done) => {
       "BmYk8g65B73kt6FsTjhBwHvMoGnL8zB72CwC_EoV7kBgKvR4S_iBwH3NsTzjB8L_YkD7G0F7L",
     );
     expect(steps[4].encoded_lat_lngs).toStrictEqual(steps[4].polyline?.points);
+    expect(steps[4].maneuver).toStrictEqual("turn-left");
 
     expect(steps[5].start_location.toJSON()).toStrictEqual({
       lat: 30.31381,
@@ -3630,6 +3635,7 @@ test("should return route with steps that contain supported fields", (done) => {
     expect(expandLatLngArray(steps[5].path)).toEqual(expandLatLngArray(steps[5].lat_lngs));
     expect(steps[5].encoded_lat_lngs).toStrictEqual("BmYk1m65Bjjvt6F7LvH5MtI");
     expect(steps[5].encoded_lat_lngs).toStrictEqual(steps[5].polyline?.points);
+    expect(steps[5].maneuver).toStrictEqual("turn-left");
 
     expect(steps[6].start_location.toJSON()).toStrictEqual({
       lat: 30.313415,
@@ -3643,6 +3649,7 @@ test("should return route with steps that contain supported fields", (done) => {
     expect(expandLatLngArray(steps[6].path)).toEqual(expandLatLngArray(steps[6].lat_lngs));
     expect(steps[6].encoded_lat_lngs).toStrictEqual("BmYu8l65Bhzvt6F");
     expect(steps[6].encoded_lat_lngs).toStrictEqual(steps[6].polyline?.points);
+    expect(steps[6].maneuver).toStrictEqual("");
 
     done();
   });

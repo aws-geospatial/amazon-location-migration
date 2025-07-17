@@ -27,6 +27,7 @@ import {
   ParseOrFindLocationResponse,
   populateAvoidOptions,
   populateTravelModeOption,
+  getManeuver,
   getUnitSystem,
 } from "./helpers";
 
@@ -368,8 +369,7 @@ export class MigrationDirectionsService {
             },
             instructions: step.Instruction,
             travel_mode: options.travelMode, // TODO: For now assume the same travelMode for the request, but steps could have different individual modes
-            // TODO: These are not currently supported, but are required in the response
-            maneuver: "",
+            maneuver: getManeuver(step),
           });
         });
 

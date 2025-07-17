@@ -13,7 +13,11 @@ import {
   CalculateRouteMatrixRequest,
   CalculateRoutesRequest,
   OptimizeWaypointsRequest,
+  RoutePedestrianTravelStep,
+  RoutePedestrianTravelStepType,
   RouteTravelMode,
+  RouteVehicleTravelStep,
+  RouteVehicleTravelStepType,
 } from "@aws-sdk/client-geo-routes";
 import { GeoPlacesClient, ReverseGeocodeCommand, ReverseGeocodeRequest } from "@aws-sdk/client-geo-places";
 import { CountryGeoJSON } from "./country_geojson/countryType";
@@ -370,3 +374,50 @@ export const largeNumberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
   useGrouping: true,
 });
+
+/**
+ * Use a RouteVehicleTravelStep or RoutePedestrianTravelStep to get a corresponding maneuver response field in Google's
+ * google.maps.DirectionsStep.
+ *
+ * Our Amazon Location steps have StepDetails for different step types (e.g. turn, keep, exit, etc...)
+ *
+ * Examples of maneuver response field in google.maps.DirectionsStep are things like: keep-left, turn-right, ramp-left,
+ * etc...
+ *
+ * @param step - The Amazon Location route step (RouteVehicleTravelStep | RoutePedestrianTravelStep)
+ * @returns Formatted string describing maneuver
+ */
+export const getManeuver = (step: RouteVehicleTravelStep | RoutePedestrianTravelStep): string => {
+  switch (step.Type) {
+    // In Amazon responses we sometimes get RAMP vs. EXIT, but they are both considered
+    // the same for Google's maneuver.
+    // Also, these are only applicable for the RouteVehicleTravelStep (since for walking
+    // people don't take exit ramps), so we have to do an additional check since the
+    // RampStepDetails/ExitStepDetails won't exist on RoutePedestrianTravelStep.
+    case RouteVehicleTravelStepType.RAMP: {
+      if ("RampStepDetails" in step) {
+        return `ramp-${step.RampStepDetails.SteeringDirection}`.toLowerCase();
+      }
+      break;
+    }
+    case RouteVehicleTravelStepType.EXIT: {
+      if ("ExitStepDetails" in step) {
+        return `ramp-${step.ExitStepDetails.SteeringDirection}`.toLowerCase();
+      }
+      break;
+    }
+
+    // Both RouteVehicleTravelStep and RoutePedestrianTravelStep have
+    // TurnStepDetails and KeepStepDetails, so we can reference them for both
+    case RouteVehicleTravelStepType.TURN:
+    case RoutePedestrianTravelStepType.TURN: {
+      return `turn-${step.TurnStepDetails.SteeringDirection}`.toLowerCase();
+    }
+    case RouteVehicleTravelStepType.KEEP:
+    case RoutePedestrianTravelStepType.KEEP: {
+      return `keep-${step.KeepStepDetails.SteeringDirection}`.toLowerCase();
+    }
+  }
+
+  return "";
+};

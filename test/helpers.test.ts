@@ -7,6 +7,7 @@ import {
   createPolygons,
   formatDistanceBasedOnUnitSystem,
   formatSecondsAsGoogleDurationText,
+  getManeuver,
   getReverseGeocodedAddresses,
   getUnitSystem,
   isPointInPolygons,
@@ -22,7 +23,12 @@ import {
   CalculateRouteMatrixRequest,
   CalculateRoutesRequest,
   OptimizeWaypointsRequest,
+  RoutePedestrianTravelStep,
+  RoutePedestrianTravelStepType,
+  RouteSteeringDirection,
   RouteTravelMode,
+  RouteVehicleTravelStep,
+  RouteVehicleTravelStepType,
 } from "@aws-sdk/client-geo-routes";
 import { UnitSystem } from "../src/directions";
 import { CountryGeoJSON } from "../src/directions/country_geojson/countryType";
@@ -783,6 +789,194 @@ describe("formatSecondsAsGoogleDurationText", () => {
     expect(formatSecondsAsGoogleDurationText(172801)).toBe("2 days 1 min");
     expect(formatSecondsAsGoogleDurationText(176400)).toBe("2 days 1 hour");
     expect(formatSecondsAsGoogleDurationText(176460)).toBe("2 days 1 hour 1 min");
+  });
+});
+
+describe("getManeuver", () => {
+  test("should return ramp-left maneuver for RouteVehicleTravelStep RAMP type", () => {
+    const step: RouteVehicleTravelStep = {
+      RampStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.RAMP,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("ramp-left");
+  });
+
+  test("should return ramp-right maneuver for RouteVehicleTravelStep RAMP type", () => {
+    const step: RouteVehicleTravelStep = {
+      RampStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.RAMP,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("ramp-right");
+  });
+
+  test("should return ramp-left maneuver for RouteVehicleTravelStep EXIT type", () => {
+    const step: RouteVehicleTravelStep = {
+      ExitStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("ramp-left");
+  });
+
+  test("should return ramp-right maneuver for RouteVehicleTravelStep EXIT type", () => {
+    const step: RouteVehicleTravelStep = {
+      ExitStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("ramp-right");
+  });
+
+  test("should return turn-left maneuver for RouteVehicleTravelStep TURN type", () => {
+    const step: RouteVehicleTravelStep = {
+      TurnStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.TURN,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("turn-left");
+  });
+
+  test("should return turn-right maneuver for RouteVehicleTravelStep TURN type", () => {
+    const step: RouteVehicleTravelStep = {
+      TurnStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.TURN,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("turn-right");
+  });
+
+  test("should return turn-left maneuver for RoutePedestrianTravelStep TURN type", () => {
+    const step: RoutePedestrianTravelStep = {
+      TurnStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RoutePedestrianTravelStepType.TURN,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("turn-left");
+  });
+
+  test("should return turn-right maneuver for RoutePedestrianTravelStep TURN type", () => {
+    const step: RoutePedestrianTravelStep = {
+      TurnStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RoutePedestrianTravelStepType.TURN,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("turn-right");
+  });
+
+  test("should return keep-left maneuver for RouteVehicleTravelStep KEEP type", () => {
+    const step: RouteVehicleTravelStep = {
+      KeepStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.KEEP,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("keep-left");
+  });
+
+  test("should return keep-right maneuver for RouteVehicleTravelStep KEEP type", () => {
+    const step: RouteVehicleTravelStep = {
+      KeepStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.KEEP,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("keep-right");
+  });
+
+  test("should return keep-left maneuver for RoutePedestrianTravelStep KEEP type", () => {
+    const step: RoutePedestrianTravelStep = {
+      KeepStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RoutePedestrianTravelStepType.KEEP,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("keep-left");
+  });
+
+  test("should return keep-right maneuver for RoutePedestrianTravelStep KEEP type", () => {
+    const step: RoutePedestrianTravelStep = {
+      KeepStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RoutePedestrianTravelStepType.KEEP,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("keep-right");
+  });
+
+  test("should return empty string maneuver for unsupported type", () => {
+    const step: RouteVehicleTravelStep = {
+      ContinueStepDetails: {
+        Intersection: undefined,
+      },
+      Type: RouteVehicleTravelStepType.CONTINUE,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("");
+  });
+
+  test("should return empty string maneuver for RoutePedestrianTravelStep RAMP type", () => {
+    const step: RoutePedestrianTravelStep = {
+      Type: RoutePedestrianTravelStepType.RAMP,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("");
+  });
+
+  test("should return empty string maneuver for RoutePedestrianTravelStep EXIT type", () => {
+    const step: RoutePedestrianTravelStep = {
+      Type: RoutePedestrianTravelStepType.EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("");
   });
 });
 
