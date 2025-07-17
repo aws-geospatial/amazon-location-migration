@@ -6,6 +6,7 @@
   top: 0;
   left: 0;
   background-color: white;
+  padding: 15px;
 
   /* Allow search-results-container to be scrollable as a child */
   display: flex;
@@ -257,4 +258,46 @@
   font-family: Arial, sans-serif;
   font-size: 12px;
   font-weight: 500;
+}
+
+#routes-container {
+  font-family: sans-serif;
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+.route-entry {
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #f9f9f9;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.route-entry:hover {
+  border-color: #888;
+  background-color: #f1f1f1;
+}
+
+.route-entry.selected {
+  border-color: #007bff;
+  background-color: #e6f0ff;
+}
+
+.route-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary {
+  font-weight: bold;
+  color: #333;
+}
+
+.details {
+  color: #555;
+  white-space: nowrap;
 }

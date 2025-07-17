@@ -251,6 +251,7 @@ async function initMap(center) {
     $("#places-container").hide();
     $("#directions-container").show();
     $("#travel-mode-container").show(); // Show the travel mode container when directions are rendered
+    $("#routes-container").show();
 
     inDirectionsMode = true;
 
@@ -268,6 +269,7 @@ async function initMap(center) {
   $("#close-directions").click(() => {
     // Switch back to the places panel
     $("#directions-container").hide();
+    $("#routes-container").hide();
     $("#travel-mode-container").hide(); // Hide the travel mode container when directions are closed
     $("#places-container").show();
 
@@ -312,6 +314,57 @@ async function initMap(center) {
   });
 }
 
+function highlightSelectedRoute(selectedIndex) {
+  const entries = document.querySelectorAll(".route-entry");
+  entries.forEach((el, idx) => {
+    el.classList.toggle("selected", idx === selectedIndex);
+  });
+}
+
+function updateSelectedRouteIndex(index) {
+  highlightSelectedRoute(index);
+  mainDirectionRenderer.setRouteIndex(index);
+}
+
+function displayAlternateRoutes(directionsResult) {
+  const routes = directionsResult.routes;
+  const container = document.getElementById("routes-container");
+
+  // Clear the previous alternate routes data
+  container.innerHTML = "";
+
+  routes.forEach((route, index) => {
+    const summary = route.summary;
+
+    // TODO: If we add support for multiple stops in the future, will need to combine the distance/duration for
+    // all legs and then calculate the display text
+    const leg = route.legs[0];
+    const distance = leg.distance.text;
+    const duration = leg.duration.text;
+
+    const routeInfo = document.createElement("div");
+    routeInfo.className = "route-entry";
+    routeInfo.innerHTML = `
+      <div class="route-row">
+        <div class="summary">via ${summary}</div>
+        <div class="details">
+          <span>${distance}</span> • <span>${duration}</span>
+        </div>
+      </div>
+    `;
+
+    // Update the selected route index on click
+    routeInfo.addEventListener("click", () => {
+      updateSelectedRouteIndex(index);
+    });
+
+    container.appendChild(routeInfo);
+  });
+
+  // Highlight the first route by default
+  highlightSelectedRoute(0);
+}
+
 function calculateRoute() {
   // Make sure we reattach our directions renderer to the map (if needed),
   // since to clear out the directions (e.g. navigating back to details panel) we
@@ -342,6 +395,9 @@ function calculateRoute() {
       // Update the main directions renderer last so it will be rendered on top
       mainDirectionRenderer.setDirections(response);
       mainDirectionRenderer.setRouteIndex(0);
+
+      // Display all alternate routes available in the display container
+      displayAlternateRoutes(response);
     })
     .catch((error) => window.alert("Directions request failed due to " + error));
 }
