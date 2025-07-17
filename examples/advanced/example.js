@@ -69,6 +69,25 @@ async function initMap(center) {
   const { Geocoder } = await google.maps.importLibrary("geocoding");
   geocoder = new Geocoder();
 
+  // Set up panel collapse/expand functionality
+  const searchPanel = document.getElementById("search-panel-container");
+  const collapseButton = document.getElementById("collapse-panel-button");
+  const expandButton = document.getElementById("expand-panel-button");
+
+  if (collapseButton && expandButton) {
+    collapseButton.addEventListener("click", function () {
+      searchPanel.classList.remove("expanded");
+      searchPanel.classList.add("collapsed");
+      expandButton.classList.remove("hidden");
+    });
+
+    expandButton.addEventListener("click", function () {
+      searchPanel.classList.remove("collapsed");
+      searchPanel.classList.add("expanded");
+      expandButton.classList.add("hidden");
+    });
+  }
+
   const { Autocomplete, AutocompleteService, PlacesService, PlacesServiceStatus, SearchBox } =
     await google.maps.importLibrary("places");
   placesService = new PlacesService(map);
