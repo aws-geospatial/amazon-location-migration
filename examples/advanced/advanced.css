@@ -301,3 +301,59 @@
   color: #555;
   white-space: nowrap;
 }
+
+#route-steps {
+  max-width: 600px;
+  max-height: 500px;
+  overflow-y: auto;
+  margin: 20px auto;
+  font-family: sans-serif;
+  padding: 16px 12px 16px 16px; /* extra space on the right */
+  box-sizing: border-box;
+  background-clip: padding-box; /* prevents background bleed under border */
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#route-steps::-webkit-scrollbar {
+  width: 8px;
+}
+
+#route-steps::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#route-steps::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 8px;
+  margin: 4px;
+  border: 2px solid #fff; /* gives breathing space from edge */
+}
+
+.step-entry {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.step-meta {
+  color: #666;
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+.step-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-icon {
+  font-size: 1.2em;
+  width: 24px;
+  text-align: center;
+}
+
+.step-text {
+  flex: 1;
+}

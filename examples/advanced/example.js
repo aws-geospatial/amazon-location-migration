@@ -28,6 +28,7 @@ let currentDisplayedPlace;
 let inDirectionsMode = false;
 let travelMode;
 let currentTravelMode;
+let currentRoutes;
 
 // navigator.geolocation.getCurrentPosition can sometimes take a long time to return,
 // so just cache the new position after receiving it and use it next time
@@ -324,11 +325,70 @@ function highlightSelectedRoute(selectedIndex) {
 function updateSelectedRouteIndex(index) {
   highlightSelectedRoute(index);
   mainDirectionRenderer.setRouteIndex(index);
+  displayRouteSteps(index);
+}
+
+function getManeuverIcon(maneuver) {
+  switch (maneuver) {
+    case "turn-left":
+    case "turn-sharp-left":
+    case "ramp-left":
+    case "fork-left":
+      return "⬅️";
+    case "turn-right":
+    case "turn-sharp-right":
+    case "ramp-right":
+    case "fork-right":
+      return "➡️";
+    case "straight":
+    case "continue":
+      return "⬆️";
+    case "uturn-left":
+    case "uturn-right":
+      return "↩️";
+    case "merge":
+      return "🔀";
+    case "roundabout-left":
+    case "roundabout-right":
+      return "🛞";
+    default:
+      return " ";
+  }
+}
+
+function displayRouteSteps(routeIndex) {
+  const stepsContainer = document.getElementById("route-steps");
+
+  // Clear the previous route steps
+  stepsContainer.innerHTML = "";
+
+  const route = currentRoutes[routeIndex];
+  const leg = route.legs[0];
+  const steps = leg.steps;
+
+  steps.forEach((step, index) => {
+    const maneuver = step.maneuver || "";
+    const icon = getManeuverIcon(maneuver);
+
+    const stepDiv = document.createElement("div");
+    stepDiv.className = "step-entry";
+    stepDiv.innerHTML = `
+      <div class="step-line">
+        <span class="step-icon">${icon}</span>
+        <span class="step-text">${step.instructions}</span>
+      </div>
+      <div class="step-meta">${step.distance.text} • ${step.duration.text}</div>
+    `;
+    stepsContainer.appendChild(stepDiv);
+  });
 }
 
 function displayAlternateRoutes(directionsResult) {
   const routes = directionsResult.routes;
-  const container = document.getElementById("routes-container");
+  const container = document.getElementById("alternate-routes");
+
+  // Store the current routes so we can lookup the steps later if the route is changed
+  currentRoutes = routes;
 
   // Clear the previous alternate routes data
   container.innerHTML = "";
@@ -362,7 +422,7 @@ function displayAlternateRoutes(directionsResult) {
   });
 
   // Highlight the first route by default
-  highlightSelectedRoute(0);
+  updateSelectedRouteIndex(0);
 }
 
 function calculateRoute() {
