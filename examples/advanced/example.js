@@ -331,18 +331,28 @@ function updateSelectedRouteIndex(index) {
 function getManeuverIcon(maneuver) {
   switch (maneuver) {
     case "turn-left":
+    case "turn-slight-left":
     case "turn-sharp-left":
-    case "ramp-left":
     case "fork-left":
       return "⬅️";
     case "turn-right":
+    case "turn-slight-right":
     case "turn-sharp-right":
-    case "ramp-right":
     case "fork-right":
       return "➡️";
     case "straight":
     case "continue":
       return "⬆️";
+    case "keep-left":
+      return "↙️";
+    case "keep-right":
+      return "↘️";
+    case "fork-left":
+    case "ramp-left":
+      return "↖️";
+    case "fork-right":
+    case "ramp-right":
+      return "↗️";
     case "uturn-left":
     case "uturn-right":
       return "↩️";

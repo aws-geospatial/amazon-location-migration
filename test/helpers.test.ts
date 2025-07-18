@@ -845,6 +845,32 @@ describe("getManeuver", () => {
     expect(getManeuver(step)).toStrictEqual("ramp-right");
   });
 
+  test("should return uturn-left maneuver for RouteVehicleTravelStep U_TURN type", () => {
+    const step: RouteVehicleTravelStep = {
+      UTurnStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.U_TURN,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("uturn-left");
+  });
+
+  test("should return uturn-right maneuver for RouteVehicleTravelStep U_TURN type", () => {
+    const step: RouteVehicleTravelStep = {
+      UTurnStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.U_TURN,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("uturn-right");
+  });
+
   test("should return turn-left maneuver for RouteVehicleTravelStep TURN type", () => {
     const step: RouteVehicleTravelStep = {
       TurnStepDetails: {
@@ -949,6 +975,146 @@ describe("getManeuver", () => {
     expect(getManeuver(step)).toStrictEqual("keep-right");
   });
 
+  test("should return roundabout-left maneuver for RouteVehicleTravelStep ROUNDABOUT types", () => {
+    const enterStep: RouteVehicleTravelStep = {
+      RoundaboutEnterStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.ROUNDABOUT_ENTER,
+      Duration: 0,
+    };
+
+    expect(getManeuver(enterStep)).toStrictEqual("roundabout-left");
+
+    const exitStep: RouteVehicleTravelStep = {
+      RoundaboutExitStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.ROUNDABOUT_EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(exitStep)).toStrictEqual("roundabout-left");
+
+    const passStep: RouteVehicleTravelStep = {
+      RoundaboutPassStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RouteVehicleTravelStepType.ROUNDABOUT_PASS,
+      Duration: 0,
+    };
+
+    expect(getManeuver(passStep)).toStrictEqual("roundabout-left");
+  });
+
+  test("should return roundabout-right maneuver for RouteVehicleTravelStep ROUNDABOUT types", () => {
+    const enterStep: RouteVehicleTravelStep = {
+      RoundaboutEnterStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.ROUNDABOUT_ENTER,
+      Duration: 0,
+    };
+
+    expect(getManeuver(enterStep)).toStrictEqual("roundabout-right");
+
+    const exitStep: RouteVehicleTravelStep = {
+      RoundaboutExitStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.ROUNDABOUT_EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(exitStep)).toStrictEqual("roundabout-right");
+
+    const passStep: RouteVehicleTravelStep = {
+      RoundaboutPassStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RouteVehicleTravelStepType.ROUNDABOUT_PASS,
+      Duration: 0,
+    };
+
+    expect(getManeuver(passStep)).toStrictEqual("roundabout-right");
+  });
+
+  test("should return roundabout-left maneuver for RoutePedestrianTravelStep ROUNDABOUT types", () => {
+    const enterStep: RoutePedestrianTravelStep = {
+      RoundaboutEnterStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RoutePedestrianTravelStepType.ROUNDABOUT_ENTER,
+      Duration: 0,
+    };
+
+    expect(getManeuver(enterStep)).toStrictEqual("roundabout-left");
+
+    const exitStep: RoutePedestrianTravelStep = {
+      RoundaboutExitStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RoutePedestrianTravelStepType.ROUNDABOUT_EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(exitStep)).toStrictEqual("roundabout-left");
+
+    const passStep: RoutePedestrianTravelStep = {
+      RoundaboutPassStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.LEFT,
+      },
+      Type: RoutePedestrianTravelStepType.ROUNDABOUT_PASS,
+      Duration: 0,
+    };
+
+    expect(getManeuver(passStep)).toStrictEqual("roundabout-left");
+  });
+
+  test("should return roundabout-right maneuver for RoutePedestrianTravelStep ROUNDABOUT types", () => {
+    const enterStep: RoutePedestrianTravelStep = {
+      RoundaboutEnterStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RoutePedestrianTravelStepType.ROUNDABOUT_ENTER,
+      Duration: 0,
+    };
+
+    expect(getManeuver(enterStep)).toStrictEqual("roundabout-right");
+
+    const exitStep: RoutePedestrianTravelStep = {
+      RoundaboutExitStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RoutePedestrianTravelStepType.ROUNDABOUT_EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(exitStep)).toStrictEqual("roundabout-right");
+
+    const passStep: RoutePedestrianTravelStep = {
+      RoundaboutPassStepDetails: {
+        Intersection: undefined,
+        SteeringDirection: RouteSteeringDirection.RIGHT,
+      },
+      Type: RoutePedestrianTravelStepType.ROUNDABOUT_PASS,
+      Duration: 0,
+    };
+
+    expect(getManeuver(passStep)).toStrictEqual("roundabout-right");
+  });
+
   test("should return empty string maneuver for unsupported type", () => {
     const step: RouteVehicleTravelStep = {
       ContinueStepDetails: {
@@ -973,6 +1139,15 @@ describe("getManeuver", () => {
   test("should return empty string maneuver for RoutePedestrianTravelStep EXIT type", () => {
     const step: RoutePedestrianTravelStep = {
       Type: RoutePedestrianTravelStepType.EXIT,
+      Duration: 0,
+    };
+
+    expect(getManeuver(step)).toStrictEqual("");
+  });
+
+  test("should return empty string maneuver for RoutePedestrianTravelStep U_TURN type", () => {
+    const step: RoutePedestrianTravelStep = {
+      Type: RoutePedestrianTravelStepType.U_TURN,
       Duration: 0,
     };
 

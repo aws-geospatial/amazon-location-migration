@@ -406,9 +406,15 @@ export const getManeuver = (step: RouteVehicleTravelStep | RoutePedestrianTravel
       }
       break;
     }
+    case RouteVehicleTravelStepType.U_TURN: {
+      if ("UTurnStepDetails" in step) {
+        return `uturn-${step.UTurnStepDetails.SteeringDirection}`.toLowerCase();
+      }
+      break;
+    }
 
     // Both RouteVehicleTravelStep and RoutePedestrianTravelStep have
-    // TurnStepDetails and KeepStepDetails, so we can reference them for both
+    // TurnStepDetails, KeepStepDetails, and RoundaboutStepDetails
     case RouteVehicleTravelStepType.TURN:
     case RoutePedestrianTravelStepType.TURN: {
       return `turn-${step.TurnStepDetails.SteeringDirection}`.toLowerCase();
@@ -416,6 +422,16 @@ export const getManeuver = (step: RouteVehicleTravelStep | RoutePedestrianTravel
     case RouteVehicleTravelStepType.KEEP:
     case RoutePedestrianTravelStepType.KEEP: {
       return `keep-${step.KeepStepDetails.SteeringDirection}`.toLowerCase();
+    }
+    case RouteVehicleTravelStepType.ROUNDABOUT_ENTER:
+    case RouteVehicleTravelStepType.ROUNDABOUT_EXIT:
+    case RouteVehicleTravelStepType.ROUNDABOUT_PASS:
+    case RoutePedestrianTravelStepType.ROUNDABOUT_ENTER:
+    case RoutePedestrianTravelStepType.ROUNDABOUT_EXIT:
+    case RoutePedestrianTravelStepType.ROUNDABOUT_PASS: {
+      const stepDetails =
+        step.RoundaboutEnterStepDetails || step.RoundaboutExitStepDetails || step.RoundaboutPassStepDetails;
+      return `roundabout-${stepDetails.SteeringDirection}`.toLowerCase();
     }
   }
 
