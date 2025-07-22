@@ -16,6 +16,23 @@
 // This is meant to be showcased as the client logic that is able to remain untouched
 // and retain the same functionality when using the Amazon Location Migration SDK.
 
+// Polyline options constants
+const POLYLINE_OPTIONS = {
+  MAIN: {
+    strokeColor: "#0D4AFF", // Dark blue
+    strokeOpacity: 0.6,
+    strokeWeight: 8,
+  },
+  ALTERNATE: {
+    strokeColor: "#73B9FF", // Light blue
+    strokeOpacity: 0.5,
+    strokeWeight: 8,
+  },
+  TRANSPARENT: {
+    strokeColor: "#00000000", // Used for main route when travel mode is set to walking
+  },
+};
+
 let map;
 let userLocation, originLocation, destinationLocation;
 let placesService, directionsService, mainDirectionRenderer, geocoder;
@@ -29,6 +46,8 @@ let inDirectionsMode = false;
 let travelMode;
 let currentTravelMode;
 let currentRoutes;
+let routeCircleMarkers = [];
+let lastUpdateZoom;
 
 // navigator.geolocation.getCurrentPosition can sometimes take a long time to return,
 // so just cache the new position after receiving it and use it next time
@@ -56,6 +75,127 @@ async function getStartingPosition() {
   }
 }
 
+// Function to update route markers based on current zoom level and route length
+function updateRouteMarkers(response) {
+  if (
+    !map ||
+    !currentTravelMode ||
+    currentTravelMode !== travelMode.WALKING ||
+    !response ||
+    !response.routes ||
+    response.routes.length === 0
+  ) {
+    return;
+  }
+
+  // Clear existing markers
+  clearRouteMarkers();
+
+  // Get the path points for the currently selected route
+  const routeIndex = mainDirectionRenderer.getRouteIndex();
+  const pathPoints = response.routes[routeIndex].overview_path;
+  const totalPoints = pathPoints.length;
+
+  // Helper function to calculate distance between two points using Haversine formula
+  function calculateDistance(point1, point2) {
+    const R = 6371000; // Earth's radius in meters
+    const lat1 = (point1.lat() * Math.PI) / 180;
+    const lat2 = (point2.lat() * Math.PI) / 180;
+    const deltaLat = ((point2.lat() - point1.lat()) * Math.PI) / 180;
+    const deltaLng = ((point2.lng() - point1.lng()) * Math.PI) / 180;
+
+    const a =
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  }
+
+  // Helper function to interpolate between two points
+  function interpolatePoint(point1, point2, fraction) {
+    const lat = point1.lat() + (point2.lat() - point1.lat()) * fraction;
+    const lng = point1.lng() + (point2.lng() - point1.lng()) * fraction;
+    return new google.maps.LatLng(lat, lng);
+  }
+
+  // Calculate total route distance and cumulative distances
+  let totalDistance = 0;
+  const cumulativeDistances = [0];
+
+  for (let i = 1; i < totalPoints; i++) {
+    const segmentDistance = calculateDistance(pathPoints[i - 1], pathPoints[i]);
+    totalDistance += segmentDistance;
+    cumulativeDistances.push(totalDistance);
+  }
+
+  // Determine marker spacing based on current zoom level and route length
+  const currentZoom = map.getZoom();
+
+  // Calculate zoom factor using exponential function
+  // - Uses 1.9 as base: each zoom level increase multiplies markers by ~1.9x
+  // - Reference point is zoom level 13 (where zoomFactor = 1.0)
+  // - At zoom 15: ~3.6x more markers; at zoom 10: ~85% fewer markers
+  const zoomFactor = Math.pow(1.9, currentZoom - 13);
+
+  // Calculate base marker count using a power function of route length
+  // - Convert total distance from meters to kilometers
+  // - Use exponent 0.95 (nearly linear) for balanced scaling:
+  //   * Short routes get proportionally more markers per km
+  //   * Long routes get slightly fewer markers per km to avoid excessive density
+  const routeLengthKm = totalDistance / 1000;
+  const scalingFactor = 10; // Controls how quickly marker count increases with distance
+  const exponent = 0.95; // Controls the growth curve (1.0 = linear, 0.5 = square root)
+  const baseMarkerCount = Math.round(scalingFactor * Math.pow(routeLengthKm, exponent));
+
+  // Apply zoom factor to get final marker count
+  const markerCount = Math.round(baseMarkerCount * zoomFactor);
+
+  // Calculate the distance between markers in meters
+  const markerSpacing = totalDistance / markerCount;
+
+  // Place markers at regular distance intervals along the route
+  for (let distance = 0; distance <= totalDistance; distance += markerSpacing) {
+    // Find the segment that contains this distance point
+    // This loop identifies which path segment the current distance falls within
+    let segmentIndex = 0;
+    while (segmentIndex < cumulativeDistances.length - 1 && cumulativeDistances[segmentIndex + 1] < distance) {
+      segmentIndex++;
+    }
+
+    // Skip if we've reached the end of the path
+    if (segmentIndex >= totalPoints - 1) continue;
+
+    // Get the start and end points of the identified segment
+    const segmentStart = pathPoints[segmentIndex];
+    const segmentEnd = pathPoints[segmentIndex + 1];
+
+    // Calculate how far along the segment this marker should be placed (0.0 = start, 1.0 = end)
+    const segmentLength = cumulativeDistances[segmentIndex + 1] - cumulativeDistances[segmentIndex];
+    const fraction = segmentLength > 0 ? (distance - cumulativeDistances[segmentIndex]) / segmentLength : 0;
+
+    // Calculate the exact position by interpolating between segment start and end points
+    const position = interpolatePoint(segmentStart, segmentEnd, fraction);
+
+    // Create and store the blue dot marker at this position
+    const marker = createSVGCircleMarker(position, map);
+    routeCircleMarkers.push(marker);
+  }
+
+  // Ensure there's always a marker at the destination point
+  // This guarantees the end of the route is marked even if it falls between spacing intervals
+  const lastMarker = createSVGCircleMarker(pathPoints[totalPoints - 1], map);
+  routeCircleMarkers.push(lastMarker);
+}
+
+// Helper function to clear existing route markers
+function clearRouteMarkers() {
+  if (routeCircleMarkers && routeCircleMarkers.length > 0) {
+    routeCircleMarkers.forEach((marker) => marker.setMap(null));
+    routeCircleMarkers = [];
+  }
+}
+
 async function initMap(center) {
   // Store the user location so it can be used later by the directions
   userLocation = center;
@@ -66,6 +206,35 @@ async function initMap(center) {
     zoom: 14,
     mapId: "DEMO_MAP_ID",
     mapTypeControl: false, // The map type control overlaps our panel, so don't show by default
+  });
+
+  // Add a listener for zoom changes to update markers when needed
+  map.addListener("zoom_changed", () => {
+    const newZoom = map.getZoom();
+
+    // If we have an active route with walking mode, update the markers
+    if (
+      currentTravelMode === travelMode.WALKING &&
+      mainDirectionRenderer.getDirections() &&
+      mainDirectionRenderer.getDirections().routes &&
+      mainDirectionRenderer.getDirections().routes.length > 0
+    ) {
+      // Initialize the zoom tracking if it doesn't exist
+      if (lastUpdateZoom === undefined) {
+        lastUpdateZoom = newZoom;
+      }
+
+      // Calculate cumulative change since last marker update
+      const cumulativeChange = Math.abs(newZoom - lastUpdateZoom);
+
+      // Update markers if cumulative change exceeds threshold
+      if (cumulativeChange >= 0.1) {
+        updateRouteMarkers(mainDirectionRenderer.getDirections());
+
+        // Reset the lastUpdateZoom to current zoom after updating markers
+        lastUpdateZoom = newZoom;
+      }
+    }
   });
 
   const { Geocoder } = await google.maps.importLibrary("geocoding");
@@ -106,11 +275,7 @@ async function initMap(center) {
   // renderers as well as the main directions renderer
   mainDirectionRenderer = new DirectionsRenderer({
     map,
-    polylineOptions: {
-      strokeColor: "#0D4AFF",
-      strokeOpacity: 0.6,
-      strokeWeight: 8,
-    },
+    polylineOptions: POLYLINE_OPTIONS.MAIN,
   });
 
   // For the 3 alternate route renderers, we have a slightly lower opacity and we don't
@@ -119,11 +284,7 @@ async function initMap(center) {
     alternativeDirectionsRenderers.push(
       new DirectionsRenderer({
         map,
-        polylineOptions: {
-          strokeColor: "#73B9FF",
-          strokeOpacity: 0.5,
-          strokeWeight: 8,
-        },
+        polylineOptions: POLYLINE_OPTIONS.ALTERNATE,
         suppressMarkers: true,
       }),
     );
@@ -278,6 +439,10 @@ async function initMap(center) {
     alternativeDirectionsRenderers.forEach((renderer) => {
       renderer.setMap(null);
     });
+
+    // Clear any circle markers
+    clearRouteMarkers();
+
     mainDirectionRenderer.setMap(null);
 
     inDirectionsMode = false;
@@ -306,12 +471,18 @@ async function initMap(center) {
     // Update the current travel mode
     if (selectedMode === "DRIVING") {
       currentTravelMode = travelMode.DRIVING;
+
+      // Clear any circle markers when switching to driving mode
+      clearRouteMarkers();
     } else if (selectedMode === "WALKING") {
       currentTravelMode = travelMode.WALKING;
     }
 
     // Recalculate the route with the new travel mode
     calculateRoute();
+
+    // Update the main route appearance based on the selected mode
+    updateMainRouteAppearance(currentTravelMode);
   });
 }
 
@@ -324,7 +495,44 @@ function highlightSelectedRoute(selectedIndex) {
 
 function updateSelectedRouteIndex(index) {
   highlightSelectedRoute(index);
+
+  // Store the previous route index before changing it
+  const previousIndex = mainDirectionRenderer.getRouteIndex();
+
+  // Update the route index
   mainDirectionRenderer.setRouteIndex(index);
+
+  // If in walking mode, update the transparency of alternative renderers
+  // and redraw the circle markers for the newly selected route
+  if (currentTravelMode === travelMode.WALKING) {
+    // Update the polyline visibility for all renderers
+    alternativeDirectionsRenderers.forEach((renderer, i) => {
+      if (i === index) {
+        // Make the selected route's alternative renderer transparent
+        renderer.setOptions({
+          polylineOptions: POLYLINE_OPTIONS.TRANSPARENT,
+        });
+      } else {
+        // Keep other alternate routes visible
+        renderer.setOptions({
+          polylineOptions: POLYLINE_OPTIONS.ALTERNATE,
+        });
+      }
+
+      // Force re-render by getting and setting the route index again for all renderers
+      renderer.setRouteIndex(renderer.getRouteIndex());
+    });
+
+    // Only redraw markers if the route index has changed
+    if (previousIndex !== index) {
+      // Clear existing markers
+      clearRouteMarkers();
+
+      // Create new markers for the selected route
+      updateRouteMarkers(mainDirectionRenderer.getDirections());
+    }
+  }
+
   displayRouteSteps(index);
 }
 
@@ -465,6 +673,15 @@ function calculateRoute() {
       // Update the main directions renderer last so it will be rendered on top
       mainDirectionRenderer.setDirections(response);
       mainDirectionRenderer.setRouteIndex(0);
+
+      // If walking mode, create circle markers along the path
+      if (currentTravelMode === travelMode.WALKING) {
+        // Initialize the zoom tracking for adaptive marker placement
+        lastUpdateZoom = map.getZoom();
+
+        // Use the updateRouteMarkers function to place markers
+        updateRouteMarkers(response);
+      }
 
       // Display all alternate routes available in the display container
       displayAlternateRoutes(response);
@@ -625,6 +842,61 @@ async function createMarker(place) {
   });
 
   markers.push(marker);
+}
+
+// Function to create a single SVG circle marker for a coordinate
+function createSVGCircleMarker(coordinate, map) {
+  const blueDotImg = {
+    url: "../images/blue_dot.png",
+  };
+
+  const marker = new google.maps.Marker({
+    position: coordinate,
+    map: map,
+    icon: blueDotImg,
+  });
+
+  return marker;
+}
+
+// Function to update the main route appearance based on travel mode
+function updateMainRouteAppearance(currentMode) {
+  if (currentMode === travelMode.WALKING) {
+    // For walking mode, hide the main polyline so only the circle markers are visible
+    mainDirectionRenderer.setOptions({
+      polylineOptions: POLYLINE_OPTIONS.TRANSPARENT,
+    });
+
+    // For walking mode, make all alternative routes light blue except for the selected route which should be transparent
+    alternativeDirectionsRenderers.forEach((renderer, index) => {
+      if (index === mainDirectionRenderer.getRouteIndex()) {
+        // Make the selected route's alternative renderer transparent
+        renderer.setOptions({
+          polylineOptions: POLYLINE_OPTIONS.TRANSPARENT,
+        });
+      } else {
+        // Keep other alternate routes visible with light blue color
+        renderer.setOptions({
+          polylineOptions: POLYLINE_OPTIONS.ALTERNATE,
+          suppressMarkers: true,
+        });
+      }
+    });
+  } else {
+    // Driving style (regular blue)
+    mainDirectionRenderer.setOptions({
+      polylineOptions: POLYLINE_OPTIONS.MAIN,
+      suppressMarkers: false,
+    });
+
+    // Reset alternate routes to light blue
+    alternativeDirectionsRenderers.forEach((renderer) => {
+      renderer.setOptions({
+        polylineOptions: POLYLINE_OPTIONS.ALTERNATE,
+        suppressMarkers: true,
+      });
+    });
+  }
 }
 
 // Hide the details by default and hide the directions container
