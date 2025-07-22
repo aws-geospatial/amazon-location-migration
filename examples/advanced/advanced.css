@@ -13,6 +13,7 @@
   flex-direction: column;
   overflow: hidden;
   transition: transform 0.3s ease;
+  box-sizing: border-box; /* Include padding in the height calculation */
 }
 
 /* Panel states for collapse/expand */
@@ -25,7 +26,7 @@
 }
 
 #search-bar-container {
-  margin: 20px;
+  margin: 5px;
   margin-bottom: 40px;
   text-align: center;
 }
@@ -74,18 +75,17 @@
 }
 
 #directions-header {
-  margin: 20px;
-  margin-bottom: 40px;
   text-align: center;
 }
 
 #origin-container {
-  margin: 20px;
+  margin: 5px;
   text-align: center;
 }
 
 #destination-container {
-  margin: 20px;
+  margin: 5px;
+  margin-bottom: 30px;
   text-align: center;
 }
 
@@ -188,10 +188,16 @@
 }
 
 #collapse-panel-container {
-  margin-top: auto; /* Push to bottom of flex container */
   padding: 15px;
   text-align: center;
   border-top: 1px solid #eee;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 #collapse-panel-button {
@@ -224,8 +230,6 @@
 #travel-mode-container {
   display: flex;
   justify-content: center;
-  margin: 10px 0;
-  padding: 10px 0;
   border-bottom: 1px solid #e8eaed;
 }
 
@@ -262,8 +266,7 @@
 }
 
 .travel-mode-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
+  font-size: 20px;
 }
 
 .travel-mode-label {
@@ -274,8 +277,12 @@
 
 #routes-container {
   font-family: sans-serif;
-  max-width: 600px;
-  margin: 20px auto;
+  margin: 0 auto;
+  margin-top: 10px;
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .route-entry {
@@ -315,10 +322,8 @@
 }
 
 #route-steps {
-  max-width: 600px;
-  max-height: 500px;
   overflow-y: auto;
-  margin: 20px auto;
+  margin: 0 auto 20px auto;
   font-family: sans-serif;
   padding: 16px 12px 16px 16px; /* extra space on the right */
   box-sizing: border-box;
@@ -368,4 +373,21 @@
 
 .step-text {
   flex: 1;
+}
+
+#directions-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#close-directions {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  color: #1a73e8;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 15px;
 }

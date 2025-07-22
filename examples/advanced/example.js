@@ -217,7 +217,8 @@ async function initMap(center) {
       currentTravelMode === travelMode.WALKING &&
       mainDirectionRenderer.getDirections() &&
       mainDirectionRenderer.getDirections().routes &&
-      mainDirectionRenderer.getDirections().routes.length > 0
+      mainDirectionRenderer.getDirections().routes.length > 0 &&
+      mainDirectionRenderer.getMap() // Ensure that the directions are being rendered
     ) {
       // Initialize the zoom tracking if it doesn't exist
       if (lastUpdateZoom === undefined) {
@@ -302,7 +303,6 @@ async function initMap(center) {
   const destinationInput = document.getElementById("destination-input");
 
   // We only need the name and geometry for the origin/destination
-  // TODO: Need to fix z-index issue with the maplibre geocoder where if one geocoder is beneath the other, the suggestions drop-down gets covered up
   originAutocomplete = new Autocomplete(originInput, {
     bounds: map.getBounds(),
     fields: ["name", "geometry"],
@@ -412,8 +412,7 @@ async function initMap(center) {
     // Switch to show the directions panel
     $("#places-container").hide();
     $("#directions-container").show();
-    $("#travel-mode-container").show(); // Show the travel mode container when directions are rendered
-    $("#routes-container").show();
+    $("#travel-mode-container").show(); // Show the travel mode container
 
     inDirectionsMode = true;
 
@@ -425,7 +424,9 @@ async function initMap(center) {
     destinationLocation = currentDisplayedPlace.geometry.location;
     $("#destination-input").val(currentDisplayedPlace.formatted_address);
 
-    calculateRoute();
+    calculateRoute(() => {
+      $("#routes-container").show(); // Don't show container until route information is retrieved
+    });
   });
 
   $("#close-directions").click(() => {
@@ -643,19 +644,7 @@ function displayAlternateRoutes(directionsResult) {
   updateSelectedRouteIndex(0);
 }
 
-function calculateRoute() {
-  // Make sure we reattach our directions renderer to the map (if needed),
-  // since to clear out the directions (e.g. navigating back to details panel) we
-  // have to set the map to null
-  alternativeDirectionsRenderers.forEach((renderer) => {
-    if (!renderer.getMap()) {
-      renderer.setMap(map);
-    }
-  });
-  if (!mainDirectionRenderer.getMap()) {
-    mainDirectionRenderer.setMap(map);
-  }
-
+function calculateRoute(callback) {
   directionsService
     .route({
       origin: originLocation,
@@ -664,6 +653,18 @@ function calculateRoute() {
       provideRouteAlternatives: true,
     })
     .then((response) => {
+      // Make sure we reattach our directions renderer to the map (if needed),
+      // since to clear out the directions (e.g. navigating back to details panel) we
+      // have to set the map to null
+      alternativeDirectionsRenderers.forEach((renderer) => {
+        if (!renderer.getMap()) {
+          renderer.setMap(map);
+        }
+      });
+      if (!mainDirectionRenderer.getMap()) {
+        mainDirectionRenderer.setMap(map);
+      }
+
       // Update the alterative route renderers first
       alternativeDirectionsRenderers.forEach((renderer, index) => {
         renderer.setDirections(response);
@@ -685,6 +686,11 @@ function calculateRoute() {
 
       // Display all alternate routes available in the display container
       displayAlternateRoutes(response);
+
+      // Execute the callback if provided
+      if (typeof callback === "function") {
+        callback();
+      }
     })
     .catch((error) => window.alert("Directions request failed due to " + error));
 }
