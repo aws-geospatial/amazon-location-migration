@@ -424,9 +424,7 @@ async function initMap(center) {
     destinationLocation = currentDisplayedPlace.geometry.location;
     $("#destination-input").val(currentDisplayedPlace.formatted_address);
 
-    calculateRoute(() => {
-      $("#routes-container").show(); // Don't show container until route information is retrieved
-    });
+    calculateRoute();
   });
 
   $("#close-directions").click(() => {
@@ -644,7 +642,7 @@ function displayAlternateRoutes(directionsResult) {
   updateSelectedRouteIndex(0);
 }
 
-function calculateRoute(callback) {
+function calculateRoute() {
   directionsService
     .route({
       origin: originLocation,
@@ -687,10 +685,8 @@ function calculateRoute(callback) {
       // Display all alternate routes available in the display container
       displayAlternateRoutes(response);
 
-      // Execute the callback if provided
-      if (typeof callback === "function") {
-        callback();
-      }
+      // Show container once new route information is set
+      $("#routes-container").show();
     })
     .catch((error) => window.alert("Directions request failed due to " + error));
 }
