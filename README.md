@@ -149,9 +149,44 @@ loader.importLibrary("maps").then(({ Map }) => {
 
 For a full overview of supported Google Maps APIs and current limitations, please see the [Supported APIs documentation](documentation/supportedLibraries.md).
 
+## Running Examples
+
+We have several examples that demonstrate the Migration SDK. These examples are under the `<root>/examples` folder that you can run locally with the built migration SDK.
+
+First, build the Migration SDK in your local environment by running the following:
+
+```
+npm install
+npm run build
+```
+
+Next, you will need to setup your configuration so that the examples can be generated. The examples are generated from templates that have placeholder values for your resources (e.g. API keys). You will need to fill out an `examples/config.json` file with your specific values.
+
+Copy the `examples/config.template.json` file:
+
+```
+cp examples/config.template.json examples/config.json
+```
+
+Next, open your new `examples/config.json` file and fill it in with your resource values. Anytime you run the examples, they will be auto-generated reading from your `examples/config.json`.
+
+Each example has an `index.html` and a `google.html` page, of which the only difference between them is that the `index.html` imports our migration SDK.
+The examples also have an `example.js` script that holds the client logic for the example. This client logic is shared between both `index` and `google` example pages
+in order to showcase that the client logic can invoke the same `google.maps` APIs, but will be re-routed by the migration SDK for any APIs that the migration SDK supports.
+
+The examples can be generated + hosted on a local webserver with the following command:
+
+```
+npm run hostExamples
+```
+
+The examples landing page will be launched in your local browser, or can be visisted here:
+
+http://localhost:8080/examples/landingPage.html
+
 ## Contributing
 
-We welcome community contributions and pull requests. See [CONTRIBUTING](CONTRIBUTING.md) for information on how to set up a development environment, run the examples and submit code.
+We welcome community contributions and pull requests. See [CONTRIBUTING](CONTRIBUTING.md) for information on how to set up a development environment, and submit code.
 
 ## Security
 

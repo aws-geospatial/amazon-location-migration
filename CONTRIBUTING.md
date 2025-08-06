@@ -84,34 +84,6 @@ npm test
 GitHub provides additional document on [forking a repository](https://help.github.com/articles/fork-a-repo/) and
 [creating a pull request](https://help.github.com/articles/creating-a-pull-request/).
 
-## Running Examples
-
-Once you have built the migration SDK in your development environment, there are several examples under the `<root>/examples` folder that you can run locally with the built migration SDK.
-
-The examples are generated from templates that have placeholder values for your resources (e.g. API keys). You will need to fill out an `examples/config.json` file with your specific values.
-
-First, copy the `examples/config.template.json` file:
-
-```
-cp examples/config.template.json examples/config.json
-```
-
-Next, open your new `examples/config.json` file and fill it in with your resource values. Anytime you run the examples, they will be auto-generated reading from your `examples/config.json`.
-
-Each example has an `index.html` and a `google.html` page, of which the only difference between them is that the `index.html` imports our migration SDK.
-The examples also have an `example.js` script that holds the client logic for the example. This client logic is shared between both `index` and `google` example pages
-in order to showcase that the client logic can invoke the same `google.maps` APIs, but will be re-routed by the migration SDK for any APIs that the migration SDK supports.
-
-The examples can be generated + hosted on a local webserver with the following command:
-
-```
-npm run hostExamples
-```
-
-The examples landing page will be launched in your local browser, or can be visisted here:
-
-http://localhost:8080/examples/landingPage.html
-
 ## Finding contributions to work on
 
 Looking at the existing issues is a great way to find something to contribute on. As our projects, by default, use the default GitHub issue labels (enhancement/bug/duplicate/help wanted/invalid/question/wontfix), looking at any 'help wanted' issues is a great place to start.
