@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { ColorScheme as GeoMapsColorScheme, MapStyle } from "@aws-sdk/client-geo-maps";
+import { ColorScheme as GeoMapsColorScheme, ContourDensity, MapStyle, Terrain } from "@aws-sdk/client-geo-maps";
 import { CameraOptions, IControl, FullscreenControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
   AddListenerResponse,
@@ -261,16 +261,13 @@ class MigrationMap {
         break;
 
       case MapTypeId.ROADMAP:
+      case MapTypeId.TERRAIN:
         styleName = MapStyle.STANDARD;
         break;
 
       case MapTypeId.SATELLITE:
         styleName = MapStyle.SATELLITE;
         break;
-
-      case MapTypeId.TERRAIN:
-        console.error("Terrain mapTypeId not supported");
-        return;
     }
 
     // Construct our style URL
@@ -278,11 +275,19 @@ class MigrationMap {
       `https://maps.geo.${this._region}.amazonaws.com/v2/styles/${styleName}/descriptor?key=${this._apiKey}`,
     );
 
-    // For Roadmap (Standard) type, we need to append the desired color-scheme as a query param
-    // If we appended this for other types, we would get a 4xx error
-    if (this.#mapTypeId == MapTypeId.ROADMAP) {
+    // Handle additional query params for Standard (ROADMAP and TERRAIN) types
+    // If we added these for other types, we would get a 4xx error
+    if (styleName == MapStyle.STANDARD) {
       const params = new URLSearchParams(styleUrl.search);
+
       params.set("color-scheme", this.#colorScheme);
+
+      // Add terrain query params for TERRAIN map type only
+      if (this.#mapTypeId === MapTypeId.TERRAIN) {
+        params.set("terrain", Terrain.HILLSHADE);
+        params.set("contour-density", ContourDensity.MEDIUM);
+      }
+
       styleUrl.search = params.toString();
     }
 

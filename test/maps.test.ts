@@ -292,15 +292,26 @@ test("should return correct mapTypeId after being modified", () => {
   expect(mockSetStyle).toHaveBeenLastCalledWith(
     "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key",
   );
+
+  // Can set/get to TERRAIN and style URL is updated
+  testMap.setMapTypeId(MapTypeId.TERRAIN);
+  expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.TERRAIN);
+  expect(mockSetStyle).toHaveBeenCalledTimes(3);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light&terrain=Hillshade&contour-density=Medium",
+  );
 });
 
-test("should throw error if trying to set mapTypeId to TERRAIN", () => {
-  const testMap = new MigrationMap(null, {});
+test("should allow Dark color scheme when mapTypeId is TERRAIN", () => {
+  const testMap = new MigrationMap(null, {
+    colorScheme: ColorScheme.DARK,
+  });
 
   testMap.setMapTypeId(MapTypeId.TERRAIN);
-  expect(mockSetStyle).toHaveBeenCalledTimes(0);
-  expect(console.error).toHaveBeenCalledTimes(1);
-  expect(console.error).toHaveBeenCalledWith("Terrain mapTypeId not supported");
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark&terrain=Hillshade&contour-density=Medium",
+  );
 });
 
 test("should update mapTypeId through new options", () => {
