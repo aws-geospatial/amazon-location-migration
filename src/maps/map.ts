@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import { ColorScheme as GeoMapsColorScheme, MapStyle } from "@aws-sdk/client-geo-maps";
 import { CameraOptions, IControl, FullscreenControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
   AddListenerResponse,
@@ -35,7 +36,7 @@ class MigrationMap {
   #fullscreenControl: IControl;
   #mapTypeControl: IControl;
   #navigationControl: IControl;
-  #colorScheme = "Light";
+  #colorScheme: GeoMapsColorScheme = GeoMapsColorScheme.LIGHT;
   #mapTypeId: MapTypeId = MapTypeId.ROADMAP;
   #styleUrl: string;
 
@@ -226,15 +227,15 @@ class MigrationMap {
 
     switch (googleColorScheme) {
       case ColorScheme.LIGHT:
-        this.#colorScheme = "Light";
+        this.#colorScheme = GeoMapsColorScheme.LIGHT;
         break;
 
       case ColorScheme.DARK:
-        this.#colorScheme = "Dark";
+        this.#colorScheme = GeoMapsColorScheme.DARK;
         break;
 
       case ColorScheme.FOLLOW_SYSTEM:
-        this.#colorScheme = systemIsDarkMode() ? "Dark" : "Light";
+        this.#colorScheme = systemIsDarkMode() ? GeoMapsColorScheme.DARK : GeoMapsColorScheme.LIGHT;
         break;
     }
   }
@@ -256,15 +257,15 @@ class MigrationMap {
     let styleName;
     switch (this.#mapTypeId) {
       case MapTypeId.HYBRID:
-        styleName = "Hybrid";
+        styleName = MapStyle.HYBRID;
         break;
 
       case MapTypeId.ROADMAP:
-        styleName = "Standard";
+        styleName = MapStyle.STANDARD;
         break;
 
       case MapTypeId.SATELLITE:
-        styleName = "Satellite";
+        styleName = MapStyle.SATELLITE;
         break;
 
       case MapTypeId.TERRAIN:
