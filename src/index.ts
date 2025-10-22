@@ -27,7 +27,13 @@ import {
   MigrationMVCObject,
   PlacesServiceStatus,
 } from "./common";
-import { MigrationInfoWindow, MigrationMap, MigrationMarker, MigrationTrafficLayer } from "./maps";
+import {
+  MigrationInfoWindow,
+  MigrationMap,
+  MigrationMarker,
+  MigrationTrafficLayer,
+  MigrationTransitLayer,
+} from "./maps";
 import {
   AddressComponent,
   MigrationAutocomplete,
@@ -137,6 +143,7 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
       MVCObject: MigrationMVCObject,
 
       TrafficLayer: MigrationTrafficLayer,
+      TransitLayer: MigrationTransitLayer,
 
       places: {
         AddressComponent: AddressComponent,
@@ -191,6 +198,7 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
                 Map: MigrationMap,
                 MapTypeId: MapTypeId,
                 TrafficLayer: MigrationTrafficLayer,
+                TransitLayer: MigrationTransitLayer,
               });
               break;
 

@@ -50,6 +50,7 @@ test("importing the SDK should populate google.maps namespace for direct loading
 
   // Map layers
   expect(google.maps).toHaveProperty("TrafficLayer");
+  expect(google.maps).toHaveProperty("TransitLayer");
 
   // Directions classes
   expect(google.maps).toHaveProperty("DirectionsRenderer");
@@ -103,13 +104,14 @@ test("can dynamically import maps classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { Circle, InfoWindow, Map, MapTypeId, TrafficLayer } = await google.maps.importLibrary("maps");
+  const { Circle, InfoWindow, Map, MapTypeId, TrafficLayer, TransitLayer } = await google.maps.importLibrary("maps");
 
   expect(Circle).toBeDefined();
   expect(InfoWindow).toBeDefined();
   expect(Map).toBeDefined();
   expect(MapTypeId).toBeDefined();
   expect(TrafficLayer).toBeDefined();
+  expect(TransitLayer).toBeDefined();
 });
 
 test("can dynamically import places classes", async () => {
