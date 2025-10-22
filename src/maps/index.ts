@@ -5,3 +5,4 @@ export * from "./info_window";
 export * from "./map_type_control";
 export * from "./map";
 export * from "./marker";
+export * from "./traffic_layer";

@@ -3,7 +3,7 @@
 
 import { IControl } from "maplibre-gl";
 
-import { MapTypeControl, MigrationMap } from "../src/maps";
+import { MapTypeControl, MigrationMap, MigrationTrafficLayer } from "../src/maps";
 import {
   ColorScheme,
   MapTypeId,
@@ -311,6 +311,37 @@ test("should allow Dark color scheme when mapTypeId is TERRAIN", () => {
   expect(mockSetStyle).toHaveBeenCalledTimes(1);
   expect(mockSetStyle).toHaveBeenLastCalledWith(
     "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark&terrain=Hillshade&contour-density=Medium",
+  );
+});
+
+test("should set traffic param when TrafficLayer is added", () => {
+  const testMap = new MigrationMap(null, {});
+  const trafficLayer = new MigrationTrafficLayer();
+
+  trafficLayer.setMap(testMap);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light&traffic=All",
+  );
+});
+
+test("should remove traffic param when TrafficLayer is removed from map", () => {
+  const testMap = new MigrationMap(null, {});
+  const trafficLayer = new MigrationTrafficLayer();
+
+  trafficLayer.setMap(testMap);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light&traffic=All",
+  );
+
+  trafficLayer.setMap(null);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(2);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light",
   );
 });
 

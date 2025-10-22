@@ -1,7 +1,13 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { ColorScheme as GeoMapsColorScheme, ContourDensity, MapStyle, Terrain } from "@aws-sdk/client-geo-maps";
+import {
+  ColorScheme as GeoMapsColorScheme,
+  ContourDensity,
+  MapStyle,
+  Terrain,
+  Traffic,
+} from "@aws-sdk/client-geo-maps";
 import { CameraOptions, IControl, FullscreenControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
   AddListenerResponse,
@@ -39,6 +45,7 @@ class MigrationMap {
   #colorScheme: GeoMapsColorScheme = GeoMapsColorScheme.LIGHT;
   #mapTypeId: MapTypeId = MapTypeId.ROADMAP;
   #styleUrl: string;
+  #traffic: Traffic | null = null;
 
   // These will be populated by the top level module that is passed our region and API key
   _apiKey: string;
@@ -288,6 +295,10 @@ class MigrationMap {
         params.set("contour-density", ContourDensity.MEDIUM);
       }
 
+      if (this.#traffic) {
+        params.set("traffic", this.#traffic);
+      }
+
       styleUrl.search = params.toString();
     }
 
@@ -445,6 +456,14 @@ class MigrationMap {
   // Internal method for manually setting the private #map property (used for mocking the map in unit testing)
   _setMap(map) {
     this.#map = map;
+  }
+
+  // Internal method for modifying the traffic layer
+  _setTraffic(traffic: Traffic | null) {
+    this.#traffic = traffic;
+
+    // Re-set the map type ID to update the style URL with the new traffic parameter
+    this.setMapTypeId(this.#mapTypeId);
   }
 }
 
