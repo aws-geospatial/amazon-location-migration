@@ -49,7 +49,7 @@
 | [StrokePosition](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#StrokePosition)           | :x:                |                          |
 | [StyledMapType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/image-overlay#StyledMapType)       | :x:                |                          |
 | [TrafficLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#TrafficLayer)                   | :white_check_mark: |                          |
-| [TransitLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#TransitLayer)                   | :x:                |                          |
+| [TransitLayer](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#TransitLayer)                   | :white_check_mark: |                          |
 | [WebGLOverlayView](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/webgl#WebGLOverlayView)         | :x:                |                          |
 | [ZoomChangeEvent](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#ZoomChangeEvent)             | :x:                |                          |
 

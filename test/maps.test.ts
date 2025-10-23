@@ -3,7 +3,7 @@
 
 import { IControl } from "maplibre-gl";
 
-import { MapTypeControl, MigrationMap, MigrationTrafficLayer } from "../src/maps";
+import { MapTypeControl, MigrationMap, MigrationTrafficLayer, MigrationTransitLayer } from "../src/maps";
 import {
   ColorScheme,
   MapTypeId,
@@ -338,6 +338,37 @@ test("should remove traffic param when TrafficLayer is removed from map", () => 
   );
 
   trafficLayer.setMap(null);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(2);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light",
+  );
+});
+
+test("should set transit param when TransitLayer is added", () => {
+  const testMap = new MigrationMap(null, {});
+  const transitLayer = new MigrationTransitLayer();
+
+  transitLayer.setMap(testMap);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light&travel-modes=Transit",
+  );
+});
+
+test("should remove transit param when TransitLayer is removed from map", () => {
+  const testMap = new MigrationMap(null, {});
+  const transitLayer = new MigrationTransitLayer();
+
+  transitLayer.setMap(testMap);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light&travel-modes=Transit",
+  );
+
+  transitLayer.setMap(null);
 
   expect(mockSetStyle).toHaveBeenCalledTimes(2);
   expect(mockSetStyle).toHaveBeenLastCalledWith(

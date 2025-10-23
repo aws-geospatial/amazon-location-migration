@@ -7,6 +7,7 @@ import {
   MapStyle,
   Terrain,
   Traffic,
+  TravelMode,
 } from "@aws-sdk/client-geo-maps";
 import { CameraOptions, IControl, FullscreenControl, Map, MapOptions, NavigationControl } from "maplibre-gl";
 import {
@@ -46,6 +47,7 @@ class MigrationMap {
   #mapTypeId: MapTypeId = MapTypeId.ROADMAP;
   #styleUrl: string;
   #traffic: Traffic | null = null;
+  #travelMode: TravelMode | null = null;
 
   // These will be populated by the top level module that is passed our region and API key
   _apiKey: string;
@@ -299,6 +301,10 @@ class MigrationMap {
         params.set("traffic", this.#traffic);
       }
 
+      if (this.#travelMode) {
+        params.set("travel-modes", this.#travelMode);
+      }
+
       styleUrl.search = params.toString();
     }
 
@@ -463,6 +469,14 @@ class MigrationMap {
     this.#traffic = traffic;
 
     // Re-set the map type ID to update the style URL with the new traffic parameter
+    this.setMapTypeId(this.#mapTypeId);
+  }
+
+  // Internal method for modifying the travel modes layer
+  _setTravelMode(travelMode: TravelMode | null) {
+    this.#travelMode = travelMode;
+
+    // Re-set the map type ID to update the style URL with the new travel mode parameter
     this.setMapTypeId(this.#mapTypeId);
   }
 }
