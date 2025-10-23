@@ -1,3 +1,11 @@
+# 1.1.0
+
+### ✨ Features and improvements
+
+- Added support for `TERRAIN` map type
+- Added support for `google.maps.TrafficLayer` and `google.maps.TransitLayer`
+- Updated dependency version to resolve [security vulnerability](https://github.com/aws-geospatial/amazon-location-migration/security/dependabot/23)
+
 # 1.0.2
 
 ### ✨ Features and improvements
