@@ -48,6 +48,8 @@ let currentTravelMode;
 let currentRoutes;
 let routeCircleMarkers = [];
 let lastUpdateZoom;
+let trafficLayer;
+let transitLayer;
 
 // navigator.geolocation.getCurrentPosition can sometimes take a long time to return,
 // so just cache the new position after receiving it and use it next time
@@ -482,6 +484,33 @@ async function initMap(center) {
 
     // Update the main route appearance based on the selected mode
     updateMainRouteAppearance(currentTravelMode);
+  });
+
+  trafficLayer = new google.maps.TrafficLayer();
+  transitLayer = new google.maps.TransitLayer();
+
+  // Handle terrain toggle
+  $("#terrain-toggle").click(function () {
+    $(this).toggleClass("active");
+
+    const isActive = $(this).hasClass("active");
+    map.setMapTypeId(isActive ? google.maps.MapTypeId.TERRAIN : google.maps.MapTypeId.ROADMAP);
+  });
+
+  // Handle traffic layer toggle
+  $("#traffic-toggle").click(function () {
+    $(this).toggleClass("active");
+
+    const isActive = $(this).hasClass("active");
+    trafficLayer.setMap(isActive ? map : null);
+  });
+
+  // Handle transit layer toggle
+  $("#transit-toggle").click(function () {
+    $(this).toggleClass("active");
+
+    const isActive = $(this).hasClass("active");
+    transitLayer.setMap(isActive ? map : null);
   });
 }
 
