@@ -354,7 +354,7 @@ class MigrationMarker {
     textElement.textContent = text;
     textElement.style.position = "absolute";
     // if default marker center text in upper half of default marker, else center text in the middle of the icon
-    defaultMarker === true ? (textElement.style.top = "35%") : (textElement.style.top = "50%");
+    textElement.style.top = defaultMarker ? "35%" : "50%";
     textElement.style.left = "50%";
     textElement.style.transform = "translate(-50%, -50%)";
 

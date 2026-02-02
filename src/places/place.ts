@@ -149,7 +149,7 @@ export class MigrationPlace implements google.maps.places.Place {
   }
 
   // TODO: Not yet implemented
-  getNextOpeningTime(date?: Date): Promise<Date | undefined> {
+  getNextOpeningTime(_date?: Date): Promise<Date | undefined> {
     return undefined;
   }
 
@@ -192,7 +192,7 @@ export class MigrationPlace implements google.maps.places.Place {
   }
 
   // TODO: Not yet implemented
-  isOpen(date?: Date): Promise<boolean | undefined> {
+  isOpen(_date?: Date): Promise<boolean | undefined> {
     return undefined;
   }
 
@@ -207,8 +207,7 @@ export class MigrationPlace implements google.maps.places.Place {
       // Handle special-case for properties that have their own toJSON helper methods (e.g. location, viewport)
       // Everything else that's a primitive (boolean/string/number) can just return the value as-is
       if (value && typeof value === "object" && "toJSON" in value) {
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        jsonObject[property as string] = (value.toJSON as Function)();
+        jsonObject[property as string] = (value.toJSON as () => unknown)();
       } else {
         jsonObject[property as string] = value;
       }

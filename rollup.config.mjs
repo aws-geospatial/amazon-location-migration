@@ -15,6 +15,19 @@ const banner = `
 
 export default {
   input: "./dist/esm/index.js",
+  output: {
+    file: "dist/amazonLocationMigrationSDK.js",
+    format: "esm",
+    banner,
+    inlineDynamicImports: true,
+    plugins: [
+      getBabelOutputPlugin({
+        minified: true,
+        moduleId: "amazonLocationMigrationSDK",
+        presets: [["@babel/env", { modules: "umd" }]],
+      }),
+    ],
+  },
   plugins: [
     nodeResolve({
       browser: true,
@@ -24,20 +37,5 @@ export default {
     nodePolyfills({
       include: ["events"],
     }),
-  ],
-
-  output: [
-    {
-      file: "dist/amazonLocationMigrationSDK.js",
-      format: "esm",
-      banner,
-      plugins: [
-        getBabelOutputPlugin({
-          minified: true,
-          moduleId: "amazonLocationMigrationSDK",
-          presets: [["@babel/env", { modules: "umd" }]],
-        }),
-      ],
-    },
   ],
 };

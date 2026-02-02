@@ -7,7 +7,6 @@ import { MapTypeId } from "../common";
 
 export class MapTypeControl implements IControl {
   _container: HTMLElement; // Use _ prefix for private container so that we can query it in the unit tests
-  #map: Map;
   #mapTypeIds: string[];
   #mapTypeChanged: (mapTypeId: string) => void;
 
@@ -20,9 +19,7 @@ export class MapTypeControl implements IControl {
     this.#mapTypeChanged = mapTypeChanged;
   }
 
-  onAdd(map: Map): HTMLElement {
-    this.#map = map;
-
+  onAdd(_map: Map): HTMLElement {
     // Create container for our buttons that match the other maplibre ctrl class style
     this._container = document.createElement("div");
     this._container.className = "maplibregl-ctrl maplibregl-ctrl-group";
@@ -50,6 +47,5 @@ export class MapTypeControl implements IControl {
 
   onRemove() {
     this._container.parentNode.removeChild(this._container);
-    this.#map = null;
   }
 }
