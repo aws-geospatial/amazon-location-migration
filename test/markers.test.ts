@@ -199,6 +199,7 @@ test("should handle svg load event for symbol marker", () => {
     _element: mockMarkerElement,
   };
   const OriginalMarker = Marker;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (Marker as any) = jest.fn().mockImplementation(() => mockMarkerInstance);
 
   const svgMarker = {
@@ -221,6 +222,7 @@ test("should handle svg load event for symbol marker", () => {
   }
 
   // Restore original Marker
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (Marker as any) = OriginalMarker;
 });
 
@@ -725,6 +727,7 @@ test("should create marker with visible option set to false", () => {
 
   // Mock the Marker constructor to return our mock
   const OriginalMarker = Marker;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (Marker as any) = jest.fn().mockImplementation(() => mockMarker);
 
   const testMarker = new MigrationMarker({
@@ -735,6 +738,7 @@ test("should create marker with visible option set to false", () => {
   expect(mockMarker.getElement().style.visibility).toBe("hidden");
 
   // Restore original Marker
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (Marker as any) = OriginalMarker;
 });
 
@@ -749,6 +753,7 @@ test("should create marker with visible option set to true", () => {
 
   // Mock the Marker constructor to return our mock
   const OriginalMarker = Marker;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (Marker as any) = jest.fn().mockImplementation(() => mockMarker);
 
   const testMarker = new MigrationMarker({
@@ -759,6 +764,7 @@ test("should create marker with visible option set to true", () => {
   expect(mockMarker.getElement().style.visibility).toBe("visible");
 
   // Restore original Marker
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (Marker as any) = OriginalMarker;
 });
 
