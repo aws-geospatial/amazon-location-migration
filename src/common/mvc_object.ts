@@ -6,7 +6,6 @@ export class MigrationMVCObject implements google.maps.MVCObject {
   addListener(eventName: string, handler): google.maps.MapsEventListener {
     console.error("addListener not supported");
 
-    // eslint-disable-next-line  @typescript-eslint/no-empty-function
     return { remove: () => {} };
   }
 
