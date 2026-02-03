@@ -174,6 +174,56 @@ test("should set marker with symbol with default attributes", () => {
   expect(Marker).toHaveBeenCalledWith(expectedMaplibreOptions);
 });
 
+test("should handle svg load event for symbol marker", () => {
+  // Create a mock path element with getBBox
+  const mockPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  mockPath.getBBox = jest.fn().mockReturnValue({
+    x: 0,
+    y: 0,
+    width: 25,
+    height: 25,
+  });
+
+  // Create a mock SVG element
+  const mockSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  mockSvg.querySelector = jest.fn().mockReturnValue(mockPath);
+  mockSvg.setAttribute = jest.fn();
+
+  // Mock the marker's _element
+  const mockMarkerElement = {
+    querySelector: jest.fn().mockReturnValue(mockSvg),
+  };
+
+  // Mock the Marker constructor
+  const mockMarkerInstance = {
+    _element: mockMarkerElement,
+  };
+  const OriginalMarker = Marker;
+  (Marker as any) = jest.fn().mockImplementation(() => mockMarkerInstance);
+
+  const svgMarker = {
+    path: "M 0 25 L 25 25 L 12.5 0 Z",
+  };
+
+  new MigrationMarker({
+    icon: svgMarker,
+  });
+
+  // Find the SVG element that was created and trigger its load event
+  const createdSvg = document.querySelector("svg");
+  if (createdSvg) {
+    const loadEvent = new Event("load");
+    createdSvg.dispatchEvent(loadEvent);
+
+    expect(mockSvg.setAttribute).toHaveBeenCalledWith("viewBox", "0 0 25 25");
+    expect(mockSvg.setAttribute).toHaveBeenCalledWith("width", "25");
+    expect(mockSvg.setAttribute).toHaveBeenCalledWith("height", "25");
+  }
+
+  // Restore original Marker
+  (Marker as any) = OriginalMarker;
+});
+
 test("should call get methods from marker", () => {
   const testMarker = new MigrationMarker({});
 
@@ -631,4 +681,117 @@ test("should call handler with translated MouseEvent after contextmenu", () => {
 
   expect(handlerSpy).toHaveBeenCalledTimes(1);
   expect(handlerSpy).toHaveBeenCalledWith(expectedGoogleMouseEvent);
+});
+
+test("should call handler once and remove listener when listenerType is 'once'", () => {
+  // mock element so that we can mock addEventListener and removeEventListener
+  const mockElement = {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  };
+
+  // mock marker to return mockElement when getElement is called
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+    getLngLat: jest.fn().mockReturnValue(new MigrationLatLng(1, 2)),
+  };
+  const migrationMarker = new MigrationMarker({});
+  migrationMarker._setMarker(mockMarker);
+
+  // add spy as handler with 'once' listener type
+  const handlerSpy = jest.fn();
+  migrationMarker.addListener("click", handlerSpy, "once");
+
+  // mock click
+  const mockMapLibreMouseEvent = {
+    target: {},
+    type: "click",
+    stopPropagation: jest.fn().mockReturnValue(null),
+  };
+  mockElement.addEventListener.mock.calls[0][1](mockMapLibreMouseEvent);
+
+  expect(handlerSpy).toHaveBeenCalledTimes(1);
+  expect(mockElement.removeEventListener).toHaveBeenCalledTimes(1);
+});
+
+test("should create marker with visible option set to false", () => {
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      style: {
+        visibility: "visible",
+      },
+    }),
+  };
+
+  // Mock the Marker constructor to return our mock
+  const OriginalMarker = Marker;
+  (Marker as any) = jest.fn().mockImplementation(() => mockMarker);
+
+  const testMarker = new MigrationMarker({
+    visible: false,
+  });
+
+  expect(testMarker).not.toBeNull();
+  expect(mockMarker.getElement().style.visibility).toBe("hidden");
+
+  // Restore original Marker
+  (Marker as any) = OriginalMarker;
+});
+
+test("should create marker with visible option set to true", () => {
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue({
+      style: {
+        visibility: "hidden",
+      },
+    }),
+  };
+
+  // Mock the Marker constructor to return our mock
+  const OriginalMarker = Marker;
+  (Marker as any) = jest.fn().mockImplementation(() => mockMarker);
+
+  const testMarker = new MigrationMarker({
+    visible: true,
+  });
+
+  expect(testMarker).not.toBeNull();
+  expect(mockMarker.getElement().style.visibility).toBe("visible");
+
+  // Restore original Marker
+  (Marker as any) = OriginalMarker;
+});
+
+test("should create label with all optional parameters", () => {
+  const testMarker = new MigrationMarker({});
+
+  const label = testMarker._createLabel(true, "Test Label", "custom-class", "red", "Arial", "16px", "bold");
+
+  expect(label.textContent).toBe("Test Label");
+  expect(label.className).toBe("custom-class");
+  expect(label.style.color).toBe("red");
+  expect(label.style.fontFamily).toBe("Arial");
+  expect(label.style.fontSize).toBe("16px");
+  expect(label.style.fontWeight).toBe("bold");
+  expect(label.style.top).toBe("35%");
+});
+
+test("should create label with fontSize without px suffix", () => {
+  const testMarker = new MigrationMarker({});
+
+  const label = testMarker._createLabel(false, "Test Label", undefined, undefined, undefined, "20");
+
+  expect(label.style.fontSize).toBe("20px");
+  expect(label.style.top).toBe("50%");
+});
+
+test("should create label with default values when optional parameters are undefined", () => {
+  const testMarker = new MigrationMarker({});
+
+  const label = testMarker._createLabel(true, "Test Label");
+
+  expect(label.textContent).toBe("Test Label");
+  expect(label.className).toBe("");
+  expect(label.style.color).toBe("black");
+  expect(label.style.fontSize).toBe("14px");
 });
