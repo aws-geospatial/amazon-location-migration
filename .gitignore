@@ -11,8 +11,8 @@
 index.html
 google.html
 # special-case to ignore generated js files for npm loader example
-/examples/npmLoader/exampleGoogle.js
-/examples/npmLoader/example.js
+/examples/vanilla/npmLoader/exampleGoogle.js
+/examples/vanilla/npmLoader/example.js
 
 # generated version file
 /src/version.ts
