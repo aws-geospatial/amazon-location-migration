@@ -9,7 +9,8 @@ const Mustache = require("mustache");
 const exampleConfig = require("./config.json");
 
 // Find all of the templated files in our examples
-const templateFiles = globSync("./examples/*/**/*.template.*");
+// Now searches in vanilla/ and react/ subdirectories
+const templateFiles = globSync("./examples/{vanilla,react}/**/*.template.*");
 
 // Generate files from all of our templates, after replacing the placeholder values
 for (const file of templateFiles) {
