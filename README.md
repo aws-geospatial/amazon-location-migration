@@ -108,11 +108,11 @@ loader.load().then(async () => {
 });
 ```
 
-To use the migration SDK, you just need to replace the `apiKey` field with your Amazon Location API key and also add a field replace to specify your `region` (unless you are using `us-west-2`, which it will use by default if no `region` is passed).
+To use the migration SDK, you just need to import the `Loader` instead from our migration SDK, replace the `apiKey` field with your Amazon Location API key and also add a field replace to specify your `region` (unless you are using `us-west-2`, which it will use by default if no `region` is passed).
 The logic when you call `load` and beyond remains the same:
 
 ```javascript
-import { Loader } from "@googlemaps/js-api-loader";
+import { Loader } from "@aws/amazon-location-migration-sdk";
 
 const loader = new Loader({
   apiKey: "AMAZON_LOCATION_API_KEY",
@@ -134,6 +134,8 @@ loader.load().then(async () => {
 The migration SDK also supports using `loader.importLibrary()` to load libraries:
 
 ```javascript
+import { Loader } from "@aws/amazon-location-migration-sdk";
+
 const loader = new Loader({
   apiKey: "YOUR_API_KEY",
   version: "weekly",
