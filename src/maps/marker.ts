@@ -14,6 +14,8 @@ import {
 
 class MigrationMarker {
   #marker: Marker;
+  #clickable: boolean = true;
+  #label: string | google.maps.MarkerLabel | null = null;
 
   constructor(options) {
     const maplibreOptions: MarkerOptions = {};
@@ -39,69 +41,12 @@ class MigrationMarker {
     // - simple icon interface parameter (no customizability),
     // - svg parameter (Symbol) excluding anchor
     if (options.icon) {
-      if (typeof options.icon === "object") {
-        if ("url" in options.icon) {
-          const imgContainer = document.createElement("div");
-          imgContainer.classList.add("non-default-legacy-marker");
-          const imgElement = new Image();
-          imgElement.src = options.icon.url;
-          imgContainer.appendChild(imgElement);
-          maplibreOptions.element = imgContainer;
-        } else if ("path" in options.icon) {
-          const imgContainer = document.createElement("div");
-          imgContainer.classList.add("non-default-legacy-marker");
-
-          // Container svg element
-          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-          // Child element to store the path, which is required a required option
-          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute("d", options.icon.path);
-
-          // Set optional attributes for the path
-          // Default values from https://developers.google.com/maps/documentation/javascript/symbols#properties
-          const scale = options.icon.scale || 1.0;
-          path.setAttribute("fill", options.icon.fillColor || "black");
-          path.setAttribute("fill-opacity", options.icon.fillOpacity || 0.0);
-          path.setAttribute("stroke", options.icon.strokeColor || "black");
-          path.setAttribute("stroke-width", options.icon.strokeWeight || scale);
-          path.setAttribute("stroke-opacity", options.icon.strokeOpacity || 1.0);
-
-          svg.appendChild(path);
-
-          // Collect the rotation and scale options (if specified) into single transform line
-          let transform = "";
-          if (options.icon.rotation) {
-            transform = `rotate(${options.icon.rotation})`;
-          }
-          if (scale !== 1.0) {
-            transform += ` scale(${scale})`;
-          }
-
-          // Set the transform attribute, if any overrides were specified
-          if (transform) {
-            svg.setAttribute("transform", transform);
-          }
-
-          imgContainer.appendChild(svg);
-          maplibreOptions.element = imgContainer;
-          svg.addEventListener("load", () => {
-            if (options.icon && typeof options.icon === "object" && "path" in options.icon) {
-              const svg = this.#marker._element.querySelector("svg");
-              const pathBBox = svg.querySelector("path").getBBox();
-              svg.setAttribute("viewBox", `${pathBBox.x} ${pathBBox.y} ${pathBBox.width} ${pathBBox.height}`);
-              svg.setAttribute("width", `${pathBBox.width}`);
-              svg.setAttribute("height", `${pathBBox.height}`);
-            }
-          });
-        }
-      } else if (typeof options.icon === "string") {
-        const imgContainer = document.createElement("div");
-        imgContainer.classList.add("non-default-legacy-marker");
-        const imgElement = new Image();
-        imgElement.src = options.icon;
-        imgContainer.appendChild(imgElement);
-        maplibreOptions.element = imgContainer;
+      const iconElement = this._createIconElement(options.icon);
+      if (iconElement.element) {
+        maplibreOptions.element = iconElement.element;
+      }
+      if (iconElement.offset) {
+        maplibreOptions.offset = iconElement.offset;
       }
     }
 
@@ -326,6 +271,223 @@ class MigrationMarker {
 
   remove() {
     this.#marker.remove();
+  }
+
+  setIcon(icon?: string | google.maps.Icon | null | google.maps.Symbol) {
+    const element = this.#marker.getElement();
+
+    if (!icon) {
+      // Reset to default marker
+      element.classList.remove("non-default-legacy-marker");
+      element.innerHTML = "";
+      return;
+    }
+
+    const iconElement = this._createIconElement(icon);
+    if (iconElement.element) {
+      // Replace existing element content
+      element.classList.add("non-default-legacy-marker");
+      element.innerHTML = "";
+      // Copy children from iconElement to existing element
+      while (iconElement.element.firstChild) {
+        element.appendChild(iconElement.element.firstChild);
+      }
+    }
+    if (iconElement.offset) {
+      this.#marker.setOffset(iconElement.offset);
+    }
+  }
+
+  setZIndex(zIndex?: number | null) {
+    const element = this.#marker.getElement();
+    if (zIndex !== null && zIndex !== undefined) {
+      element.style.zIndex = String(zIndex);
+    } else {
+      element.style.zIndex = "";
+    }
+  }
+
+  getZIndex(): number | null | undefined {
+    const element = this.#marker.getElement();
+    const zIndex = element.style.zIndex;
+    return zIndex ? parseInt(zIndex, 10) : undefined;
+  }
+
+  setTitle(title?: string | null) {
+    const element = this.#marker.getElement();
+    if (title) {
+      element.setAttribute("title", title);
+    } else {
+      element.removeAttribute("title");
+    }
+  }
+
+  getTitle(): string | null | undefined {
+    const element = this.#marker.getElement();
+    return element.getAttribute("title") || undefined;
+  }
+
+  setCursor(cursor?: string | null) {
+    const element = this.#marker.getElement();
+    if (cursor) {
+      element.style.cursor = cursor;
+    } else {
+      element.style.cursor = "";
+    }
+  }
+
+  getCursor(): string | null | undefined {
+    const element = this.#marker.getElement();
+    return element.style.cursor || undefined;
+  }
+
+  setClickable(clickable: boolean) {
+    this.#clickable = clickable;
+    const element = this.#marker.getElement();
+    element.style.pointerEvents = clickable ? "" : "none";
+  }
+
+  getClickable(): boolean {
+    return this.#clickable;
+  }
+
+  getMap(): google.maps.Map | null {
+    // MapLibre's _map property holds the map reference
+    return this.#marker._map ? (this.#marker._map as any) : null;
+  }
+
+  setLabel(label?: string | google.maps.MarkerLabel | null) {
+    this.#label = label || null;
+    // Note: This only tracks the label state. Full label rendering would require
+    // DOM manipulation similar to what's done in the constructor.
+    // For now, we just store the value for getLabel() to return.
+  }
+
+  getLabel(): google.maps.MarkerLabel | null | string | undefined {
+    return this.#label || undefined;
+  }
+
+  setAnimation(animation?: google.maps.Animation | null) {
+    console.error("setAnimation is not supported");
+  }
+
+  getAnimation(): google.maps.Animation | null | undefined {
+    console.error("getAnimation is not supported");
+    return undefined;
+  }
+
+  setShape(shape?: google.maps.MarkerShape | null) {
+    console.error("setShape is not supported");
+  }
+
+  getShape(): google.maps.MarkerShape | null | undefined {
+    console.error("getShape is not supported");
+    return undefined;
+  }
+
+  // Internal method for creating icon element from various icon formats
+  _createIconElement(icon: string | google.maps.Icon | google.maps.Symbol): {
+    element?: HTMLElement;
+    offset?: [number, number];
+  } {
+    if (typeof icon === "string") {
+      // Simple string URL
+      const imgContainer = document.createElement("div");
+      imgContainer.classList.add("non-default-legacy-marker");
+      const imgElement = new Image();
+      imgElement.src = icon;
+      imgContainer.appendChild(imgElement);
+      return { element: imgContainer };
+    } else if (typeof icon === "object") {
+      if ("url" in icon) {
+        // Icon with url
+        const imgContainer = document.createElement("div");
+        imgContainer.classList.add("non-default-legacy-marker");
+        const imgElement = new Image();
+        imgElement.src = icon.url;
+
+        // Handle scaledSize if provided
+        if (icon.scaledSize) {
+          imgElement.style.width = `${icon.scaledSize.width}px`;
+          imgElement.style.height = `${icon.scaledSize.height}px`;
+        }
+
+        imgContainer.appendChild(imgElement);
+
+        // Handle anchor if provided
+        // Google's anchor is the point on the icon that should be placed at the marker's position
+        // MapLibre centers markers by default (anchor is at center)
+        // So we need to calculate offset from center
+        let offset: [number, number] | undefined;
+        if (icon.anchor && icon.scaledSize) {
+          const anchorX = icon.anchor.x || 0;
+          const anchorY = icon.anchor.y || 0;
+          const centerX = icon.scaledSize.width / 2;
+          const centerY = icon.scaledSize.height / 2;
+          // Offset from center: if anchor is at center, offset is [0, 0]
+          // If anchor is top-left (0, 0), we need offset [-centerX, -centerY] to shift it
+          offset = [centerX - anchorX, centerY - anchorY];
+        }
+
+        return { element: imgContainer, offset };
+      } else if ("path" in icon) {
+        // Symbol with path
+        const imgContainer = document.createElement("div");
+        imgContainer.classList.add("non-default-legacy-marker");
+
+        // Container svg element
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+        // Child element to store the path, which is required a required option
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", String(icon.path));
+
+        // Set optional attributes for the path
+        // Default values from https://developers.google.com/maps/documentation/javascript/symbols#properties
+        const scale = icon.scale || 1.0;
+        path.setAttribute("fill", icon.fillColor || "black");
+        path.setAttribute("fill-opacity", String(icon.fillOpacity ?? 0.0));
+        path.setAttribute("stroke", icon.strokeColor || "black");
+        path.setAttribute("stroke-width", String(icon.strokeWeight || scale));
+        path.setAttribute("stroke-opacity", String(icon.strokeOpacity ?? 1.0));
+
+        svg.appendChild(path);
+
+        // Collect the rotation and scale options (if specified) into single transform line
+        let transform = "";
+        if (icon.rotation) {
+          transform = `rotate(${icon.rotation})`;
+        }
+        if (scale !== 1.0) {
+          transform += ` scale(${scale})`;
+        }
+
+        // Set the transform attribute, if any overrides were specified
+        if (transform) {
+          svg.setAttribute("transform", transform);
+        }
+
+        imgContainer.appendChild(svg);
+
+        // Handle SVG viewBox after load
+        svg.addEventListener("load", () => {
+          const svgElement = imgContainer.querySelector("svg");
+          if (svgElement) {
+            const pathElement = svgElement.querySelector("path");
+            if (pathElement) {
+              const pathBBox = pathElement.getBBox();
+              svgElement.setAttribute("viewBox", `${pathBBox.x} ${pathBBox.y} ${pathBBox.width} ${pathBBox.height}`);
+              svgElement.setAttribute("width", `${pathBBox.width}`);
+              svgElement.setAttribute("height", `${pathBBox.height}`);
+            }
+          }
+        });
+
+        return { element: imgContainer };
+      }
+    }
+
+    return {};
   }
 
   // Internal method for manually getting the private #marker property

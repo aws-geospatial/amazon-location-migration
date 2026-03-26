@@ -7,3 +7,5 @@ export * from "./helpers";
 export * from "./lat_lng";
 export * from "./lat_lng_bounds";
 export * from "./mvc_object";
+export * from "./point";
+export * from "./size";

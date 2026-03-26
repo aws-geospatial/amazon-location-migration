@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { MigrationMap, MigrationMarker } from "../src/maps";
-import { MigrationLatLng } from "../src/common";
+import { MigrationLatLng, MigrationPoint, MigrationSize } from "../src/common";
 
 // Mock maplibre because it requires a valid DOM container to create a Map
 // We don't need to verify maplibre itself, we just need to verify that
@@ -140,6 +140,108 @@ test("should set marker with symbol object", () => {
   imageContainer.appendChild(svg);
   const expectedMaplibreOptions: MarkerOptions = {
     element: imageContainer,
+  };
+
+  expect(Marker).toHaveBeenCalledTimes(1);
+  expect(Marker).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set marker with icon scaledSize", () => {
+  const iconWithSize = {
+    url: "../images/red_dot.png",
+    scaledSize: { width: 32, height: 32 },
+  };
+  new MigrationMarker({
+    icon: iconWithSize,
+  });
+
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const expectedImage = new Image();
+  expectedImage.src = iconWithSize.url;
+  expectedImage.style.width = "32px";
+  expectedImage.style.height = "32px";
+  imageContainer.appendChild(expectedImage);
+  const expectedMaplibreOptions: MarkerOptions = {
+    element: imageContainer,
+  };
+
+  expect(Marker).toHaveBeenCalledTimes(1);
+  expect(Marker).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set marker with icon anchor", () => {
+  const iconWithAnchor = {
+    url: "../images/red_dot.png",
+    anchor: { x: 16, y: 32 },
+  };
+  new MigrationMarker({
+    icon: iconWithAnchor,
+  });
+
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const expectedImage = new Image();
+  expectedImage.src = iconWithAnchor.url;
+  imageContainer.appendChild(expectedImage);
+  // When anchor is provided without scaledSize, offset is undefined
+  // (would be calculated after image loads, but not set during construction)
+  const expectedMaplibreOptions: MarkerOptions = {
+    element: imageContainer,
+  };
+
+  expect(Marker).toHaveBeenCalledTimes(1);
+  expect(Marker).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set marker with icon scaledSize and anchor", () => {
+  const iconWithSizeAndAnchor = {
+    url: "../images/red_dot.png",
+    scaledSize: { width: 32, height: 64 },
+    anchor: { x: 16, y: 64 },
+  };
+  new MigrationMarker({
+    icon: iconWithSizeAndAnchor,
+  });
+
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const expectedImage = new Image();
+  expectedImage.src = iconWithSizeAndAnchor.url;
+  expectedImage.style.width = "32px";
+  expectedImage.style.height = "64px";
+  imageContainer.appendChild(expectedImage);
+  // Offset calculation: center - anchor = (16, 32) - (16, 64) = (0, -32)
+  const expectedMaplibreOptions: MarkerOptions = {
+    element: imageContainer,
+    offset: [0, -32],
+  };
+
+  expect(Marker).toHaveBeenCalledTimes(1);
+  expect(Marker).toHaveBeenCalledWith(expectedMaplibreOptions);
+});
+
+test("should set marker with MigrationSize and MigrationPoint", () => {
+  const iconWithClasses = {
+    url: "../images/marker.png",
+    scaledSize: new MigrationSize(40, 64),
+    anchor: new MigrationPoint(20, 64),
+  };
+  new MigrationMarker({
+    icon: iconWithClasses,
+  });
+
+  const imageContainer = document.createElement("div");
+  imageContainer.className = "non-default-legacy-marker";
+  const expectedImage = new Image();
+  expectedImage.src = iconWithClasses.url;
+  expectedImage.style.width = "40px";
+  expectedImage.style.height = "64px";
+  imageContainer.appendChild(expectedImage);
+  // Offset calculation: center - anchor = (20, 32) - (20, 64) = (0, -32)
+  const expectedMaplibreOptions: MarkerOptions = {
+    element: imageContainer,
+    offset: [0, -32],
   };
 
   expect(Marker).toHaveBeenCalledTimes(1);
@@ -800,4 +902,252 @@ test("should create label with default values when optional parameters are undef
   expect(label.className).toBe("");
   expect(label.style.color).toBe("black");
   expect(label.style.fontSize).toBe("14px");
+});
+
+test("should set and get icon with string URL", () => {
+  const mockElement = document.createElement("div");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+    setOffset: jest.fn(),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  const iconUrl = "../images/marker.png";
+  testMarker.setIcon(iconUrl);
+
+  expect(mockElement.classList.contains("non-default-legacy-marker")).toBe(true);
+  expect(mockElement.querySelector("img")).not.toBeNull();
+  expect(mockElement.querySelector("img").src).toContain("marker.png");
+});
+
+test("should set icon with object containing url, scaledSize, and anchor", () => {
+  const mockElement = document.createElement("div");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+    setOffset: jest.fn(),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  const icon = {
+    url: "../images/marker.png",
+    scaledSize: new MigrationSize(40, 60),
+    anchor: new MigrationPoint(20, 60),
+  };
+  testMarker.setIcon(icon);
+
+  expect(mockElement.classList.contains("non-default-legacy-marker")).toBe(true);
+  const img = mockElement.querySelector("img");
+  expect(img).not.toBeNull();
+  expect(img.style.width).toBe("40px");
+  expect(img.style.height).toBe("60px");
+  // Offset calculation: center - anchor = (20, 30) - (20, 60) = (0, -30)
+  expect(mockMarker.setOffset).toHaveBeenCalledWith([0, -30]);
+});
+
+test("should reset icon to default when passed null", () => {
+  const mockElement = document.createElement("div");
+  mockElement.classList.add("non-default-legacy-marker");
+  mockElement.innerHTML = "<img src='test.png' />";
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setIcon(null);
+
+  expect(mockElement.classList.contains("non-default-legacy-marker")).toBe(false);
+  expect(mockElement.innerHTML).toBe("");
+});
+
+test("should set and get zIndex", () => {
+  const mockElement = document.createElement("div");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setZIndex(1000);
+  expect(mockElement.style.zIndex).toBe("1000");
+  expect(testMarker.getZIndex()).toBe(1000);
+});
+
+test("should clear zIndex when passed null", () => {
+  const mockElement = document.createElement("div");
+  mockElement.style.zIndex = "500";
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setZIndex(null);
+  expect(mockElement.style.zIndex).toBe("");
+  expect(testMarker.getZIndex()).toBeUndefined();
+});
+
+test("should set and get title", () => {
+  const mockElement = document.createElement("div");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setTitle("Test Marker");
+  expect(mockElement.getAttribute("title")).toBe("Test Marker");
+  expect(testMarker.getTitle()).toBe("Test Marker");
+});
+
+test("should remove title when passed null", () => {
+  const mockElement = document.createElement("div");
+  mockElement.setAttribute("title", "Old Title");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setTitle(null);
+  expect(mockElement.getAttribute("title")).toBeNull();
+  expect(testMarker.getTitle()).toBeUndefined();
+});
+
+test("should set and get cursor", () => {
+  const mockElement = document.createElement("div");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setCursor("pointer");
+  expect(mockElement.style.cursor).toBe("pointer");
+  expect(testMarker.getCursor()).toBe("pointer");
+});
+
+test("should clear cursor when passed null", () => {
+  const mockElement = document.createElement("div");
+  mockElement.style.cursor = "pointer";
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  testMarker.setCursor(null);
+  expect(mockElement.style.cursor).toBe("");
+  expect(testMarker.getCursor()).toBeUndefined();
+});
+
+test("should set and get clickable", () => {
+  const mockElement = document.createElement("div");
+  const mockMarker = {
+    getElement: jest.fn().mockReturnValue(mockElement),
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  expect(testMarker.getClickable()).toBe(true);
+
+  testMarker.setClickable(false);
+  expect(mockElement.style.pointerEvents).toBe("none");
+  expect(testMarker.getClickable()).toBe(false);
+
+  testMarker.setClickable(true);
+  expect(mockElement.style.pointerEvents).toBe("");
+  expect(testMarker.getClickable()).toBe(true);
+});
+
+test("should get map", () => {
+  const mockMap = { test: "map" };
+  const mockMarker = {
+    _map: mockMap,
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  expect(testMarker.getMap()).toBe(mockMap);
+});
+
+test("should return null when map is not set", () => {
+  const mockMarker = {
+    _map: null,
+  };
+  const testMarker = new MigrationMarker({});
+  testMarker._setMarker(mockMarker);
+
+  expect(testMarker.getMap()).toBeNull();
+});
+
+test("should set and get label as string", () => {
+  const testMarker = new MigrationMarker({});
+
+  testMarker.setLabel("Test Label");
+  expect(testMarker.getLabel()).toBe("Test Label");
+});
+
+test("should set and get label as object", () => {
+  const testMarker = new MigrationMarker({});
+
+  const labelObject = {
+    text: "Label Text",
+    color: "red",
+    fontSize: "16px",
+  };
+  testMarker.setLabel(labelObject);
+  expect(testMarker.getLabel()).toEqual(labelObject);
+});
+
+test("should clear label when passed null", () => {
+  const testMarker = new MigrationMarker({});
+
+  testMarker.setLabel("Test Label");
+  testMarker.setLabel(null);
+  expect(testMarker.getLabel()).toBeUndefined();
+});
+
+test("should log error when setAnimation is called", () => {
+  const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+  const testMarker = new MigrationMarker({});
+
+  testMarker.setAnimation(1); // google.maps.Animation.BOUNCE
+
+  expect(consoleErrorSpy).toHaveBeenCalledWith("setAnimation is not supported");
+  consoleErrorSpy.mockRestore();
+});
+
+test("should log error and return undefined when getAnimation is called", () => {
+  const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+  const testMarker = new MigrationMarker({});
+
+  const result = testMarker.getAnimation();
+
+  expect(consoleErrorSpy).toHaveBeenCalledWith("getAnimation is not supported");
+  expect(result).toBeUndefined();
+  consoleErrorSpy.mockRestore();
+});
+
+test("should log error when setShape is called", () => {
+  const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+  const testMarker = new MigrationMarker({});
+
+  testMarker.setShape({ type: "circle", coords: [1, 1, 1] });
+
+  expect(consoleErrorSpy).toHaveBeenCalledWith("setShape is not supported");
+  consoleErrorSpy.mockRestore();
+});
+
+test("should log error and return undefined when getShape is called", () => {
+  const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+  const testMarker = new MigrationMarker({});
+
+  const result = testMarker.getShape();
+
+  expect(consoleErrorSpy).toHaveBeenCalledWith("getShape is not supported");
+  expect(result).toBeUndefined();
+  consoleErrorSpy.mockRestore();
 });

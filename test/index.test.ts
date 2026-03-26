@@ -40,6 +40,8 @@ test("importing the SDK should populate google.maps namespace for direct loading
   expect(google.maps).toHaveProperty("LatLng");
   expect(google.maps).toHaveProperty("LatLngBounds");
   expect(google.maps).toHaveProperty("MVCObject");
+  expect(google.maps).toHaveProperty("Point");
+  expect(google.maps).toHaveProperty("Size");
   expect(google.maps).toHaveProperty("event");
 
   // Maps and controls (e.g. Markers)
@@ -47,6 +49,7 @@ test("importing the SDK should populate google.maps namespace for direct loading
   expect(google.maps).toHaveProperty("MapTypeId");
   expect(google.maps).toHaveProperty("Marker");
   expect(google.maps.marker).toHaveProperty("AdvancedMarkerElement");
+  expect(google.maps).toHaveProperty("Polyline");
 
   // Map layers
   expect(google.maps).toHaveProperty("TrafficLayer");
@@ -78,6 +81,11 @@ test("importing the SDK should populate google.maps namespace for direct loading
   expect(google.maps).toHaveProperty("Geocoder");
   expect(google.maps).toHaveProperty("GeocoderStatus");
 
+  // Geometry classes
+  expect(google.maps.geometry).toHaveProperty("encoding");
+  expect(google.maps.geometry).toHaveProperty("spherical");
+  expect(google.maps.geometry).toHaveProperty("poly");
+
   // Verify our mock callback has been invoked after loading the SDK
   expect(mockMigrationCallback).toHaveBeenCalledTimes(1);
 });
@@ -86,15 +94,16 @@ test("can dynamically import core classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { ColorScheme, ControlPosition, LatLng, LatLngBounds, MVCObject, event } = await google.maps.importLibrary(
-    "core",
-  );
+  const { ColorScheme, ControlPosition, LatLng, LatLngBounds, MVCObject, Point, Size, event } =
+    await google.maps.importLibrary("core");
 
   expect(ColorScheme).toBeDefined();
   expect(ControlPosition).toBeDefined();
   expect(LatLng).toBeDefined();
   expect(LatLngBounds).toBeDefined();
   expect(MVCObject).toBeDefined();
+  expect(Point).toBeDefined();
+  expect(Size).toBeDefined();
   expect(event.addListener).toBeDefined();
   expect(event.addListenerOnce).toBeDefined();
   expect(event.removeListener).toBeDefined();
@@ -104,12 +113,16 @@ test("can dynamically import maps classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { Circle, InfoWindow, Map, MapTypeId, TrafficLayer, TransitLayer } = await google.maps.importLibrary("maps");
+  const { Circle, InfoWindow, Map, MapTypeId, Point, Polyline, Size, TrafficLayer, TransitLayer } =
+    await google.maps.importLibrary("maps");
 
   expect(Circle).toBeDefined();
   expect(InfoWindow).toBeDefined();
   expect(Map).toBeDefined();
   expect(MapTypeId).toBeDefined();
+  expect(Point).toBeDefined();
+  expect(Polyline).toBeDefined();
+  expect(Size).toBeDefined();
   expect(TrafficLayer).toBeDefined();
   expect(TransitLayer).toBeDefined();
 });
@@ -172,10 +185,12 @@ test("can dynamically import marker classes", async () => {
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const google = (window as any).google;
 
-  const { AdvancedMarkerElement, Marker } = await google.maps.importLibrary("marker");
+  const { AdvancedMarkerElement, Marker, Point, Size } = await google.maps.importLibrary("marker");
 
   expect(AdvancedMarkerElement).toBeDefined();
   expect(Marker).toBeDefined();
+  expect(Point).toBeDefined();
+  expect(Size).toBeDefined();
 });
 
 test("can dynamically import geocoder classes", async () => {
@@ -186,6 +201,23 @@ test("can dynamically import geocoder classes", async () => {
 
   expect(Geocoder).toBeDefined();
   expect(GeocoderStatus).toBeDefined();
+});
+
+test("can dynamically import geometry classes", async () => {
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+  const google = (window as any).google;
+
+  const { encoding, spherical, poly } = await google.maps.importLibrary("geometry");
+
+  expect(encoding).toBeDefined();
+  expect(encoding.encodePath).toBeDefined();
+  expect(encoding.decodePath).toBeDefined();
+  expect(spherical).toBeDefined();
+  expect(spherical.computeDistanceBetween).toBeDefined();
+  expect(spherical.computeHeading).toBeDefined();
+  expect(poly).toBeDefined();
+  expect(poly.containsLocation).toBeDefined();
+  expect(poly.isLocationOnEdge).toBeDefined();
 });
 
 test("should report an error if a library we don't support is requested", async () => {

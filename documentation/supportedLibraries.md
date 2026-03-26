@@ -16,11 +16,11 @@
 | [MapsServerError](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/errors#MapsServerError)                   | :x:                |                     |
 | [MVCArray](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/event#MVCArray)                                  | :x:                |                     |
 | [MVCObject](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/event#MVCObject)                                | :white_check_mark: |                     |
-| [Point](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#Point)                                  | :x:                |                     |
+| [Point](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#Point)                                  | :white_check_mark: |                     |
 | [Settings](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/settings#Settings)                               | :x:                |                     |
-| [Size](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#Size)                                    | :x:                |                     |
+| [Size](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/coordinates#Size)                                    | :white_check_mark: |                     |
 | [SymbolPath](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/marker#SymbolPath)                             | :x:                |                     |
-| [UnitSystem](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#UnitSystem)                         | :x:                |                     |
+| [UnitSystem](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#UnitSystem)                         | :white_check_mark: |                     |
 
 ### [MapsLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MapsLibrary)
 
@@ -43,7 +43,7 @@
 | [MaxZoomStatus](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/max-zoom#MaxZoomStatus)            | :x:                |                          |
 | [OverlayView](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/overlay-view#OverlayView)            | :x:                |                          |
 | [Polygon](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Polygon)                         | :x:                |                          |
-| [Polyline](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Polyline)                       | :x:                |                          |
+| [Polyline](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Polyline)                       | :white_check_mark: | [Details](polyline.md)   |
 | [Rectangle](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#Rectangle)                     | :x:                |                          |
 | [RenderingType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/map#RenderingType)                 | :x:                |                          |
 | [StrokePosition](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/polygon#StrokePosition)           | :x:                |                          |
@@ -131,12 +131,19 @@
 | [Marker](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/marker#Marker)                                               | :white_check_mark: | [Details](markers.md#marker-class)                |
 | [PinElement](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/advanced-markers#PinElement)                             | :x:                |                                                   |
 
+### [GeometryLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeometryLibrary)
+
+| Interface                                                                                                                                      | Supported          | Notes |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
+| [encoding](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#encoding)                       | :white_check_mark: |       |
+| [poly](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#poly)                               | :white_check_mark: |       |
+| [spherical](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#spherical)                     | :white_check_mark: |       |
+
 ## Unsupported Google APIs
 
 These library interfaces have no support currently.
 
 - [Maps3D](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#Maps3DLibrary)
-- [Geometry](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeometryLibrary)
 - [Elevation](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#ElevationLibrary)
 - [StreetView](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#StreetViewLibrary)
 - [JourneySharing](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#JourneySharingLibrary)
