@@ -133,11 +133,11 @@
 
 ### [GeometryLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#GeometryLibrary)
 
-| Interface                                                                                                                                      | Supported          | Notes |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
-| [encoding](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#encoding)                       | :white_check_mark: |       |
-| [poly](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#poly)                               | :white_check_mark: |       |
-| [spherical](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#spherical)                     | :white_check_mark: |       |
+| Interface                                                                                                                  | Supported          | Notes |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
+| [encoding](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#encoding)   | :white_check_mark: |       |
+| [poly](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#poly)           | :white_check_mark: |       |
+| [spherical](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/geometry#spherical) | :white_check_mark: |       |
 
 ## Unsupported Google APIs
 

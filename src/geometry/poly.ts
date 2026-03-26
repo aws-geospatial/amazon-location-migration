@@ -4,12 +4,11 @@
 import * as turf from "@turf/turf";
 import { MigrationLatLng } from "../common/lat_lng";
 
-/**
- * Utility functions for computations involving polygons and polylines.
- */
+/** Utility functions for computations involving polygons and polylines. */
 export class MigrationPoly {
   /**
    * Determines whether the given point falls within the polygon.
+   *
    * @param point - The point to test.
    * @param polygon - The polygon to test.
    * @returns True if the point is inside the polygon.
@@ -43,6 +42,7 @@ export class MigrationPoly {
 
   /**
    * Determines whether the given point falls on or near a polyline, or the edge of a polygon, within a tolerance.
+   *
    * @param point - The point to test.
    * @param poly - The polyline or polygon to test.
    * @param tolerance - Optional. The tolerance in degrees. Defaults to 10^-9.

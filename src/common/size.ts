@@ -6,7 +6,7 @@ export class MigrationSize implements google.maps.Size {
   width: number;
   height: number;
 
-  constructor(width: number, height: number, widthUnit?: string, heightUnit?: string) {
+  constructor(width: number, height: number, _widthUnit?: string, _heightUnit?: string) {
     this.width = width;
     this.height = height;
     // Note: widthUnit and heightUnit are accepted for compatibility but not stored

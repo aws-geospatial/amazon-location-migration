@@ -7,12 +7,11 @@ import { MigrationLatLng } from "../common/lat_lng";
 // Earth's radius in meters (same as Google Maps uses)
 const EARTH_RADIUS = 6378137;
 
-/**
- * Utility functions for computing angles, distances, and areas on the sphere.
- */
+/** Utility functions for computing angles, distances, and areas on the sphere. */
 export class MigrationSpherical {
   /**
    * Returns the area of a closed path.
+   *
    * @param path - A closed path.
    * @param radiusOfSphere - Optional. The radius of the sphere in meters. Defaults to Earth's radius.
    * @returns The area in square meters.
@@ -44,6 +43,7 @@ export class MigrationSpherical {
 
   /**
    * Returns the distance, in meters, between two LatLngs.
+   *
    * @param from - The first LatLng.
    * @param to - The second LatLng.
    * @param radius - Optional. The radius of the sphere in meters. Defaults to Earth's radius.
@@ -69,6 +69,7 @@ export class MigrationSpherical {
 
   /**
    * Returns the heading from one LatLng to another LatLng.
+   *
    * @param from - The first LatLng.
    * @param to - The second LatLng.
    * @returns The heading in degrees from North in the range [-180, 180).
@@ -89,14 +90,12 @@ export class MigrationSpherical {
 
   /**
    * Returns the length of the given path.
+   *
    * @param path - A sequence of LatLngs.
    * @param radius - Optional. The radius of the sphere in meters. Defaults to Earth's radius.
    * @returns The length in meters.
    */
-  static computeLength(
-    path: google.maps.LatLng[] | google.maps.MVCArray<google.maps.LatLng>,
-    radius?: number,
-  ): number {
+  static computeLength(path: google.maps.LatLng[] | google.maps.MVCArray<google.maps.LatLng>, radius?: number): number {
     const radiusToUse = radius ?? EARTH_RADIUS;
     const latLngs = Array.isArray(path) ? path : path.getArray();
 
@@ -115,6 +114,7 @@ export class MigrationSpherical {
 
   /**
    * Returns the LatLng resulting from moving a distance from an origin in the specified heading.
+   *
    * @param from - The starting LatLng.
    * @param distance - The distance to travel in meters.
    * @param heading - The heading in degrees clockwise from North.
@@ -142,6 +142,7 @@ export class MigrationSpherical {
 
   /**
    * Returns the location of origin when provided with a LatLng destination, meters traveled, and heading.
+   *
    * @param to - The destination LatLng.
    * @param distance - The distance traveled in meters.
    * @param heading - The heading in degrees clockwise from North.
@@ -163,6 +164,7 @@ export class MigrationSpherical {
 
   /**
    * Returns the signed area of a closed path. The sign of the area is positive if the ordering is counter-clockwise.
+   *
    * @param loop - A closed loop path.
    * @param radius - Optional. The radius of the sphere in meters. Defaults to Earth's radius.
    * @returns The signed area in square meters.
@@ -197,6 +199,7 @@ export class MigrationSpherical {
 
   /**
    * Returns the LatLng which lies the given fraction of the way between the origin and the destination.
+   *
    * @param from - The starting LatLng.
    * @param to - The ending LatLng.
    * @param fraction - A fraction between 0 and 1.

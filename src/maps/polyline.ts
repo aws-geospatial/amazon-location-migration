@@ -175,10 +175,7 @@ export class MigrationPolyline extends MigrationMVCObject implements google.maps
   }
 
   setPath(
-    path:
-      | google.maps.MVCArray<google.maps.LatLng>
-      | (google.maps.LatLng | google.maps.LatLngLiteral)[]
-      | null,
+    path: google.maps.MVCArray<google.maps.LatLng> | (google.maps.LatLng | google.maps.LatLngLiteral)[] | null,
   ): void {
     if (!path) {
       this.path = [];

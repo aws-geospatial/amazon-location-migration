@@ -353,7 +353,7 @@ class MigrationMarker {
 
   getMap(): google.maps.Map | null {
     // MapLibre's _map property holds the map reference
-    return this.#marker._map ? (this.#marker._map as any) : null;
+    return this.#marker._map ? (this.#marker._map as unknown as google.maps.Map) : null;
   }
 
   setLabel(label?: string | google.maps.MarkerLabel | null) {
@@ -367,7 +367,7 @@ class MigrationMarker {
     return this.#label || undefined;
   }
 
-  setAnimation(animation?: google.maps.Animation | null) {
+  setAnimation(_animation?: google.maps.Animation | null) {
     console.error("setAnimation is not supported");
   }
 
@@ -376,7 +376,7 @@ class MigrationMarker {
     return undefined;
   }
 
-  setShape(shape?: google.maps.MarkerShape | null) {
+  setShape(_shape?: google.maps.MarkerShape | null) {
     console.error("setShape is not supported");
   }
 

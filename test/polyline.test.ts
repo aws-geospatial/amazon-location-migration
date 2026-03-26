@@ -19,10 +19,7 @@ afterEach(() => {
 
 describe("MigrationPolyline", () => {
   test("should create polyline with path", () => {
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     const polyline = new MigrationPolyline({
       path: path,
@@ -33,10 +30,7 @@ describe("MigrationPolyline", () => {
   });
 
   test("should create polyline with options", () => {
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     const polyline = new MigrationPolyline({
       path: path,
@@ -77,10 +71,7 @@ describe("MigrationPolyline", () => {
 
   test("should get and set path", () => {
     const polyline = new MigrationPolyline();
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     polyline.setPath(path);
     expect(polyline.path).toEqual(path);
@@ -89,6 +80,17 @@ describe("MigrationPolyline", () => {
     expect(retrievedPath.getLength()).toBe(2);
     expect(retrievedPath.getAt(0)).toEqual(path[0]);
     expect(retrievedPath.getAt(1)).toEqual(path[1]);
+  });
+
+  test("should clear path when set to null", () => {
+    const polyline = new MigrationPolyline();
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
+
+    polyline.setPath(path);
+    expect(polyline.path.length).toBe(2);
+
+    polyline.setPath(null);
+    expect(polyline.path.length).toBe(0);
   });
 
   test("should convert LatLngLiterals in path", () => {
@@ -105,6 +107,23 @@ describe("MigrationPolyline", () => {
     expect(polyline.path[0].lng()).toBe(testLng);
   });
 
+  test("should set path from MVCArray with LatLngLiterals", () => {
+    const polyline = new MigrationPolyline();
+    const pathArray = [
+      { lat: testLat, lng: testLng },
+      { lat: testLat2, lng: testLng2 },
+    ];
+
+    const mvcPath = {
+      getArray: () => pathArray,
+    };
+
+    polyline.setPath(mvcPath as unknown as google.maps.MVCArray<google.maps.LatLng>);
+    expect(polyline.path.length).toBe(2);
+    expect(polyline.path[0]).toBeInstanceOf(MigrationLatLng);
+    expect(polyline.path[0].lat()).toBe(testLat);
+  });
+
   test("should get and set visible", () => {
     const polyline = new MigrationPolyline();
 
@@ -116,7 +135,7 @@ describe("MigrationPolyline", () => {
 
   test("should get map", () => {
     const testMap = new MigrationMap(null, {});
-    const polyline = new MigrationPolyline({ map: testMap as any });
+    const polyline = new MigrationPolyline({ map: testMap as unknown as google.maps.Map });
 
     expect(polyline.getMap()).toBe(testMap);
   });
@@ -140,14 +159,11 @@ describe("MigrationPolyline", () => {
     const testMap = new MigrationMap(null, {});
     testMap._setMap(mockMapLibreMap as unknown as MapLibreMap);
 
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     const polyline = new MigrationPolyline({
       path: path,
-      map: testMap as any,
+      map: testMap as unknown as google.maps.Map,
     });
 
     // Now remove from map
@@ -159,10 +175,7 @@ describe("MigrationPolyline", () => {
   });
 
   test("should update path through MVCArray methods", () => {
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     const polyline = new MigrationPolyline({ path: path });
     const mvcPath = polyline.getPath();
@@ -224,6 +237,15 @@ describe("MigrationPolyline", () => {
     expect(polyline.zIndex).toBe(50);
   });
 
+  test("should handle null options", () => {
+    const polyline = new MigrationPolyline();
+    const originalColor = polyline.strokeColor;
+
+    polyline.setOptions(null);
+
+    expect(polyline.strokeColor).toBe(originalColor); // Should not change
+  });
+
   test("should draw polyline on map when style is loaded", () => {
     const mockMapLibreMap = {
       isStyleLoaded: jest.fn().mockReturnValue(true),
@@ -236,14 +258,11 @@ describe("MigrationPolyline", () => {
     const testMap = new MigrationMap(null, {});
     testMap._setMap(mockMapLibreMap as unknown as MapLibreMap);
 
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     new MigrationPolyline({
       path: path,
-      map: testMap as any,
+      map: testMap as unknown as google.maps.Map,
       strokeColor: "#FF0000",
       strokeOpacity: 0.8,
       strokeWeight: 5,
@@ -292,14 +311,11 @@ describe("MigrationPolyline", () => {
     const testMap = new MigrationMap(null, {});
     testMap._setMap(mockMapLibreMap as unknown as MapLibreMap);
 
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     new MigrationPolyline({
       path: path,
-      map: testMap as any,
+      map: testMap as unknown as google.maps.Map,
     });
 
     expect(mockMapLibreMap.once).toHaveBeenCalledWith("style.load", expect.any(Function));
@@ -322,14 +338,11 @@ describe("MigrationPolyline", () => {
     const testMap = new MigrationMap(null, {});
     testMap._setMap(mockMapLibreMap as unknown as MapLibreMap);
 
-    const path = [
-      new MigrationLatLng(testLat, testLng),
-      new MigrationLatLng(testLat2, testLng2),
-    ];
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
 
     const polyline = new MigrationPolyline({
       path: path,
-      map: testMap as any,
+      map: testMap as unknown as google.maps.Map,
     });
 
     // Clear the mock calls from initial creation
@@ -337,10 +350,7 @@ describe("MigrationPolyline", () => {
     mockMapLibreMap.setLayoutProperty.mockClear();
 
     // Update path
-    const newPath = [
-      new MigrationLatLng(31.0, -98.0),
-      new MigrationLatLng(31.1, -98.1),
-    ];
+    const newPath = [new MigrationLatLng(31.0, -98.0), new MigrationLatLng(31.1, -98.1)];
     polyline.setPath(newPath);
 
     expect(mockSource.setData).toHaveBeenCalledWith(
@@ -355,5 +365,30 @@ describe("MigrationPolyline", () => {
         }),
       }),
     );
+  });
+
+  test("should remove orphaned layer when source is missing", () => {
+    const mockMapLibreMap = {
+      isStyleLoaded: jest.fn().mockReturnValue(true),
+      addSource: jest.fn(),
+      addLayer: jest.fn(),
+      getSource: jest.fn().mockReturnValue(null), // Source missing
+      getLayer: jest.fn().mockReturnValue(true), // But layer exists
+      removeLayer: jest.fn(),
+    };
+
+    const testMap = new MigrationMap(null, {});
+    testMap._setMap(mockMapLibreMap as unknown as MapLibreMap);
+
+    const path = [new MigrationLatLng(testLat, testLng), new MigrationLatLng(testLat2, testLng2)];
+
+    new MigrationPolyline({
+      path: path,
+      map: testMap as unknown as google.maps.Map,
+    });
+
+    expect(mockMapLibreMap.removeLayer).toHaveBeenCalled();
+    expect(mockMapLibreMap.addSource).toHaveBeenCalled();
+    expect(mockMapLibreMap.addLayer).toHaveBeenCalled();
   });
 });

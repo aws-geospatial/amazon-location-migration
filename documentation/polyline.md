@@ -3,18 +3,18 @@
 ### [Polyline class](https://developers.google.com/maps/documentation/javascript/reference/polygon#Polyline)
 
 | [Methods](https://developers.google.com/maps/documentation/javascript/reference/polygon#Polyline-Methods) | Supported          | Notes |
-| ---------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
-| getDraggable                                                                                               | :white_check_mark: |       |
-| getEditable                                                                                                | :white_check_mark: |       |
-| getMap                                                                                                     | :white_check_mark: |       |
-| getPath                                                                                                    | :white_check_mark: |       |
-| getVisible                                                                                                 | :white_check_mark: |       |
-| setDraggable                                                                                               | :white_check_mark: |       |
-| setEditable                                                                                                | :white_check_mark: |       |
-| setMap                                                                                                     | :white_check_mark: |       |
-| setOptions                                                                                                 | :white_check_mark: |       |
-| setPath                                                                                                    | :white_check_mark: |       |
-| setVisible                                                                                                 | :white_check_mark: |       |
+| --------------------------------------------------------------------------------------------------------- | ------------------ | ----- |
+| getDraggable                                                                                              | :white_check_mark: |       |
+| getEditable                                                                                               | :white_check_mark: |       |
+| getMap                                                                                                    | :white_check_mark: |       |
+| getPath                                                                                                   | :white_check_mark: |       |
+| getVisible                                                                                                | :white_check_mark: |       |
+| setDraggable                                                                                              | :white_check_mark: |       |
+| setEditable                                                                                               | :white_check_mark: |       |
+| setMap                                                                                                    | :white_check_mark: |       |
+| setOptions                                                                                                | :white_check_mark: |       |
+| setPath                                                                                                   | :white_check_mark: |       |
+| setVisible                                                                                                | :white_check_mark: |       |
 
 | [Events](https://developers.google.com/maps/documentation/javascript/reference/polygon#Polyline-Events) | Supported | Notes |
 | ------------------------------------------------------------------------------------------------------- | --------- | ----- |
