@@ -300,12 +300,20 @@ describe("MigrationPolyline", () => {
   });
 
   test("should queue drawing when style is not loaded", () => {
+    let styleLoadCallback: (() => void) | null = null;
+
     const mockMapLibreMap = {
-      isStyleLoaded: jest.fn().mockReturnValue(false),
+      isStyleLoaded: jest.fn().mockReturnValue(false).mockReturnValueOnce(false).mockReturnValue(true),
       on: jest.fn(),
-      once: jest.fn(),
+      once: jest.fn((event: string, callback: () => void) => {
+        if (event === "style.load") {
+          styleLoadCallback = callback;
+        }
+      }),
       getSource: jest.fn().mockReturnValue(null),
       getLayer: jest.fn().mockReturnValue(null),
+      addSource: jest.fn(),
+      addLayer: jest.fn(),
     };
 
     const testMap = new MigrationMap(null, {});
@@ -319,6 +327,13 @@ describe("MigrationPolyline", () => {
     });
 
     expect(mockMapLibreMap.once).toHaveBeenCalledWith("style.load", expect.any(Function));
+
+    // Trigger the callback
+    if (styleLoadCallback) {
+      styleLoadCallback();
+      expect(mockMapLibreMap.addSource).toHaveBeenCalled();
+      expect(mockMapLibreMap.addLayer).toHaveBeenCalled();
+    }
   });
 
   test("should update existing polyline data when already drawn", () => {

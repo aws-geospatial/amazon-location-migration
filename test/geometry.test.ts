@@ -417,6 +417,25 @@ describe("MigrationPoly", () => {
     expect(result).toBe(true);
   });
 
+  test("should detect point inside polygon with MVCArray path", () => {
+    const polygonPath = [
+      new MigrationLatLng(41.84, -87.66),
+      new MigrationLatLng(41.84, -87.64),
+      new MigrationLatLng(41.86, -87.64),
+      new MigrationLatLng(41.86, -87.66),
+    ];
+    const mockPolygon = {
+      getPath: () => ({
+        getArray: () => polygonPath,
+      }),
+    };
+
+    const pointInside = new MigrationLatLng(41.85, -87.65);
+    const result = MigrationPoly.containsLocation(pointInside, mockPolygon as unknown as google.maps.Polygon);
+
+    expect(result).toBe(true);
+  });
+
   test("should detect point on polyline edge", () => {
     const path = [new MigrationLatLng(0, 0), new MigrationLatLng(0, 1), new MigrationLatLng(1, 1)];
 
@@ -472,6 +491,21 @@ describe("MigrationPoly", () => {
     // Point as LatLngLiteral on the line
     const pointOnLine = { lat: 0, lng: 0.5 };
     const result = MigrationPoly.isLocationOnEdge(pointOnLine, polyline as google.maps.Polyline);
+
+    expect(result).toBe(true);
+  });
+
+  test("should detect point on edge with MVCArray path", () => {
+    const pathArray = [new MigrationLatLng(0, 0), new MigrationLatLng(0, 1), new MigrationLatLng(1, 1)];
+
+    const mockPolyline = {
+      getPath: () => ({
+        getArray: () => pathArray,
+      }),
+    };
+
+    const pointOnLine = new MigrationLatLng(0, 0.5);
+    const result = MigrationPoly.isLocationOnEdge(pointOnLine, mockPolyline as unknown as google.maps.Polyline);
 
     expect(result).toBe(true);
   });
