@@ -191,9 +191,7 @@ describe("MigrationSpherical", () => {
     const mvcPath = {
       getArray: () => path,
     };
-    const length = MigrationSpherical.computeLength(
-      mvcPath as unknown as google.maps.MVCArray<google.maps.LatLng>,
-    );
+    const length = MigrationSpherical.computeLength(mvcPath as unknown as google.maps.MVCArray<google.maps.LatLng>);
 
     expect(length).toBeGreaterThan(2000000);
   });
