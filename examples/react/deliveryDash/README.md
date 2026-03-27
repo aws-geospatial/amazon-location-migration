@@ -19,17 +19,20 @@ This example showcases real-world Google Maps API usage patterns in a production
 ## 🎯 How to Play
 
 ### Quick Start Mode (Recommended)
+
 - Automatically finds 6 nearby restaurants
 - Fast setup - just click waypoints and go!
 - Perfect for quick testing
 
 ### Custom Mode (Full Control)
+
 - Search for any location with autocomplete
 - Use "Find Nearby" buttons (restaurants, cafes, stores, gas stations, parks, ATMs)
 - Add up to 10 custom waypoints
 - Build complex custom routes
 
 ### Gameplay
+
 1. Click waypoints on the map in the order you want to visit them
 2. Your route appears as a colored line
 3. Click "🏁 Start Race!" when ready (minimum 2 waypoints)
@@ -43,6 +46,7 @@ This example showcases real-world Google Maps API usage patterns in a production
 This example provides comprehensive coverage of Google Maps Platform features:
 
 ### 1. Maps JavaScript API
+
 - **Map initialization** with custom controls (zoom, map type, fullscreen)
 - **Custom markers** with dynamic SVG icons (data URLs)
 - **Icon updates** - change size, color, and content dynamically
@@ -54,11 +58,13 @@ This example provides comprehensive coverage of Google Maps Platform features:
 ### 2. Places API
 
 #### Autocomplete
+
 - Text input with real-time location suggestions
 - Field selection (name, address, geometry, place_id)
 - Place selection and coordinate extraction
 
 #### Nearby Search
+
 - Find places within configurable radius (2km default)
 - Multiple place type filters: `restaurant`, `cafe`, `store`, `gas_station`, `park`, `atm`
 - Returns: name, coordinates, vicinity, place_id, types
@@ -67,15 +73,18 @@ This example provides comprehensive coverage of Google Maps Platform features:
 ### 3. Directions API
 
 #### Multi-Waypoint Routing
+
 - Routes with 2-10 waypoints
 - Origin and destination points
 - Intermediate waypoints with `stopover: true`
 - Returns: distance, duration, overview_path, route legs
 
 #### Waypoint Optimization ⭐
+
 This is the **star feature** of the example! Makes two identical requests:
 
 1. **User Route** - `optimizeWaypoints: false`
+
    - Preserves user's selected order
    - Shows "human intuition" routing
 
@@ -87,6 +96,7 @@ This is the **star feature** of the example! Makes two identical requests:
 The race compares these two approaches visually and quantitatively.
 
 ### 4. Geometry Library
+
 - `computeDistanceBetween()` for path segment distances
 - Path interpolation for smooth marker animation
 - Position calculation along routes for real-time racing
@@ -98,11 +108,13 @@ The race compares these two approaches visually and quantitatively.
 ### Per Game Session
 
 **Quick Start Mode:**
+
 - 1× Nearby Search (restaurants)
 - 2× Directions API (user route + optimal route)
 - **Total: 3 API calls**
 
 **Custom Mode:**
+
 - N× Autocomplete queries (as user types)
 - M× Nearby Search (when using "Find Nearby")
 - 2× Directions API (user route + optimal route)
@@ -111,6 +123,7 @@ The race compares these two approaches visually and quantitatively.
 ### Key Features Tested
 
 ✅ **Well-Supported Features:**
+
 - Map rendering with custom controls
 - Custom marker icons (SVG data URLs)
 - Polyline visualization
@@ -120,6 +133,7 @@ The race compares these two approaches visually and quantitatively.
 - Distance and duration calculations
 
 ⭐ **Advanced Features:**
+
 - **Waypoint optimization** (`optimizeWaypoints: true`)
 - Simultaneous route comparison
 - Real-time marker animation
@@ -141,6 +155,7 @@ The race compares these two approaches visually and quantitatively.
 ### What To Test During Migration
 
 **Critical Features:**
+
 - [ ] Map renders with controls
 - [ ] Custom markers display correctly (SVG data URLs)
 - [ ] Marker click events work
@@ -155,6 +170,7 @@ The race compares these two approaches visually and quantitatively.
 - [ ] Routes display on map
 
 **Advanced Features:**
+
 - [ ] **Waypoint optimization** - Does migration support `optimizeWaypoints`?
 - [ ] Waypoint order array returned correctly
 - [ ] Path interpolation for animation works
