@@ -18,9 +18,8 @@ export class MigrationSpherical {
    */
   static computeArea(
     path: google.maps.LatLng[] | google.maps.MVCArray<google.maps.LatLng>,
-    radiusOfSphere?: number,
+    radiusOfSphere: number = EARTH_RADIUS,
   ): number {
-    const radius = radiusOfSphere ?? EARTH_RADIUS;
     const latLngs = Array.isArray(path) ? path : path.getArray();
 
     // Create a polygon from the path
@@ -38,7 +37,7 @@ export class MigrationSpherical {
     // turf.area returns in square meters assuming Earth's radius
     // Scale by the radius ratio squared
     const areaAtEarthRadius = turf.area(polygon);
-    return areaAtEarthRadius * Math.pow(radius / EARTH_RADIUS, 2);
+    return areaAtEarthRadius * Math.pow(radiusOfSphere / EARTH_RADIUS, 2);
   }
 
   /**
@@ -52,9 +51,8 @@ export class MigrationSpherical {
   static computeDistanceBetween(
     from: google.maps.LatLng | google.maps.LatLngLiteral,
     to: google.maps.LatLng | google.maps.LatLngLiteral,
-    radius?: number,
+    radius: number = EARTH_RADIUS,
   ): number {
-    const radiusToUse = radius ?? EARTH_RADIUS;
     const fromLatLng = from instanceof MigrationLatLng ? from : new MigrationLatLng(from);
     const toLatLng = to instanceof MigrationLatLng ? to : new MigrationLatLng(to);
 
@@ -64,7 +62,7 @@ export class MigrationSpherical {
     // turf.distance returns in kilometers
     const distanceInKm = turf.distance(point1, point2);
     // Convert to meters and scale by radius
-    return distanceInKm * 1000 * (radiusToUse / EARTH_RADIUS);
+    return distanceInKm * 1000 * (radius / EARTH_RADIUS);
   }
 
   /**
@@ -95,8 +93,10 @@ export class MigrationSpherical {
    * @param radius - Optional. The radius of the sphere in meters. Defaults to Earth's radius.
    * @returns The length in meters.
    */
-  static computeLength(path: google.maps.LatLng[] | google.maps.MVCArray<google.maps.LatLng>, radius?: number): number {
-    const radiusToUse = radius ?? EARTH_RADIUS;
+  static computeLength(
+    path: google.maps.LatLng[] | google.maps.MVCArray<google.maps.LatLng>,
+    radius: number = EARTH_RADIUS,
+  ): number {
     const latLngs = Array.isArray(path) ? path : path.getArray();
 
     if (latLngs.length < 2) {
@@ -109,7 +109,7 @@ export class MigrationSpherical {
     // turf.length returns in kilometers
     const lengthInKm = turf.length(line);
     // Convert to meters and scale by radius
-    return lengthInKm * 1000 * (radiusToUse / EARTH_RADIUS);
+    return lengthInKm * 1000 * (radius / EARTH_RADIUS);
   }
 
   /**
@@ -125,14 +125,13 @@ export class MigrationSpherical {
     from: google.maps.LatLng | google.maps.LatLngLiteral,
     distance: number,
     heading: number,
-    radius?: number,
+    radius: number = EARTH_RADIUS,
   ): google.maps.LatLng {
-    const radiusToUse = radius ?? EARTH_RADIUS;
     const fromLatLng = from instanceof MigrationLatLng ? from : new MigrationLatLng(from);
 
     const point = turf.point([fromLatLng.lng(), fromLatLng.lat()]);
     // Scale distance by radius ratio and convert to kilometers
-    const distanceInKm = (distance / 1000) * (EARTH_RADIUS / radiusToUse);
+    const distanceInKm = (distance / 1000) * (EARTH_RADIUS / radius);
 
     const destination = turf.destination(point, distanceInKm, heading);
     const [lng, lat] = destination.geometry.coordinates;
@@ -153,7 +152,7 @@ export class MigrationSpherical {
     to: google.maps.LatLng | google.maps.LatLngLiteral,
     distance: number,
     heading: number,
-    radius?: number,
+    radius: number = EARTH_RADIUS,
   ): google.maps.LatLng {
     // To find the origin, we travel in the opposite direction from the destination
     const toLatLng = to instanceof MigrationLatLng ? to : new MigrationLatLng(to);
@@ -171,9 +170,8 @@ export class MigrationSpherical {
    */
   static computeSignedArea(
     loop: google.maps.LatLng[] | google.maps.MVCArray<google.maps.LatLng>,
-    radius?: number,
+    radius: number = EARTH_RADIUS,
   ): number {
-    const radiusToUse = radius ?? EARTH_RADIUS;
     const latLngs = Array.isArray(loop) ? loop : loop.getArray();
 
     // Create a polygon from the loop
@@ -189,7 +187,7 @@ export class MigrationSpherical {
 
     const polygon = turf.polygon([coordinates]);
     const areaAtEarthRadius = turf.area(polygon);
-    const scaledArea = areaAtEarthRadius * Math.pow(radiusToUse / EARTH_RADIUS, 2);
+    const scaledArea = areaAtEarthRadius * Math.pow(radius / EARTH_RADIUS, 2);
 
     // Check if the polygon is clockwise (negative area) or counter-clockwise (positive area)
     const isClockwise = turf.booleanClockwise(coordinates);

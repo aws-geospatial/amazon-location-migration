@@ -51,11 +51,10 @@ export class MigrationPoly {
   static isLocationOnEdge(
     point: google.maps.LatLng | google.maps.LatLngLiteral,
     poly: google.maps.Polygon | google.maps.Polyline,
-    tolerance?: number,
+    tolerance: number = 1e-9,
   ): boolean {
     const testPoint = point instanceof MigrationLatLng ? point : new MigrationLatLng(point);
     const turfPoint = turf.point([testPoint.lng(), testPoint.lat()]);
-    const toleranceInDegrees = tolerance ?? 1e-9;
 
     // Get the path from the polyline or polygon
     const path = poly.getPath();
@@ -75,6 +74,6 @@ export class MigrationPoly {
     const distanceInKm = turf.pointToLineDistance(turfPoint, line);
     const distanceInDegrees = distanceInKm / 111.32; // Approximate conversion at equator
 
-    return distanceInDegrees <= toleranceInDegrees;
+    return distanceInDegrees <= tolerance;
   }
 }
