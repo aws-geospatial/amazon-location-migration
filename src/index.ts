@@ -25,12 +25,15 @@ import {
   MigrationLatLng,
   MigrationLatLngBounds,
   MigrationMVCObject,
+  MigrationPoint,
+  MigrationSize,
   PlacesServiceStatus,
 } from "./common";
 import {
   MigrationInfoWindow,
   MigrationMap,
   MigrationMarker,
+  MigrationPolyline,
   MigrationTrafficLayer,
   MigrationTransitLayer,
 } from "./maps";
@@ -47,6 +50,7 @@ import {
   PlusCode,
 } from "./places";
 import { addListener, addListenerOnce, removeListener } from "./events";
+import { MigrationEncoding, MigrationSpherical, MigrationPoly } from "./geometry";
 import { PACKAGE_VERSION } from "./version";
 
 // Dynamically load the MapLibre and MapLibre Geocoder stylesheets so that our migration SDK is the only thing our users need to import
@@ -117,6 +121,8 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
       Circle: MigrationCircle,
       LatLng: MigrationLatLng,
       LatLngBounds: MigrationLatLngBounds,
+      Point: MigrationPoint,
+      Size: MigrationSize,
 
       ColorScheme: ColorScheme,
       Map: MigrationMap,
@@ -127,6 +133,7 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
       },
       InfoWindow: MigrationInfoWindow,
       ControlPosition: MigrationControlPosition,
+      Polyline: MigrationPolyline,
 
       DirectionsRenderer: MigrationDirectionsRenderer,
       DirectionsService: MigrationDirectionsService,
@@ -165,6 +172,12 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
         removeListener: removeListener,
       },
 
+      geometry: {
+        encoding: MigrationEncoding,
+        spherical: MigrationSpherical,
+        poly: MigrationPoly,
+      },
+
       // Handle dynamic imports, e.g. const { Map } = await google.maps.importLibrary("maps");
       importLibrary: (library) => {
         return new Promise((resolve) => {
@@ -176,6 +189,8 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
                 LatLng: MigrationLatLng,
                 LatLngBounds: MigrationLatLngBounds,
                 MVCObject: MigrationMVCObject,
+                Point: MigrationPoint,
+                Size: MigrationSize,
                 event: {
                   addListener: addListener,
                   addListenerOnce: addListenerOnce,
@@ -197,6 +212,9 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
                 InfoWindow: MigrationInfoWindow,
                 Map: MigrationMap,
                 MapTypeId: MapTypeId,
+                Point: MigrationPoint,
+                Polyline: MigrationPolyline,
+                Size: MigrationSize,
                 TrafficLayer: MigrationTrafficLayer,
                 TransitLayer: MigrationTransitLayer,
               });
@@ -234,6 +252,16 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
               resolve({
                 AdvancedMarkerElement: MigrationMarker,
                 Marker: MigrationMarker,
+                Point: MigrationPoint,
+                Size: MigrationSize,
+              });
+              break;
+
+            case "geometry":
+              resolve({
+                encoding: MigrationEncoding,
+                spherical: MigrationSpherical,
+                poly: MigrationPoly,
               });
               break;
 
