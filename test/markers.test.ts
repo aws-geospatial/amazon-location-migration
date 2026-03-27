@@ -1151,3 +1151,12 @@ test("should log error and return undefined when getShape is called", () => {
   expect(result).toBeUndefined();
   consoleErrorSpy.mockRestore();
 });
+
+test("should return empty object for invalid icon object in _createIconElement", () => {
+  const testMarker = new MigrationMarker({});
+
+  // Icon object with neither url nor path property should return empty object
+  const result = testMarker._createIconElement({} as unknown as google.maps.Icon);
+
+  expect(result).toEqual({});
+});
