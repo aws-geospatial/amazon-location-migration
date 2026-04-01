@@ -1,3 +1,23 @@
+# 1.2.0
+
+### ✨ Features and improvements
+
+- **Geometry Library**: Added full implementation of `google.maps.geometry` namespace including:
+  - Encoding utilities for polylines using the `@aws/polyline` library
+  - Spherical geometry calculations
+  - Polygon/polyline utilities
+- **Polyline Class**: Added complete support for `google.maps.Polyline` class with rendering, styling, and path manipulation
+- **Marker Improvements**: Fixed anchor offset calculation to properly align markers with MapLibre's center-based positioning
+- Added React-based delivery dashboard example demonstrating real-world usage patterns
+- Restructured examples directory for better organization
+- Fixed import instructions for migration SDK when using js-api-loader
+- Security: Updated dependencies to resolve multiple vulnerabilities:
+  - `fast-xml-parser` - DoS vulnerability ([GHSA-37qj-frw5-hhjh](https://github.com/advisories/GHSA-37qj-frw5-hhjh))
+  - `picomatch` - [CVE-2026-33671](https://nvd.nist.gov/vuln/detail/CVE-2026-33671) and [CVE-2026-33672](https://nvd.nist.gov/vuln/detail/CVE-2026-33672)
+  - `brace-expansion` - ReDoS vulnerability ([GHSA-f886-m6hf-6m8v](https://github.com/advisories/GHSA-f886-m6hf-6m8v))
+  - `flatted` - Prototype pollution ([CWE-1321](https://cwe.mitre.org/data/definitions/1321.html))
+  - `yaml` - Stack overflow vulnerability
+
 # 1.1.0
 
 ### ✨ Features and improvements
