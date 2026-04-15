@@ -51,6 +51,86 @@ let lastUpdateZoom;
 let trafficLayer;
 let transitLayer;
 
+// Helper function to attach zoom-based route marker updates
+function attachZoomRouteMarkerListener() {
+  map.addListener("zoom_changed", () => {
+    const newZoom = map.getZoom();
+
+    if (
+      currentTravelMode === travelMode.WALKING &&
+      mainDirectionRenderer.getDirections() &&
+      mainDirectionRenderer.getDirections().routes &&
+      mainDirectionRenderer.getDirections().routes.length > 0 &&
+      mainDirectionRenderer.getMap()
+    ) {
+      if (lastUpdateZoom === undefined) {
+        lastUpdateZoom = newZoom;
+      }
+
+      const cumulativeChange = Math.abs(newZoom - lastUpdateZoom);
+
+      if (cumulativeChange >= 0.1) {
+        updateRouteMarkers(mainDirectionRenderer.getDirections());
+        lastUpdateZoom = newZoom;
+      }
+    }
+  });
+}
+
+// Helper function to attach autocomplete bounds update listeners
+function attachAutocompleteBoundsListeners() {
+  map.addListener("zoom_changed", () => {
+    searchBarAutocomplete.setBounds(map.getBounds());
+    originAutocomplete.setBounds(map.getBounds());
+    destinationAutocomplete.setBounds(map.getBounds());
+  });
+
+  map.addListener("dragend", () => {
+    searchBarAutocomplete.setBounds(map.getBounds());
+    originAutocomplete.setBounds(map.getBounds());
+    destinationAutocomplete.setBounds(map.getBounds());
+  });
+}
+
+// Helper function to attach click listener for directions mode
+function attachDirectionsClickListener() {
+  map.addListener("click", (mapMouseEvent) => {
+    const clickedLatLng = mapMouseEvent.latLng;
+    const originInput = $("#origin-input").val();
+    const destinationInput = $("#destination-input").val();
+    let replacedInput = false;
+
+    if (!originInput) {
+      replacedInput = true;
+      originLocation = clickedLatLng;
+    } else if (!destinationInput) {
+      replacedInput = true;
+      destinationLocation = clickedLatLng;
+    }
+
+    if (replacedInput) {
+      calculateRoute();
+      geocoder
+        .geocode({
+          location: clickedLatLng,
+        })
+        .then((response) => {
+          const results = response.results;
+          if (results) {
+            const topResult = results[0];
+            const address = topResult.formatted_address;
+
+            if (!originInput) {
+              $("#origin-input").val(address);
+            } else if (!destinationInput) {
+              $("#destination-input").val(address);
+            }
+          }
+        });
+    }
+  });
+}
+
 // navigator.geolocation.getCurrentPosition can sometimes take a long time to return,
 // so just cache the new position after receiving it and use it next time
 async function getStartingPosition() {
@@ -198,47 +278,25 @@ function clearRouteMarkers() {
   }
 }
 
-async function initMap(center) {
+async function initMap(center, colorScheme = null) {
   // Store the user location so it can be used later by the directions
   userLocation = center;
 
   const { Map } = await google.maps.importLibrary("maps");
+
+  // Default to follow system preference if no color scheme provided
+  const mapColorScheme = colorScheme || "FOLLOW_SYSTEM";
+
   map = new Map(document.getElementById("map"), {
     center: center,
     zoom: 14,
     mapId: "DEMO_MAP_ID",
     mapTypeControl: false, // The map type control overlaps our panel, so don't show by default
+    colorScheme: mapColorScheme,
   });
 
-  // Add a listener for zoom changes to update markers when needed
-  map.addListener("zoom_changed", () => {
-    const newZoom = map.getZoom();
-
-    // If we have an active route with walking mode, update the markers
-    if (
-      currentTravelMode === travelMode.WALKING &&
-      mainDirectionRenderer.getDirections() &&
-      mainDirectionRenderer.getDirections().routes &&
-      mainDirectionRenderer.getDirections().routes.length > 0 &&
-      mainDirectionRenderer.getMap() // Ensure that the directions are being rendered
-    ) {
-      // Initialize the zoom tracking if it doesn't exist
-      if (lastUpdateZoom === undefined) {
-        lastUpdateZoom = newZoom;
-      }
-
-      // Calculate cumulative change since last marker update
-      const cumulativeChange = Math.abs(newZoom - lastUpdateZoom);
-
-      // Update markers if cumulative change exceeds threshold
-      if (cumulativeChange >= 0.1) {
-        updateRouteMarkers(mainDirectionRenderer.getDirections());
-
-        // Reset the lastUpdateZoom to current zoom after updating markers
-        lastUpdateZoom = newZoom;
-      }
-    }
-  });
+  // Attach zoom-based route marker updates
+  attachZoomRouteMarkerListener();
 
   const { Geocoder } = await google.maps.importLibrary("geocoding");
   geocoder = new Geocoder();
@@ -315,62 +373,12 @@ async function initMap(center) {
   });
 
   // Update our input field bounds whenever map bounds changes
-  map.addListener("zoom_changed", () => {
-    searchBarAutocomplete.setBounds(map.getBounds());
-
-    originAutocomplete.setBounds(map.getBounds());
-    destinationAutocomplete.setBounds(map.getBounds());
-  });
-  map.addListener("dragend", () => {
-    searchBarAutocomplete.setBounds(map.getBounds());
-
-    originAutocomplete.setBounds(map.getBounds());
-    destinationAutocomplete.setBounds(map.getBounds());
-  });
+  attachAutocompleteBoundsListeners();
 
   // If we are in directions mode, and the user has cleared out the origin
   // or destination input fields, clicking on the map should choose that
   // clicked location as the empty origin/destination
-  map.addListener("click", (mapMouseEvent) => {
-    const clickedLatLng = mapMouseEvent.latLng;
-
-    const originInput = $("#origin-input").val();
-    const destinationInput = $("#destination-input").val();
-    let replacedInput = false;
-
-    // Replace whichever input field is empty, starting with the origin (in case they are both empty)
-    if (!originInput) {
-      replacedInput = true;
-      originLocation = clickedLatLng;
-    } else if (!destinationInput) {
-      replacedInput = true;
-      destinationLocation = clickedLatLng;
-    }
-
-    // If one of the inputs was empty, calculate a new route and fill in the empty input field
-    if (replacedInput) {
-      calculateRoute();
-
-      // Use the geocoder to populate the input field we replaced with an address
-      geocoder
-        .geocode({
-          location: clickedLatLng,
-        })
-        .then((response) => {
-          const results = response.results;
-          if (results) {
-            const topResult = results[0];
-            const address = topResult.formatted_address;
-
-            if (!originInput) {
-              $("#origin-input").val(address);
-            } else if (!destinationInput) {
-              $("#destination-input").val(address);
-            }
-          }
-        });
-    }
-  });
+  attachDirectionsClickListener();
 
   // When user selects a single place or query list in SearchBox, show them in the
   // details pane and add marker(s) for the place(s).
@@ -489,12 +497,23 @@ async function initMap(center) {
   trafficLayer = new google.maps.TrafficLayer();
   transitLayer = new google.maps.TransitLayer();
 
-  // Handle terrain toggle
-  $("#terrain-toggle").click(function () {
-    $(this).toggleClass("active");
-
-    const isActive = $(this).hasClass("active");
-    map.setMapTypeId(isActive ? google.maps.MapTypeId.TERRAIN : google.maps.MapTypeId.ROADMAP);
+  // Handle map type selector
+  $("#map-type-selector").change(function () {
+    const selectedType = $(this).val();
+    switch (selectedType) {
+      case "roadmap":
+        map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+        break;
+      case "terrain":
+        map.setMapTypeId(google.maps.MapTypeId.TERRAIN);
+        break;
+      case "satellite":
+        map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+        break;
+      case "hybrid":
+        map.setMapTypeId(google.maps.MapTypeId.HYBRID);
+        break;
+    }
   });
 
   // Handle traffic layer toggle
@@ -512,6 +531,133 @@ async function initMap(center) {
     const isActive = $(this).hasClass("active");
     transitLayer.setMap(isActive ? map : null);
   });
+
+  // Dark mode functionality
+  let currentColorScheme = "FOLLOW_SYSTEM"; // Can be 'LIGHT', 'DARK', or 'FOLLOW_SYSTEM'
+
+  // Function to recreate the map with a new color scheme
+  async function recreateMapWithColorScheme(scheme) {
+    if (!map) return;
+
+    // Save current map state
+    const currentCenter = map.getCenter();
+    const currentZoom = map.getZoom();
+
+    // Save layer states and map type
+    const isTrafficActive = $("#traffic-toggle").hasClass("active");
+    const isTransitActive = $("#transit-toggle").hasClass("active");
+    const currentMapType = $("#map-type-selector").val();
+
+    // Clear existing markers and directions
+    markers.forEach((marker) => marker.setMap(null));
+    markers = [];
+
+    // Clear directions if they exist
+    if (mainDirectionRenderer) {
+      mainDirectionRenderer.setMap(null);
+    }
+    alternativeDirectionsRenderers.forEach((renderer) => {
+      renderer.setMap(null);
+    });
+    clearRouteMarkers();
+
+    // Recreate the map
+    const { Map } = await google.maps.importLibrary("maps");
+    map = new Map(document.getElementById("map"), {
+      center: currentCenter,
+      zoom: currentZoom,
+      mapId: "DEMO_MAP_ID",
+      mapTypeControl: false,
+      colorScheme: scheme,
+    });
+
+    // Restore map type based on saved value
+    switch (currentMapType) {
+      case "roadmap":
+        map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+        break;
+      case "terrain":
+        map.setMapTypeId(google.maps.MapTypeId.TERRAIN);
+        break;
+      case "satellite":
+        map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+        break;
+      case "hybrid":
+        map.setMapTypeId(google.maps.MapTypeId.HYBRID);
+        break;
+    }
+
+    // Restore map type selector dropdown value
+    $("#map-type-selector").val(currentMapType);
+
+    // Reattach all map listeners using shared helpers
+    attachZoomRouteMarkerListener();
+    attachAutocompleteBoundsListeners();
+    attachDirectionsClickListener();
+
+    // Reattach layers if they were active
+    if (isTrafficActive) {
+      trafficLayer.setMap(map);
+    }
+    if (isTransitActive) {
+      transitLayer.setMap(map);
+    }
+
+    // Reattach directions renderers
+    mainDirectionRenderer.setMap(map);
+    alternativeDirectionsRenderers.forEach((renderer) => {
+      renderer.setMap(map);
+    });
+
+    // Restore places if we have them
+    if (currentPlaces && currentPlaces.length > 0) {
+      currentPlaces.forEach((place) => {
+        createMarker(place);
+      });
+    }
+
+    // Recalculate route if in directions mode
+    if (inDirectionsMode && originLocation && destinationLocation) {
+      calculateRoute();
+    }
+  }
+
+  // Function to update the active button state
+  function updateActiveButton(buttonId) {
+    $(".mode-btn").removeClass("active");
+    $(`#${buttonId}`).addClass("active");
+  }
+
+  // Light mode button
+  $("#light-mode-btn").click(async function () {
+    currentColorScheme = "LIGHT";
+    await recreateMapWithColorScheme("LIGHT");
+    updateActiveButton("light-mode-btn");
+  });
+
+  // Dark mode button
+  $("#dark-mode-btn").click(async function () {
+    currentColorScheme = "DARK";
+    await recreateMapWithColorScheme("DARK");
+    updateActiveButton("dark-mode-btn");
+  });
+
+  // System mode button
+  $("#system-mode-btn").click(async function () {
+    currentColorScheme = "FOLLOW_SYSTEM";
+    await recreateMapWithColorScheme("FOLLOW_SYSTEM");
+    updateActiveButton("system-mode-btn");
+  });
+
+  // Listen for system color scheme changes when in FOLLOW_SYSTEM mode
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", async (e) => {
+      if (currentColorScheme === "FOLLOW_SYSTEM") {
+        // Recreate map with FOLLOW_SYSTEM to pick up the new system preference
+        await recreateMapWithColorScheme("FOLLOW_SYSTEM");
+      }
+    });
+  }
 }
 
 function highlightSelectedRoute(selectedIndex) {
