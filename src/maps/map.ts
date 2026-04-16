@@ -284,29 +284,33 @@ class MigrationMap {
       `https://maps.geo.${this._region}.amazonaws.com/v2/styles/${styleName}/descriptor?key=${this._apiKey}`,
     );
 
-    // Handle additional query params for Standard (ROADMAP and TERRAIN) types
-    // If we added these for other types, we would get a 4xx error
-    if (styleName == MapStyle.STANDARD) {
-      const params = new URLSearchParams(styleUrl.search);
+    // Handle additional query params based on map style
+    // If we added these for other unsupported types, we would get a 4xx error
+    const params = new URLSearchParams(styleUrl.search);
 
+    // Color scheme support: Standard, Hybrid, Satellite
+    if (styleName === MapStyle.STANDARD || styleName === MapStyle.HYBRID || styleName === MapStyle.SATELLITE) {
       params.set("color-scheme", this.#colorScheme);
-
-      // Add terrain query params for TERRAIN map type only
-      if (this.#mapTypeId === MapTypeId.TERRAIN) {
-        params.set("terrain", Terrain.HILLSHADE);
-        params.set("contour-density", ContourDensity.MEDIUM);
-      }
-
-      if (this.#traffic) {
-        params.set("traffic", this.#traffic);
-      }
-
-      if (this.#travelMode) {
-        params.set("travel-modes", this.#travelMode);
-      }
-
-      styleUrl.search = params.toString();
     }
+
+    // Terrain and contour density support: Standard (TERRAIN type only)
+    if (styleName === MapStyle.STANDARD && this.#mapTypeId === MapTypeId.TERRAIN) {
+      params.set("terrain", Terrain.HILLSHADE);
+      params.set("contour-density", ContourDensity.MEDIUM);
+    }
+
+    // Traffic support: Standard and Hybrid
+    if (this.#traffic && (styleName === MapStyle.STANDARD || styleName === MapStyle.HYBRID)) {
+      params.set("traffic", this.#traffic);
+    }
+
+    // Travel modes support: Standard and Hybrid
+    if (this.#travelMode && (styleName === MapStyle.STANDARD || styleName === MapStyle.HYBRID)) {
+      params.set("travel-modes", this.#travelMode);
+    }
+
+    // Always set the search params (will be a no-op if only the key param exists)
+    styleUrl.search = params.toString();
 
     this.#styleUrl = styleUrl.toString();
 

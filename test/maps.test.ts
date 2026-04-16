@@ -277,20 +277,20 @@ test("should return correct mapTypeId after being modified", () => {
   expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.ROADMAP);
   expect(mockSetStyle).toHaveBeenCalledTimes(0);
 
-  // Can set/get to HYBRID and style URL is updated
+  // Can set/get to HYBRID and style URL is updated with color-scheme
   testMap.setMapTypeId(MapTypeId.HYBRID);
   expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.HYBRID);
   expect(mockSetStyle).toHaveBeenCalledTimes(1);
   expect(mockSetStyle).toHaveBeenLastCalledWith(
-    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key",
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key&color-scheme=Light",
   );
 
-  // Can set/get to SATELLITE and style URL is updated
+  // Can set/get to SATELLITE and style URL is updated with color-scheme
   testMap.setMapTypeId(MapTypeId.SATELLITE);
   expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.SATELLITE);
   expect(mockSetStyle).toHaveBeenCalledTimes(2);
   expect(mockSetStyle).toHaveBeenLastCalledWith(
-    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key",
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key&color-scheme=Light",
   );
 
   // Can set/get to TERRAIN and style URL is updated
@@ -311,6 +311,30 @@ test("should allow Dark color scheme when mapTypeId is TERRAIN", () => {
   expect(mockSetStyle).toHaveBeenCalledTimes(1);
   expect(mockSetStyle).toHaveBeenLastCalledWith(
     "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Dark&terrain=Hillshade&contour-density=Medium",
+  );
+});
+
+test("should allow Dark color scheme when mapTypeId is HYBRID", () => {
+  const testMap = new MigrationMap(null, {
+    colorScheme: ColorScheme.DARK,
+  });
+
+  testMap.setMapTypeId(MapTypeId.HYBRID);
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key&color-scheme=Dark",
+  );
+});
+
+test("should allow Dark color scheme when mapTypeId is SATELLITE", () => {
+  const testMap = new MigrationMap(null, {
+    colorScheme: ColorScheme.DARK,
+  });
+
+  testMap.setMapTypeId(MapTypeId.SATELLITE);
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key&color-scheme=Dark",
   );
 });
 
@@ -376,6 +400,64 @@ test("should remove transit param when TransitLayer is removed from map", () => 
   );
 });
 
+test("should set traffic param when TrafficLayer is added to HYBRID map", () => {
+  const testMap = new MigrationMap(null, {
+    mapTypeId: MapTypeId.HYBRID,
+  });
+  const trafficLayer = new MigrationTrafficLayer();
+
+  trafficLayer.setMap(testMap);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key&color-scheme=Light&traffic=All",
+  );
+});
+
+test("should set transit param when TransitLayer is added to HYBRID map", () => {
+  const testMap = new MigrationMap(null, {
+    mapTypeId: MapTypeId.HYBRID,
+  });
+  const transitLayer = new MigrationTransitLayer();
+
+  transitLayer.setMap(testMap);
+
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key&color-scheme=Light&travel-modes=Transit",
+  );
+});
+
+test("should not set traffic param when TrafficLayer is added to SATELLITE map", () => {
+  const testMap = new MigrationMap(null, {
+    mapTypeId: MapTypeId.SATELLITE,
+  });
+  const trafficLayer = new MigrationTrafficLayer();
+
+  trafficLayer.setMap(testMap);
+
+  // Traffic is not supported on SATELLITE, so the URL should not include traffic param
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key&color-scheme=Light",
+  );
+});
+
+test("should not set transit param when TransitLayer is added to SATELLITE map", () => {
+  const testMap = new MigrationMap(null, {
+    mapTypeId: MapTypeId.SATELLITE,
+  });
+  const transitLayer = new MigrationTransitLayer();
+
+  transitLayer.setMap(testMap);
+
+  // Transit is not supported on SATELLITE, so the URL should not include travel-modes param
+  expect(mockSetStyle).toHaveBeenCalledTimes(1);
+  expect(mockSetStyle).toHaveBeenLastCalledWith(
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key&color-scheme=Light",
+  );
+});
+
 test("should update mapTypeId through new options", () => {
   const testMap = new MigrationMap(null, {});
 
@@ -387,11 +469,11 @@ test("should update mapTypeId through new options", () => {
     mapTypeId: MapTypeId.HYBRID,
   });
 
-  // mapTypeId should be updated from the setOptions call and new style URL set
+  // mapTypeId should be updated from the setOptions call and new style URL set with color-scheme
   expect(testMap.getMapTypeId()).toStrictEqual(MapTypeId.HYBRID);
   expect(mockSetStyle).toHaveBeenCalledTimes(1);
   expect(mockSetStyle).toHaveBeenLastCalledWith(
-    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key",
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Hybrid/descriptor?key=test-api-key&color-scheme=Light",
   );
 });
 
@@ -665,12 +747,12 @@ test("MapTypeControl should change mapTypeId when button is clicked", () => {
   // Before clicking the buttons, the mockSetStyle shouldn't be called yet
   expect(mockSetStyle).toHaveBeenCalledTimes(0);
 
-  // Clicking the Satellite button should set the Satellite style
+  // Clicking the Satellite button should set the Satellite style with color-scheme
   buttons[0].click();
   expect(mockSetStyle).toHaveBeenCalledTimes(1);
   const firstNewStyle = mockSetStyle.mock.calls[0][0];
   expect(firstNewStyle).toStrictEqual(
-    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key",
+    "https://maps.geo.test-region.amazonaws.com/v2/styles/Satellite/descriptor?key=test-api-key&color-scheme=Light",
   );
 
   // Clicking the Map button should set the Standard style

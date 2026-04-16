@@ -121,11 +121,23 @@
       <span>&#9776;</span>
     </div>
 
-    <!-- Map layer toggles -->
-    <div id="layer-toggles">
-      <button id="terrain-toggle" class="layer-toggle" title="Toggle Terrain">🗻 Terrain</button>
+    <!-- Map type and layer controls -->
+    <div id="map-controls">
+      <select id="map-type-selector" class="map-control-select" title="Map Type">
+        <option value="roadmap">🗺️ Roadmap</option>
+        <option value="terrain">🗻 Terrain</option>
+        <option value="satellite">🛰️ Satellite</option>
+        <option value="hybrid">🌍 Hybrid</option>
+      </select>
       <button id="traffic-toggle" class="layer-toggle" title="Toggle Traffic">🚦 Traffic</button>
       <button id="transit-toggle" class="layer-toggle" title="Toggle Transit">🚇 Transit</button>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div id="dark-mode-toggle">
+      <button id="light-mode-btn" class="mode-btn" title="Light Mode">☀️</button>
+      <button id="dark-mode-btn" class="mode-btn" title="Dark Mode">🌙</button>
+      <button id="system-mode-btn" class="mode-btn active" title="Follow System">💻</button>
     </div>
 
     <!-- Migration script import -->
