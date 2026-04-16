@@ -1,3 +1,12 @@
+# 1.3.0
+
+### ✨ Features and improvements
+
+- **Map Styles**: Extended map style support for additional style/query parameter combinations:
+  - Color scheme support now available for Hybrid and Satellite map styles (previously Standard only)
+  - Traffic layer and travel mode support now available for Hybrid map style (previously Standard only)
+- Security: Updated `vite` dev dependency to resolve [security vulnerability](https://github.com/aws-geospatial/amazon-location-migration/security/dependabot/80)
+
 # 1.2.0
 
 ### ✨ Features and improvements
