@@ -1,3 +1,12 @@
+# 1.3.1
+
+### ✨ Features and improvements
+
+- Security: Updated dependencies to resolve vulnerabilities:
+  - `postcss` - updated from 8.5.3 to 8.5.12
+  - `fast-xml-parser` - updated from 5.5.8 to 5.7.2
+  - `protocol-buffers-schema` - updated from 3.6.0 to 3.6.1
+
 # 1.3.0
 
 ### ✨ Features and improvements
