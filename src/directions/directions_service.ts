@@ -342,7 +342,7 @@ export class MigrationDirectionsService {
     const isTransitRoute = options.travelMode === TravelMode.TRANSIT;
 
     response.Routes.forEach((route) => {
-      let bounds = new MigrationLatLngBounds();
+      const bounds = new MigrationLatLngBounds();
       const routeCoordinates: number[][] = [];
       const googleLegs: google.maps.DirectionsLeg[] = [];
 
