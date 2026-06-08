@@ -352,7 +352,17 @@ export class MigrationDirectionsService {
         );
       } else {
         route.Legs.forEach((leg) => {
-          googleLegs.push(this._buildStandardLeg(leg, bounds, routeCoordinates, unitSystem, options, originResponse, destinationResponse));
+          googleLegs.push(
+            this._buildStandardLeg(
+              leg,
+              bounds,
+              routeCoordinates,
+              unitSystem,
+              options,
+              originResponse,
+              destinationResponse,
+            ),
+          );
         });
       }
 
@@ -507,7 +517,13 @@ export class MigrationDirectionsService {
           const nextGeometryOffset =
             stepIndex + 1 < walkSteps.length ? walkSteps[stepIndex + 1].GeometryOffset : legGeometry.length - 1;
           googleSteps.push(
-            this._buildVehicleStep(step, legGeometry, nextGeometryOffset, "WALKING" as google.maps.TravelMode, unitSystem),
+            this._buildVehicleStep(
+              step,
+              legGeometry,
+              nextGeometryOffset,
+              "WALKING" as google.maps.TravelMode,
+              unitSystem,
+            ),
           );
         });
       }
@@ -565,7 +581,10 @@ export class MigrationDirectionsService {
 
     const legOverview = legDetails.Summary.Overview;
     return {
-      distance: { text: formatDistanceBasedOnUnitSystem(legOverview.Distance, unitSystem), value: legOverview.Distance },
+      distance: {
+        text: formatDistanceBasedOnUnitSystem(legOverview.Distance, unitSystem),
+        value: legOverview.Distance,
+      },
       duration: { text: formatSecondsAsGoogleDurationText(legOverview.Duration), value: legOverview.Duration },
       steps: googleSteps,
       start_location: new MigrationLatLng(

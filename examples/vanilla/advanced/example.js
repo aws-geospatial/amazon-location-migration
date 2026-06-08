@@ -685,9 +685,7 @@ function updateSelectedRouteIndex(index) {
   if (currentTravelMode === travelMode.TRANSIT) {
     const directions = mainDirectionRenderer.getDirections();
     const route = directions?.routes?.[index];
-    const firstTransitStep = route?.legs
-      .flatMap((l) => l.steps)
-      .find((s) => s.transit?.line?.color);
+    const firstTransitStep = route?.legs.flatMap((l) => l.steps).find((s) => s.transit?.line?.color);
     const lineColor = firstTransitStep?.transit?.line?.color || POLYLINE_OPTIONS.MAIN.strokeColor;
     mainDirectionRenderer.setOptions({
       polylineOptions: { ...POLYLINE_OPTIONS.MAIN, strokeColor: lineColor },
@@ -977,9 +975,7 @@ function calculateRoute() {
       // For transit, color the main polyline using the first transit line's color
       // and make the first alternate renderer transparent to prevent color blending
       if (currentTravelMode === travelMode.TRANSIT) {
-        const firstTransitStep = response.routes[0]?.legs
-          .flatMap((l) => l.steps)
-          .find((s) => s.transit?.line?.color);
+        const firstTransitStep = response.routes[0]?.legs.flatMap((l) => l.steps).find((s) => s.transit?.line?.color);
         const lineColor = firstTransitStep?.transit?.line?.color || POLYLINE_OPTIONS.MAIN.strokeColor;
         mainDirectionRenderer.setOptions({
           polylineOptions: { ...POLYLINE_OPTIONS.MAIN, strokeColor: lineColor },

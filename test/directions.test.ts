@@ -2093,7 +2093,10 @@ const mockedRoutesClientSend = jest.fn((command) => {
                   Incidents: [],
                   IntermediateStops: [
                     {
-                      Departure: { Place: { Position: [-97.73, 30.25], Name: "Mid Station" }, Time: "2026-06-08T13:29:00-04:00" },
+                      Departure: {
+                        Place: { Position: [-97.73, 30.25], Name: "Mid Station" },
+                        Time: "2026-06-08T13:29:00-04:00",
+                      },
                       Duration: 60,
                     },
                   ],
@@ -5287,7 +5290,12 @@ describe("transit routing", () => {
       {
         Legs: [
           {
-            Geometry: { LineString: [[-97.7277, 30.23973], [-97.72794, 30.24016]] },
+            Geometry: {
+              LineString: [
+                [-97.7277, 30.23973],
+                [-97.72794, 30.24016],
+              ],
+            },
             TravelMode: "Pedestrian",
             Type: "Pedestrian",
             PedestrianLegDetails: firstLegDetails ?? {
@@ -5300,13 +5308,23 @@ describe("transit routing", () => {
             },
           },
           {
-            Geometry: { LineString: [[-97.72794, 30.24016], [-97.74, 30.26]] },
+            Geometry: {
+              LineString: [
+                [-97.72794, 30.24016],
+                [-97.74, 30.26],
+              ],
+            },
             TravelMode: "Subway",
             Type: "Transit",
             TransitLegDetails: transitLegDetails,
           },
           {
-            Geometry: { LineString: [[-97.74, 30.26], [-97.7405, 30.261]] },
+            Geometry: {
+              LineString: [
+                [-97.74, 30.26],
+                [-97.7405, 30.261],
+              ],
+            },
             TravelMode: "Pedestrian",
             Type: "Pedestrian",
             PedestrianLegDetails: lastLegDetails ?? {
@@ -5330,14 +5348,25 @@ describe("transit routing", () => {
     Attributions: [],
     BeforeTravelSteps: [],
     BookingWebLinks: [],
-    Departure: { Place: { Position: [-97.72794, 30.24016], Name: "Main St Station" }, Time: "2026-06-08T13:25:00-04:00" },
+    Departure: {
+      Place: { Position: [-97.72794, 30.24016], Name: "Main St Station" },
+      Time: "2026-06-08T13:25:00-04:00",
+    },
     Incidents: [],
     IntermediateStops: [],
     NextDepartures: [],
     Notices: [],
     PassThroughWaypoints: [],
     Spans: [],
-    Transport: { Mode: "Subway", Color: "#F6BC26", Headsign: "Downtown", LongRouteName: "Broadway Local", RouteName: "R", ShortRouteName: "R", TextColor: "#000000" },
+    Transport: {
+      Mode: "Subway",
+      Color: "#F6BC26",
+      Headsign: "Downtown",
+      LongRouteName: "Broadway Local",
+      RouteName: "R",
+      ShortRouteName: "R",
+      TextColor: "#000000",
+    },
     TravelSteps: [],
     Agency: { Name: "City Transit", Url: "http://transit.example.com" },
     Summary: { Overview: { Distance: 2000, Duration: 540 }, TravelOnly: { Duration: 540 } },
@@ -5345,12 +5374,14 @@ describe("transit routing", () => {
 
   test("transit step instruction falls back when transport fields are absent", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse({
-        ...baseTransitLegDetails,
-        Departure: { Place: { Position: [-97.72794, 30.24016] } },
-        Arrival: { Place: { Position: [-97.74, 30.26] } },
-        Transport: { Mode: undefined, RouteName: undefined, Headsign: undefined },
-      })),
+      Promise.resolve(
+        makeTransitMockResponse({
+          ...baseTransitLegDetails,
+          Departure: { Place: { Position: [-97.72794, 30.24016] } },
+          Arrival: { Place: { Position: [-97.74, 30.26] } },
+          Transport: { Mode: undefined, RouteName: undefined, Headsign: undefined },
+        }),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       const transitStep = response.routes[0].legs[0].steps.find((s) => s.travel_mode === "TRANSIT");
@@ -5361,25 +5392,27 @@ describe("transit routing", () => {
 
   test("transit leg omits departure_time and arrival_time when times are absent", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse(
-        baseTransitLegDetails,
-        {
-          Arrival: { Place: { Position: [-97.72794, 30.24016] } },
-          Departure: { Place: { Position: [-97.7277, 30.23973] } },
-          PassThroughWaypoints: [],
-          Spans: [],
-          Summary: { Overview: { Distance: 100, Duration: 300 }, TravelOnly: { Duration: 300 } },
-          TravelSteps: [],
-        },
-        {
-          Arrival: { Place: { Position: [-97.7405, 30.261] } },
-          Departure: { Place: { Position: [-97.74, 30.26] } },
-          PassThroughWaypoints: [],
-          Spans: [],
-          Summary: { Overview: { Distance: 80, Duration: 300 }, TravelOnly: { Duration: 300 } },
-          TravelSteps: [],
-        },
-      )),
+      Promise.resolve(
+        makeTransitMockResponse(
+          baseTransitLegDetails,
+          {
+            Arrival: { Place: { Position: [-97.72794, 30.24016] } },
+            Departure: { Place: { Position: [-97.7277, 30.23973] } },
+            PassThroughWaypoints: [],
+            Spans: [],
+            Summary: { Overview: { Distance: 100, Duration: 300 }, TravelOnly: { Duration: 300 } },
+            TravelSteps: [],
+          },
+          {
+            Arrival: { Place: { Position: [-97.7405, 30.261] } },
+            Departure: { Place: { Position: [-97.74, 30.26] } },
+            PassThroughWaypoints: [],
+            Spans: [],
+            Summary: { Overview: { Distance: 80, Duration: 300 }, TravelOnly: { Duration: 300 } },
+            TravelSteps: [],
+          },
+        ),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       const leg = response.routes[0].legs[0];
@@ -5391,10 +5424,12 @@ describe("transit routing", () => {
 
   test("transit summary falls back to LongRouteName when RouteName is absent", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse({
-        ...baseTransitLegDetails,
-        Transport: { ...baseTransitLegDetails.Transport, RouteName: undefined, LongRouteName: "Broadway Local" },
-      })),
+      Promise.resolve(
+        makeTransitMockResponse({
+          ...baseTransitLegDetails,
+          Transport: { ...baseTransitLegDetails.Transport, RouteName: undefined, LongRouteName: "Broadway Local" },
+        }),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       expect(response.routes[0].summary).toBe("Broadway Local");
@@ -5404,10 +5439,12 @@ describe("transit routing", () => {
 
   test("transit summary returns empty string when no route names are available", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse({
-        ...baseTransitLegDetails,
-        Transport: { Mode: "Subway" },
-      })),
+      Promise.resolve(
+        makeTransitMockResponse({
+          ...baseTransitLegDetails,
+          Transport: { Mode: "Subway" },
+        }),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       expect(response.routes[0].summary).toBe("");
@@ -5417,11 +5454,13 @@ describe("transit routing", () => {
 
   test("transit_details handles missing Position in departure/arrival places", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse({
-        ...baseTransitLegDetails,
-        Departure: { Place: { Name: "No Position Dep" } },
-        Arrival: { Place: { Name: "No Position Arr" } },
-      })),
+      Promise.resolve(
+        makeTransitMockResponse({
+          ...baseTransitLegDetails,
+          Departure: { Place: { Name: "No Position Dep" } },
+          Arrival: { Place: { Name: "No Position Arr" } },
+        }),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       const transitStep = response.routes[0].legs[0].steps.find((s) => s.travel_mode === "TRANSIT");
@@ -5436,11 +5475,13 @@ describe("transit routing", () => {
 
   test("transit_details departure_time and arrival_time are undefined when times are absent from transit leg", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse({
-        ...baseTransitLegDetails,
-        Departure: { Place: { Position: [-97.72794, 30.24016], Name: "Dep" } },
-        Arrival: { Place: { Position: [-97.74, 30.26], Name: "Arr" } },
-      })),
+      Promise.resolve(
+        makeTransitMockResponse({
+          ...baseTransitLegDetails,
+          Departure: { Place: { Position: [-97.72794, 30.24016], Name: "Dep" } },
+          Arrival: { Place: { Position: [-97.74, 30.26], Name: "Arr" } },
+        }),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       const transitStep = response.routes[0].legs[0].steps.find((s) => s.travel_mode === "TRANSIT");
@@ -5453,11 +5494,13 @@ describe("transit routing", () => {
 
   test("transit_details handles absent agency url and no IntermediateStops", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse({
-        ...baseTransitLegDetails,
-        Agency: { Name: "No URL Agency" },
-        IntermediateStops: undefined,
-      })),
+      Promise.resolve(
+        makeTransitMockResponse({
+          ...baseTransitLegDetails,
+          Agency: { Name: "No URL Agency" },
+          IntermediateStops: undefined,
+        }),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       const transitStep = response.routes[0].legs[0].steps.find((s) => s.travel_mode === "TRANSIT");
@@ -5470,10 +5513,12 @@ describe("transit routing", () => {
 
   test("transit_details handles absent transport mode (fallback vehicle)", (done) => {
     mockedRoutesClientSend.mockImplementationOnce(() =>
-      Promise.resolve(makeTransitMockResponse({
-        ...baseTransitLegDetails,
-        Transport: undefined,
-      })),
+      Promise.resolve(
+        makeTransitMockResponse({
+          ...baseTransitLegDetails,
+          Transport: undefined,
+        }),
+      ),
     );
     directionsService.route(transitRequest).then((response) => {
       const transitStep = response.routes[0].legs[0].steps.find((s) => s.travel_mode === "TRANSIT");
@@ -5511,7 +5556,12 @@ describe("transit routing", () => {
             {
               Legs: [
                 {
-                  Geometry: { LineString: [[-97.7277, 30.23973], [-97.74, 30.26]] },
+                  Geometry: {
+                    LineString: [
+                      [-97.7277, 30.23973],
+                      [-97.74, 30.26],
+                    ],
+                  },
                   TravelMode: mode,
                   Type: "Transit",
                   TransitLegDetails: {
@@ -5520,7 +5570,10 @@ describe("transit routing", () => {
                     Attributions: [],
                     BeforeTravelSteps: [],
                     BookingWebLinks: [],
-                    Departure: { Place: { Position: [-97.7277, 30.23973], Name: "Dep" }, Time: "2026-06-08T13:25:00-04:00" },
+                    Departure: {
+                      Place: { Position: [-97.7277, 30.23973], Name: "Dep" },
+                      Time: "2026-06-08T13:25:00-04:00",
+                    },
                     Incidents: [],
                     IntermediateStops: [],
                     NextDepartures: [],

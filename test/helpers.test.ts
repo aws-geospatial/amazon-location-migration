@@ -1128,7 +1128,6 @@ describe("getManeuver", () => {
 
     expect(getManeuver(step)).toStrictEqual("");
   });
-
 });
 
 describe("populateTravelModeOption", () => {
@@ -1356,7 +1355,9 @@ describe("populateTransitOptions", () => {
       origin,
       destination,
       travelMode: TravelMode.TRANSIT,
-      transitOptions: { modes: ["RAIL" as unknown as google.maps.TransitMode, "TRAIN" as unknown as google.maps.TransitMode] },
+      transitOptions: {
+        modes: ["RAIL" as unknown as google.maps.TransitMode, "TRAIN" as unknown as google.maps.TransitMode],
+      },
     };
     const input = baseInput();
     populateTransitOptions(options, input);
