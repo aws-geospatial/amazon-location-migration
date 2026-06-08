@@ -375,6 +375,101 @@
   flex: 1;
 }
 
+/* Transit step styles */
+.transit-step {
+  align-items: flex-start;
+}
+
+.transit-step-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transit-step-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.transit-line-badge {
+  display: inline-block;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.85em;
+  flex-shrink: 0;
+}
+
+.transit-step-headsign {
+  font-size: 0.95em;
+  color: #333;
+}
+
+.transit-step-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.85em;
+  color: #555;
+  flex-wrap: wrap;
+}
+
+.transit-step-times {
+  font-size: 0.85em;
+  color: #1a73e8;
+}
+
+.transit-agency {
+  font-size: 0.8em;
+  color: #888;
+}
+
+.transit-line-name {
+  font-size: 0.85em;
+  color: #555;
+  font-style: italic;
+}
+
+.transit-walk-step {
+  opacity: 0.7;
+  border-bottom: 1px dashed #ddd;
+}
+
+.transit-leg-times {
+  padding: 8px 12px;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #1a73e8;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.transit-route-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.transit-route-times {
+  font-size: 0.8em;
+  color: #555;
+  margin-top: 2px;
+}
+
+.transit-fare {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.8em;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
 #directions-container {
   display: flex;
   flex-direction: column;

@@ -48,6 +48,7 @@ const mockedRoutesClientSend = jest.fn((command) => {
               Legs: [
                 {
                   VehicleLegDetails: {
+                    AfterTravelSteps: [],
                     Arrival: {
                       Place: {
                         OriginalPosition: [-97.73835, 30.31332],
@@ -130,6 +131,7 @@ const mockedRoutesClientSend = jest.fn((command) => {
               Legs: [
                 {
                   VehicleLegDetails: {
+                    AfterTravelSteps: [],
                     Arrival: {
                       Place: {
                         OriginalPosition: [-11.393328, 6.718845],
@@ -211,6 +213,7 @@ const mockedRoutesClientSend = jest.fn((command) => {
               Legs: [
                 {
                   VehicleLegDetails: {
+                    AfterTravelSteps: [],
                     Arrival: {
                       Place: {
                         OriginalPosition: [97.11542, 19.65123],
@@ -292,6 +295,7 @@ const mockedRoutesClientSend = jest.fn((command) => {
               Legs: [
                 {
                   VehicleLegDetails: {
+                    AfterTravelSteps: [],
                     Arrival: {
                       Place: {
                         OriginalPosition: [2.3376, 48.8606],

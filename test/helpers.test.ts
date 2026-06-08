@@ -15,6 +15,7 @@ import {
   numberFormatter,
   populateAvoidOptions,
   populateTravelModeOption,
+  populateTransitOptions,
 } from "../src/directions/helpers";
 import { TravelMode } from "../src/directions";
 import * as turf from "@turf/turf";
@@ -26,6 +27,7 @@ import {
   RoutePedestrianTravelStep,
   RoutePedestrianTravelStepType,
   RouteSteeringDirection,
+  RouteTransitMode,
   RouteTravelMode,
   RouteVehicleTravelStep,
   RouteVehicleTravelStepType,
@@ -1127,32 +1129,6 @@ describe("getManeuver", () => {
     expect(getManeuver(step)).toStrictEqual("");
   });
 
-  test("should return empty string maneuver for RoutePedestrianTravelStep RAMP type", () => {
-    const step: RoutePedestrianTravelStep = {
-      Type: RoutePedestrianTravelStepType.RAMP,
-      Duration: 0,
-    };
-
-    expect(getManeuver(step)).toStrictEqual("");
-  });
-
-  test("should return empty string maneuver for RoutePedestrianTravelStep EXIT type", () => {
-    const step: RoutePedestrianTravelStep = {
-      Type: RoutePedestrianTravelStepType.EXIT,
-      Duration: 0,
-    };
-
-    expect(getManeuver(step)).toStrictEqual("");
-  });
-
-  test("should return empty string maneuver for RoutePedestrianTravelStep U_TURN type", () => {
-    const step: RoutePedestrianTravelStep = {
-      Type: RoutePedestrianTravelStepType.U_TURN,
-      Duration: 0,
-    };
-
-    expect(getManeuver(step)).toStrictEqual("");
-  });
 });
 
 describe("populateTravelModeOption", () => {
@@ -1190,6 +1166,58 @@ describe("populateTravelModeOption", () => {
     expect(input.TravelMode).toBe(RouteTravelMode.PEDESTRIAN);
   });
 
+  test("should set TravelMode to TRANSIT for TRANSIT", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin: { lat: 30.2784, lng: -97.7289 },
+      destination: { lat: 30.2672, lng: -97.7431 },
+      travelMode: TravelMode.TRANSIT,
+    };
+
+    const input: CalculateRoutesRequest = {
+      Origin: [-97.7289, 30.2784],
+      Destination: [-97.7431, 30.2672],
+    };
+
+    populateTravelModeOption(options, input);
+
+    expect(input.TravelMode).toBe(RouteTravelMode.TRANSIT);
+  });
+
+  test("should not set TravelMode to TRANSIT for CalculateRouteMatrixRequest", () => {
+    const options: google.maps.DistanceMatrixRequest = {
+      origins: [{ lat: 30.2784, lng: -97.7289 }],
+      destinations: [{ lat: 30.2672, lng: -97.7431 }],
+      travelMode: TravelMode.TRANSIT,
+    };
+
+    const input: CalculateRouteMatrixRequest = {
+      Origins: [{ Position: [-97.7289, 30.2784] }],
+      Destinations: [{ Position: [-97.7431, 30.2672] }],
+    };
+
+    populateTravelModeOption(options, input);
+
+    expect(input.TravelMode).toBeUndefined();
+  });
+
+  test("should not set TravelMode to TRANSIT for OptimizeWaypointsRequest", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin: { lat: 30.2784, lng: -97.7289 },
+      destination: { lat: 30.2672, lng: -97.7431 },
+      travelMode: TravelMode.TRANSIT,
+    };
+
+    const input: OptimizeWaypointsRequest = {
+      Origin: [-97.7289, 30.2784],
+      Destination: [-97.7431, 30.2672],
+      Waypoints: [],
+    };
+
+    populateTravelModeOption(options, input);
+
+    expect(input.TravelMode).toBeUndefined();
+  });
+
   test("should work with OptimizeWaypointsRequest", () => {
     const options: google.maps.DirectionsRequest = {
       origin: { lat: 30.2784, lng: -97.7289 },
@@ -1205,6 +1233,135 @@ describe("populateTravelModeOption", () => {
     populateTravelModeOption(options, input);
 
     expect(input.TravelMode).toBe(RouteTravelMode.CAR);
+  });
+});
+
+describe("populateTransitOptions", () => {
+  const origin = { lat: 30.2784, lng: -97.7289 };
+  const destination = { lat: 30.2672, lng: -97.7431 };
+  const baseInput = (): CalculateRoutesRequest => ({
+    Origin: [-97.7289, 30.2784],
+    Destination: [-97.7431, 30.2672],
+  });
+
+  test("should not set TravelModeOptions when travelMode is not TRANSIT", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.DRIVING,
+      transitOptions: { modes: ["BUS" as unknown as google.maps.TransitMode] },
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    expect(input.TravelModeOptions).toBeUndefined();
+  });
+
+  test("should not set TravelModeOptions when no modes specified", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.TRANSIT,
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    expect(input.TravelModeOptions).toBeUndefined();
+  });
+
+  test("should map BUS to BUS, BUS_RAPID_TRANSIT, and PRIVATE_BUS", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.TRANSIT,
+      transitOptions: { modes: ["BUS" as unknown as google.maps.TransitMode] },
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toEqual(
+      expect.arrayContaining([RouteTransitMode.BUS, RouteTransitMode.BUS_RAPID_TRANSIT, RouteTransitMode.PRIVATE_BUS]),
+    );
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toHaveLength(3);
+  });
+
+  test("should map SUBWAY to SUBWAY", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.TRANSIT,
+      transitOptions: { modes: ["SUBWAY" as unknown as google.maps.TransitMode] },
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toEqual([RouteTransitMode.SUBWAY]);
+  });
+
+  test("should map TRAM to LIGHT_RAIL", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.TRANSIT,
+      transitOptions: { modes: ["TRAM" as unknown as google.maps.TransitMode] },
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toEqual([RouteTransitMode.LIGHT_RAIL]);
+  });
+
+  test("should map TRAIN to city/intercity/regional train modes", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.TRANSIT,
+      transitOptions: { modes: ["TRAIN" as unknown as google.maps.TransitMode] },
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toEqual(
+      expect.arrayContaining([
+        RouteTransitMode.CITY_TRAIN,
+        RouteTransitMode.HIGH_SPEED_TRAIN,
+        RouteTransitMode.INTERCITY_TRAIN,
+        RouteTransitMode.INTERREGIONAL_TRAIN,
+        RouteTransitMode.REGIONAL_TRAIN,
+      ]),
+    );
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toHaveLength(5);
+  });
+
+  test("should map RAIL to all rail modes including light rail", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.TRANSIT,
+      transitOptions: { modes: ["RAIL" as unknown as google.maps.TransitMode] },
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toEqual(
+      expect.arrayContaining([
+        RouteTransitMode.CITY_TRAIN,
+        RouteTransitMode.HIGH_SPEED_TRAIN,
+        RouteTransitMode.INTERCITY_TRAIN,
+        RouteTransitMode.INTERREGIONAL_TRAIN,
+        RouteTransitMode.REGIONAL_TRAIN,
+        RouteTransitMode.LIGHT_RAIL,
+        RouteTransitMode.MONORAIL,
+        RouteTransitMode.FUNICULAR_RAILWAY,
+      ]),
+    );
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toHaveLength(8);
+  });
+
+  test("should deduplicate modes when RAIL and TRAIN are both specified", () => {
+    const options: google.maps.DirectionsRequest = {
+      origin,
+      destination,
+      travelMode: TravelMode.TRANSIT,
+      transitOptions: { modes: ["RAIL" as unknown as google.maps.TransitMode, "TRAIN" as unknown as google.maps.TransitMode] },
+    };
+    const input = baseInput();
+    populateTransitOptions(options, input);
+    // RAIL is a superset of TRAIN so result should be same as RAIL alone
+    expect(input.TravelModeOptions?.Transit?.AllowedModes).toHaveLength(8);
   });
 });
 

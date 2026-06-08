@@ -68,6 +68,9 @@
       "text"
     ],
     "testEnvironment": "jsdom",
+    "testEnvironmentOptions": {
+      "customExportConditions": ["node", "require", "default"]
+    },
     "setupFilesAfterEnv": [
       "./setupFilesAfterEnv.js"
     ]
@@ -80,10 +83,10 @@
     "!(*.{js,ts})": "prettier --write --ignore-unknown"
   },
   "dependencies": {
-    "@aws-sdk/client-geo-maps": "^3.981.0",
-    "@aws-sdk/client-geo-places": "^3.981.0",
-    "@aws-sdk/client-geo-routes": "^3.981.0",
-    "@aws/amazon-location-for-maplibre-gl-geocoder": "^2.0.3",
+    "@aws-sdk/client-geo-maps": "^3.1063.0",
+    "@aws-sdk/client-geo-places": "^3.1063.0",
+    "@aws-sdk/client-geo-routes": "^3.1063.0",
+    "@aws/amazon-location-for-maplibre-gl-geocoder": "^2.0.7",
     "@aws/amazon-location-utilities-auth-helper": "^1.2.2",
     "@aws/polyline": "^0.1.2",
     "@turf/turf": "^7.1.0",
@@ -95,6 +98,7 @@
     "@babel/core": "^7.21.8",
     "@babel/preset-env": "^7.21.5",
     "@babel/preset-typescript": "^7.21.5",
+    "@eslint/js": "^9.39.2",
     "@googlemaps/js-api-loader": "^1.16.8",
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-commonjs": "^25.0.2",
@@ -105,7 +109,6 @@
     "@types/jest": "^29.5.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
-    "@eslint/js": "^9.39.2",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "eslint": "^9.39.2",

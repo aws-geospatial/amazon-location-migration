@@ -92,6 +92,26 @@ GoogleToMaplibreControlPosition[MigrationControlPosition.RIGHT_BOTTOM] = "bottom
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_LEFT] = "bottom-left";
 GoogleToMaplibreControlPosition[MigrationControlPosition.BOTTOM_RIGHT] = "bottom-right";
 
+export enum VehicleType {
+  BUS = "BUS",
+  CABLE_CAR = "CABLE_CAR",
+  COMMUTER_TRAIN = "COMMUTER_TRAIN",
+  FERRY = "FERRY",
+  FUNICULAR = "FUNICULAR",
+  GONDOLA_LIFT = "GONDOLA_LIFT",
+  HEAVY_RAIL = "HEAVY_RAIL",
+  HIGH_SPEED_TRAIN = "HIGH_SPEED_TRAIN",
+  INTERCITY_BUS = "INTERCITY_BUS",
+  METRO_RAIL = "METRO_RAIL",
+  MONORAIL = "MONORAIL",
+  OTHER = "OTHER",
+  RAIL = "RAIL",
+  SHARE_TAXI = "SHARE_TAXI",
+  SUBWAY = "SUBWAY",
+  TRAM = "TRAM",
+  TROLLEYBUS = "TROLLEYBUS",
+}
+
 // addListener response
 export interface AddListenerResponse {
   instance;

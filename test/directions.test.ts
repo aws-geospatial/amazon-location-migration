@@ -2007,9 +2007,178 @@ const mockedRoutesClientSend = jest.fn((command) => {
           },
         ];
 
+        const transitRoutes = [
+          {
+            Legs: [
+              {
+                Geometry: {
+                  LineString: [
+                    [-97.7277, 30.23973],
+                    [-97.72794, 30.2401],
+                    [-97.72794, 30.24016],
+                  ],
+                },
+                TravelMode: "Pedestrian",
+                Type: "Pedestrian",
+                PedestrianLegDetails: {
+                  Arrival: {
+                    Place: {
+                      Position: [-97.72794, 30.24016],
+                      Name: "Main St Station",
+                      Type: "Station",
+                    },
+                    Time: "2026-06-08T13:25:00-04:00",
+                  },
+                  Departure: {
+                    Place: {
+                      Position: [-97.7277, 30.23973],
+                    },
+                    Time: "2026-06-08T13:20:00-04:00",
+                  },
+                  PassThroughWaypoints: [],
+                  Spans: [],
+                  Summary: {
+                    Overview: { Distance: 100, Duration: 300 },
+                    TravelOnly: { Duration: 300 },
+                  },
+                  TravelSteps: [
+                    {
+                      Distance: 100,
+                      Duration: 300,
+                      GeometryOffset: 0,
+                      Instruction: "Head northwest. Go for 100 m.",
+                      Type: "Depart",
+                    },
+                    {
+                      Distance: 0,
+                      Duration: 0,
+                      GeometryOffset: 2,
+                      Instruction: "Arrive at station.",
+                      Type: "Arrive",
+                    },
+                  ],
+                },
+              },
+              {
+                Geometry: {
+                  LineString: [
+                    [-97.72794, 30.24016],
+                    [-97.73, 30.25],
+                    [-97.74, 30.26],
+                  ],
+                },
+                TravelMode: "Subway",
+                Type: "Transit",
+                TransitLegDetails: {
+                  AfterTravelSteps: [],
+                  Arrival: {
+                    Place: {
+                      Position: [-97.74, 30.26],
+                      Name: "Downtown Station",
+                      Type: "Station",
+                    },
+                    Time: "2026-06-08T13:34:00-04:00",
+                  },
+                  Attributions: [],
+                  BeforeTravelSteps: [],
+                  BookingWebLinks: [],
+                  Departure: {
+                    Place: {
+                      Position: [-97.72794, 30.24016],
+                      Name: "Main St Station",
+                      Type: "Station",
+                    },
+                    Time: "2026-06-08T13:25:00-04:00",
+                  },
+                  Incidents: [],
+                  IntermediateStops: [
+                    {
+                      Departure: { Place: { Position: [-97.73, 30.25], Name: "Mid Station" }, Time: "2026-06-08T13:29:00-04:00" },
+                      Duration: 60,
+                    },
+                  ],
+                  NextDepartures: [],
+                  Notices: [],
+                  PassThroughWaypoints: [],
+                  Spans: [],
+                  Transport: {
+                    Mode: "Subway",
+                    Color: "#F6BC26",
+                    Headsign: "Downtown",
+                    LongRouteName: "Broadway Local",
+                    RouteName: "R",
+                    ShortRouteName: "R",
+                    TextColor: "#000000",
+                  },
+                  TravelSteps: [],
+                  Agency: {
+                    Name: "City Transit",
+                    Url: "http://transit.example.com",
+                  },
+                  Summary: {
+                    Overview: { Distance: 2000, Duration: 540 },
+                    TravelOnly: { Duration: 540 },
+                  },
+                },
+              },
+              {
+                Geometry: {
+                  LineString: [
+                    [-97.74, 30.26],
+                    [-97.7405, 30.261],
+                  ],
+                },
+                TravelMode: "Pedestrian",
+                Type: "Pedestrian",
+                PedestrianLegDetails: {
+                  Arrival: {
+                    Place: {
+                      Position: [-97.7405, 30.261],
+                    },
+                    Time: "2026-06-08T13:39:00-04:00",
+                  },
+                  Departure: {
+                    Place: {
+                      Position: [-97.74, 30.26],
+                      Name: "Downtown Station",
+                      Type: "Station",
+                    },
+                    Time: "2026-06-08T13:34:00-04:00",
+                  },
+                  PassThroughWaypoints: [],
+                  Spans: [],
+                  Summary: {
+                    Overview: { Distance: 80, Duration: 300 },
+                    TravelOnly: { Duration: 300 },
+                  },
+                  TravelSteps: [
+                    {
+                      Distance: 80,
+                      Duration: 300,
+                      GeometryOffset: 0,
+                      Instruction: "Head northeast. Go for 80 m.",
+                      Type: "Depart",
+                    },
+                    {
+                      Distance: 0,
+                      Duration: 0,
+                      GeometryOffset: 1,
+                      Instruction: "Arrive at destination.",
+                      Type: "Arrive",
+                    },
+                  ],
+                },
+              },
+            ],
+            Summary: { Distance: 2180, Duration: 1140 },
+          },
+        ];
+
         let routes;
         if (command.input.TravelMode == RouteTravelMode.PEDESTRIAN) {
           routes = walkingRoutes;
+        } else if (command.input.TravelMode == RouteTravelMode.TRANSIT) {
+          routes = transitRoutes;
         } else {
           routes = command.input.MaxAlternatives ? alternativeRoutes : singleRoute;
         }
@@ -2057,6 +2226,7 @@ import {
   RouteTravelMode,
   MeasurementSystem,
 } from "@aws-sdk/client-geo-routes";
+import { VehicleType } from "../src/common";
 
 const directionsService = new MigrationDirectionsService();
 const distanceMatrixService = new MigrationDistanceMatrixService();
@@ -4965,6 +5135,212 @@ describe("test summary field in route response", () => {
 
       directionsService.route(defaultRequest).then((response) => {
         expect(response.routes[0].summary).toStrictEqual("First Valid and Second Valid");
+        done();
+      });
+    });
+  });
+});
+
+describe("transit routing", () => {
+  const origin = new MigrationLatLng(30.23973, -97.7277);
+  const destination = new MigrationLatLng(30.261, -97.7405);
+  const transitRequest = {
+    origin,
+    destination,
+    travelMode: TravelMode.TRANSIT,
+  };
+
+  test("should return a single combined leg for transit route", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const routes = response.routes;
+      expect(routes.length).toBe(1);
+      expect(routes[0].legs.length).toBe(1);
+      done();
+    });
+  });
+
+  test("transit leg should have correct total distance and duration", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const leg = response.routes[0].legs[0];
+      expect(leg.distance.value).toBe(2180);
+      expect(leg.duration.value).toBe(1140);
+      done();
+    });
+  });
+
+  test("transit leg should have departure_time from first leg and arrival_time from last leg", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const leg = response.routes[0].legs[0];
+      expect(leg.departure_time).toBeDefined();
+      expect(leg.departure_time.value).toEqual(new Date("2026-06-08T13:20:00-04:00"));
+      expect(leg.arrival_time).toBeDefined();
+      expect(leg.arrival_time.value).toEqual(new Date("2026-06-08T13:39:00-04:00"));
+      done();
+    });
+  });
+
+  test("transit leg steps should contain both WALKING and TRANSIT travel modes", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const steps = response.routes[0].legs[0].steps;
+      const travelModes = steps.map((s) => s.travel_mode);
+      expect(travelModes).toContain("WALKING");
+      expect(travelModes).toContain("TRANSIT");
+      done();
+    });
+  });
+
+  test("transit step should have transit_details and transit populated", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const steps = response.routes[0].legs[0].steps;
+      const transitStep = steps.find((s) => s.travel_mode === "TRANSIT");
+      expect(transitStep).toBeDefined();
+      expect(transitStep.transit_details).toBeDefined();
+      expect(transitStep.transit).toBeDefined();
+      done();
+    });
+  });
+
+  test("transit_details should have correct line info", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const steps = response.routes[0].legs[0].steps;
+      const transitStep = steps.find((s) => s.travel_mode === "TRANSIT");
+      const td = transitStep.transit_details;
+      expect(td.line.short_name).toBe("R");
+      expect(td.line.name).toBe("Broadway Local");
+      expect(td.line.color).toBe("#F6BC26");
+      expect(td.line.text_color).toBe("#000000");
+      expect(td.headsign).toBe("Downtown");
+      done();
+    });
+  });
+
+  test("transit_details should have correct departure and arrival stops", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const steps = response.routes[0].legs[0].steps;
+      const transitStep = steps.find((s) => s.travel_mode === "TRANSIT");
+      const td = transitStep.transit_details;
+      expect(td.departure_stop.name).toBe("Main St Station");
+      expect(td.arrival_stop.name).toBe("Downtown Station");
+      done();
+    });
+  });
+
+  test("transit_details num_stops should count intermediate stops + 1", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const steps = response.routes[0].legs[0].steps;
+      const transitStep = steps.find((s) => s.travel_mode === "TRANSIT");
+      expect(transitStep.transit_details.num_stops).toBe(2);
+      done();
+    });
+  });
+
+  test("transit_details should have agency info", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const steps = response.routes[0].legs[0].steps;
+      const transitStep = steps.find((s) => s.travel_mode === "TRANSIT");
+      const td = transitStep.transit_details;
+      expect(td.line.agencies[0].name).toBe("City Transit");
+      done();
+    });
+  });
+
+  test("transit_details vehicle type should be SUBWAY", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      const steps = response.routes[0].legs[0].steps;
+      const transitStep = steps.find((s) => s.travel_mode === "TRANSIT");
+      expect(transitStep.transit_details.line.vehicle.type).toBe(VehicleType.SUBWAY);
+      expect(transitStep.transit_details.line.vehicle.name).toBe("Subway");
+      done();
+    });
+  });
+
+  test("transit route summary should use line route names", (done) => {
+    directionsService.route(transitRequest).then((response) => {
+      expect(response.routes[0].summary).toBe("R");
+      done();
+    });
+  });
+
+  test("transit request should not include TRAVEL_STEP_INSTRUCTIONS or TYPICAL_DURATION features", (done) => {
+    directionsService.route(transitRequest).then(() => {
+      const input: CalculateRoutesRequest = mockedRoutesClientSend.mock.calls[0][0].input;
+      expect(input.LegAdditionalFeatures).not.toContain("TravelStepInstructions");
+      expect(input.LegAdditionalFeatures).not.toContain("TypicalDuration");
+      expect(input.LegAdditionalFeatures).toContain("IntermediateStops");
+      expect(input.LegAdditionalFeatures).toContain("Summary");
+      done();
+    });
+  });
+
+  test("transit request should set TravelMode to TRANSIT", (done) => {
+    directionsService.route(transitRequest).then(() => {
+      const input: CalculateRoutesRequest = mockedRoutesClientSend.mock.calls[0][0].input;
+      expect(input.TravelMode).toBe(RouteTravelMode.TRANSIT);
+      done();
+    });
+  });
+
+  const vehicleTypeCases: [string, string, string][] = [
+    ["Bus", VehicleType.BUS, "Bus"],
+    ["PrivateBus", VehicleType.BUS, "Bus"],
+    ["BusRapidTransit", VehicleType.INTERCITY_BUS, "Bus Rapid Transit"],
+    ["CityTrain", VehicleType.COMMUTER_TRAIN, "Train"],
+    ["HighSpeedTrain", VehicleType.HIGH_SPEED_TRAIN, "High Speed Train"],
+    ["IntercityTrain", VehicleType.HEAVY_RAIL, "Intercity Train"],
+    ["InterregionalTrain", VehicleType.HEAVY_RAIL, "Interregional Train"],
+    ["RegionalTrain", VehicleType.HEAVY_RAIL, "Regional Train"],
+    ["LightRail", VehicleType.TRAM, "Light Rail"],
+    ["Monorail", VehicleType.MONORAIL, "Monorail"],
+    ["Ferry", VehicleType.FERRY, "Ferry"],
+    ["FunicularRailway", VehicleType.FUNICULAR, "Funicular"],
+    ["AerialTramway", VehicleType.GONDOLA_LIFT, "Aerial Tramway"],
+    ["All", VehicleType.OTHER, "Transit"],
+  ];
+
+  vehicleTypeCases.forEach(([mode, expectedVehicleType, expectedVehicleName]) => {
+    test(`transit_details vehicle type for ${mode} mode`, (done) => {
+      mockedRoutesClientSend.mockImplementationOnce(() =>
+        Promise.resolve({
+          LegGeometryFormat: "Simple",
+          Notices: [],
+          Routes: [
+            {
+              Legs: [
+                {
+                  Geometry: { LineString: [[-97.7277, 30.23973], [-97.74, 30.26]] },
+                  TravelMode: mode,
+                  Type: "Transit",
+                  TransitLegDetails: {
+                    AfterTravelSteps: [],
+                    Arrival: { Place: { Position: [-97.74, 30.26], Name: "Arr" }, Time: "2026-06-08T13:34:00-04:00" },
+                    Attributions: [],
+                    BeforeTravelSteps: [],
+                    BookingWebLinks: [],
+                    Departure: { Place: { Position: [-97.7277, 30.23973], Name: "Dep" }, Time: "2026-06-08T13:25:00-04:00" },
+                    Incidents: [],
+                    IntermediateStops: [],
+                    NextDepartures: [],
+                    Notices: [],
+                    PassThroughWaypoints: [],
+                    Spans: [],
+                    Transport: { Mode: mode, RouteName: "X", Color: "#FF0000", TextColor: "#FFFFFF" },
+                    TravelSteps: [],
+                    Agency: { Name: "Test Agency" },
+                    Summary: { Overview: { Distance: 2000, Duration: 540 }, TravelOnly: { Duration: 540 } },
+                  },
+                },
+              ],
+              Summary: { Distance: 2000, Duration: 540 },
+            },
+          ],
+        }),
+      );
+
+      directionsService.route(transitRequest).then((response) => {
+        const steps = response.routes[0].legs[0].steps;
+        const transitStep = steps.find((s) => s.travel_mode === "TRANSIT");
+        expect(transitStep.transit_details.line.vehicle.type).toBe(expectedVehicleType);
+        expect(transitStep.transit_details.line.vehicle.name).toBe(expectedVehicleName);
         done();
       });
     });
