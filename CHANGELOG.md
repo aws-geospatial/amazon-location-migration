@@ -1,3 +1,10 @@
+# 1.4.0
+
+### ✨ Features and improvements
+
+- **Transit Routing**: Added support for `TravelMode.TRANSIT` in `DirectionsRequest`, leveraging Amazon Location's [new public transit routing](https://aws.amazon.com/about-aws/whats-new/2026/06/amazon-location-service/amazon-location-new-public-transit-intermodal-routing/). Includes `transitOptions.modes` mapping, rich `transit_details` on each step, and an updated advanced demo showcasing transit routes
+- Updated `@aws-sdk/client-geo-routes`, `@aws-sdk/client-geo-places`, and `@aws-sdk/client-geo-maps` to `^3.1063.0`
+
 # 1.3.1
 
 ### ✨ Features and improvements
