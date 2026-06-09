@@ -203,6 +203,10 @@ export function populateTravelModeOption(
         // Transit routing is not supported for route matrix or waypoint optimization
         if (!("Origins" in input) && !("Waypoints" in input)) {
           input.TravelMode = RouteTravelMode.TRANSIT;
+        } else {
+          console.warn(
+            "TravelMode.TRANSIT is not supported for distance matrix or waypoint optimization requests and will be ignored.",
+          );
         }
         break;
       }

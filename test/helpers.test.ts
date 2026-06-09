@@ -1183,6 +1183,8 @@ describe("populateTravelModeOption", () => {
   });
 
   test("should not set TravelMode to TRANSIT for CalculateRouteMatrixRequest", () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
     const options: google.maps.DistanceMatrixRequest = {
       origins: [{ lat: 30.2784, lng: -97.7289 }],
       destinations: [{ lat: 30.2672, lng: -97.7431 }],
@@ -1197,9 +1199,15 @@ describe("populateTravelModeOption", () => {
     populateTravelModeOption(options, input);
 
     expect(input.TravelMode).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "TravelMode.TRANSIT is not supported for distance matrix or waypoint optimization requests and will be ignored.",
+    );
+    warnSpy.mockRestore();
   });
 
   test("should not set TravelMode to TRANSIT for OptimizeWaypointsRequest", () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
     const options: google.maps.DirectionsRequest = {
       origin: { lat: 30.2784, lng: -97.7289 },
       destination: { lat: 30.2672, lng: -97.7431 },
@@ -1215,6 +1223,10 @@ describe("populateTravelModeOption", () => {
     populateTravelModeOption(options, input);
 
     expect(input.TravelMode).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "TravelMode.TRANSIT is not supported for distance matrix or waypoint optimization requests and will be ignored.",
+    );
+    warnSpy.mockRestore();
   });
 
   test("should work with OptimizeWaypointsRequest", () => {
