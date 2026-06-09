@@ -118,7 +118,7 @@
 | [TransitMode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#TransitMode)                                      | :white_check_mark: | Supported as part of `transitOptions.modes` in `DirectionsRequest`. See [details](directions.md#directionsrequest-interface). |
 | [TransitRoutePreference](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#TransitRoutePreference)                | :x:                |                                                                                                                               |
 | [TravelMode](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#TravelMode)                                        | :white_check_mark: |                                                                                                                               |
-| [VehicleType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#VehicleType)                                      | :x:                |                                                                                                                               |
+| [VehicleType](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/directions#VehicleType)                                      | :white_check_mark:                |                                                                                                                               |
 
 ### [MarkerLibrary interface](https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/reference/library-interfaces#MarkerLibrary)
 
