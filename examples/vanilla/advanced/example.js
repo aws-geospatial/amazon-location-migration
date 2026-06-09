@@ -22,14 +22,17 @@ const POLYLINE_OPTIONS = {
     strokeColor: "#0D4AFF", // Dark blue
     strokeOpacity: 0.6,
     strokeWeight: 8,
+    zIndex: 2,
   },
   ALTERNATE: {
     strokeColor: "#73B9FF", // Light blue
     strokeOpacity: 0.5,
     strokeWeight: 8,
+    zIndex: 1,
   },
   TRANSPARENT: {
     strokeColor: "#00000000", // Used for main route when travel mode is set to walking
+    zIndex: 1,
   },
 };
 
@@ -480,11 +483,12 @@ async function initMap(center, colorScheme = null) {
     // Update the current travel mode
     if (selectedMode === "DRIVING") {
       currentTravelMode = travelMode.DRIVING;
-
-      // Clear any circle markers when switching to driving mode
       clearRouteMarkers();
     } else if (selectedMode === "WALKING") {
       currentTravelMode = travelMode.WALKING;
+    } else if (selectedMode === "TRANSIT") {
+      currentTravelMode = travelMode.TRANSIT;
+      clearRouteMarkers();
     }
 
     // Recalculate the route with the new travel mode
@@ -676,6 +680,23 @@ function updateSelectedRouteIndex(index) {
   // Update the route index
   mainDirectionRenderer.setRouteIndex(index);
 
+  // If in transit mode, update the polyline color to match the selected route's line
+  // and suppress the alternate renderer for the selected route to prevent color blending
+  if (currentTravelMode === travelMode.TRANSIT) {
+    const directions = mainDirectionRenderer.getDirections();
+    const route = directions?.routes?.[index];
+    const firstTransitStep = route?.legs.flatMap((l) => l.steps).find((s) => s.transit?.line?.color);
+    const lineColor = firstTransitStep?.transit?.line?.color || POLYLINE_OPTIONS.MAIN.strokeColor;
+    mainDirectionRenderer.setOptions({
+      polylineOptions: { ...POLYLINE_OPTIONS.MAIN, strokeColor: lineColor },
+    });
+    alternativeDirectionsRenderers.forEach((renderer, i) => {
+      renderer.setOptions({
+        polylineOptions: i === index ? POLYLINE_OPTIONS.TRANSPARENT : POLYLINE_OPTIONS.ALTERNATE,
+      });
+    });
+  }
+
   // If in walking mode, update the transparency of alternative renderers
   // and redraw the circle markers for the newly selected route
   if (currentTravelMode === travelMode.WALKING) {
@@ -748,6 +769,36 @@ function getManeuverIcon(maneuver) {
   }
 }
 
+function getTransitLineBadge(transitDetails) {
+  if (!transitDetails?.line) return "";
+  const line = transitDetails.line;
+  // Strip trailing " Line" suffix (e.g. "R Line" → "R", "M5" stays "M5")
+  const shortName = (line.short_name || line.name || "").replace(/ Line$/, "");
+  if (!shortName) return "";
+  const color = line.color || "#888";
+  const textColor = line.text_color || "#fff";
+  return `<span class="transit-line-badge" style="background:${color};color:${textColor}">${shortName}</span>`;
+}
+
+function getTransitVehicleIcon(vehicleType) {
+  const icons = {
+    BUS: "🚌",
+    INTERCITY_BUS: "🚌",
+    SUBWAY: "🚇",
+    COMMUTER_TRAIN: "🚆",
+    HIGH_SPEED_TRAIN: "🚄",
+    HEAVY_RAIL: "🚂",
+    TRAM: "🚊",
+    MONORAIL: "🚝",
+    FERRY: "⛴️",
+    FUNICULAR: "🚡",
+    GONDOLA_LIFT: "🚡",
+    RAIL: "🚆",
+    OTHER: "🚌",
+  };
+  return icons[vehicleType] || "🚌";
+}
+
 function displayRouteSteps(routeIndex) {
   const stepsContainer = document.getElementById("route-steps");
 
@@ -757,20 +808,75 @@ function displayRouteSteps(routeIndex) {
   const route = currentRoutes[routeIndex];
   const leg = route.legs[0];
   const steps = leg.steps;
+  const isTransit = currentTravelMode === travelMode.TRANSIT;
 
-  steps.forEach((step, index) => {
-    const maneuver = step.maneuver || "";
-    const icon = getManeuverIcon(maneuver);
+  // Show departure/arrival times for transit at the top of the steps panel
+  if (isTransit && (leg.departure_time || leg.arrival_time)) {
+    const timeDiv = document.createElement("div");
+    timeDiv.className = "transit-leg-times";
+    const depText = leg.departure_time ? `Depart ${leg.departure_time.text}` : "";
+    const arrText = leg.arrival_time ? `Arrive ${leg.arrival_time.text}` : "";
+    timeDiv.innerHTML = [depText, arrText].filter(Boolean).join(" &nbsp;→&nbsp; ");
+    stepsContainer.appendChild(timeDiv);
+  }
 
+  steps.forEach((step) => {
     const stepDiv = document.createElement("div");
     stepDiv.className = "step-entry";
-    stepDiv.innerHTML = `
-      <div class="step-line">
-        <span class="step-icon">${icon}</span>
-        <span class="step-text">${step.instructions}</span>
-      </div>
-      <div class="step-meta">${step.distance.text} • ${step.duration.text}</div>
-    `;
+
+    if (isTransit && step.transit) {
+      const td = step.transit;
+      const vehicleIcon = getTransitVehicleIcon(td.line?.vehicle?.type);
+      const badge = getTransitLineBadge(td);
+      const lineName = td.line?.name || "";
+      const agencyName = td.line?.agencies?.[0]?.name || "";
+      const headsign = td.headsign ? `towards <em>${td.headsign}</em>` : "";
+      const stops = td.num_stops ? `${td.num_stops} stop${td.num_stops > 1 ? "s" : ""}` : "";
+      const depTime = td.departure_time?.text ? `Depart ${td.departure_time.text}` : "";
+      const arrTime = td.arrival_time?.text ? `Arrive ${td.arrival_time.text}` : "";
+      const times = [depTime, arrTime].filter(Boolean).join(" → ");
+      const lineColor = td.line?.color || "#888";
+
+      stepDiv.innerHTML = `
+        <div class="step-line transit-step" style="border-left: 4px solid ${lineColor}; padding-left: 8px;">
+          <span class="step-icon">${vehicleIcon}</span>
+          <div class="transit-step-body">
+            <div class="transit-step-header">
+              ${badge}
+              ${lineName ? `<span class="transit-line-name">${lineName}</span>` : ""}
+            </div>
+            ${headsign ? `<div class="transit-step-headsign">${headsign}</div>` : ""}
+            <div class="transit-step-meta">
+              ${td.departure_stop?.name ? `<span>📍 <strong>${td.departure_stop.name}</strong></span>` : ""}
+              ${td.arrival_stop?.name ? `<span>🏁 <strong>${td.arrival_stop.name}</strong></span>` : ""}
+              ${stops ? `<span>${stops}</span>` : ""}
+            </div>
+            ${times ? `<div class="transit-step-times">${times}</div>` : ""}
+            ${agencyName ? `<div class="transit-agency">${agencyName}</div>` : ""}
+          </div>
+        </div>
+      `;
+    } else if (isTransit && step.travel_mode === "WALKING") {
+      stepDiv.className = "step-entry transit-walk-step";
+      stepDiv.innerHTML = `
+        <div class="step-line">
+          <span class="step-icon">🚶</span>
+          <span class="step-text">${step.instructions || "Walk"}</span>
+        </div>
+        <div class="step-meta">${step.distance?.text || ""} • ${step.duration?.text || ""}</div>
+      `;
+    } else {
+      const maneuver = step.maneuver || "";
+      const icon = getManeuverIcon(maneuver);
+      stepDiv.innerHTML = `
+        <div class="step-line">
+          <span class="step-icon">${icon}</span>
+          <span class="step-text">${step.instructions}</span>
+        </div>
+        <div class="step-meta">${step.distance?.text || ""} • ${step.duration?.text || ""}</div>
+      `;
+    }
+
     stepsContainer.appendChild(stepDiv);
   });
 }
@@ -794,11 +900,33 @@ function displayAlternateRoutes(directionsResult) {
     const distance = leg.distance.text;
     const duration = leg.duration.text;
 
+    // For transit routes, collect line badges from transit_details across all steps
+    const isTransit = currentTravelMode === travelMode.TRANSIT;
+    let summaryContent;
+    if (isTransit) {
+      const allSteps = route.legs.flatMap((l) => l.steps);
+      const badges = allSteps
+        .filter((s) => s.transit?.line)
+        .map((s) => getTransitLineBadge(s.transit))
+        .filter(Boolean);
+      const depTime = leg.departure_time?.text ? `Depart ${leg.departure_time.text}` : "";
+      const arrTime = leg.arrival_time?.text ? `Arrive ${leg.arrival_time.text}` : "";
+      const times = [depTime, arrTime].filter(Boolean).join(" → ");
+      const fare = route.fare?.text ? `<span class="transit-fare">🎫 ${route.fare.text}</span>` : "";
+      summaryContent = `
+        <div class="transit-route-badges">${badges.join(" ")}</div>
+        ${times ? `<div class="transit-route-times">${times}</div>` : ""}
+        ${fare}
+      `;
+    } else {
+      summaryContent = `<div class="summary">via ${summary}</div>`;
+    }
+
     const routeInfo = document.createElement("div");
     routeInfo.className = "route-entry";
     routeInfo.innerHTML = `
       <div class="route-row">
-        <div class="summary">via ${summary}</div>
+        ${summaryContent}
         <div class="details">
           <span>${distance}</span> • <span>${duration}</span>
         </div>
@@ -843,6 +971,21 @@ function calculateRoute() {
         renderer.setDirections(response);
         renderer.setRouteIndex(index);
       });
+
+      // For transit, color the main polyline using the first transit line's color
+      // and make the first alternate renderer transparent to prevent color blending
+      if (currentTravelMode === travelMode.TRANSIT) {
+        const firstTransitStep = response.routes[0]?.legs.flatMap((l) => l.steps).find((s) => s.transit?.line?.color);
+        const lineColor = firstTransitStep?.transit?.line?.color || POLYLINE_OPTIONS.MAIN.strokeColor;
+        mainDirectionRenderer.setOptions({
+          polylineOptions: { ...POLYLINE_OPTIONS.MAIN, strokeColor: lineColor },
+        });
+        alternativeDirectionsRenderers.forEach((renderer, i) => {
+          renderer.setOptions({
+            polylineOptions: i === 0 ? POLYLINE_OPTIONS.TRANSPARENT : POLYLINE_OPTIONS.ALTERNATE,
+          });
+        });
+      }
 
       // Update the main directions renderer last so it will be rendered on top
       mainDirectionRenderer.setDirections(response);

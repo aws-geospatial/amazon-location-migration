@@ -15,6 +15,7 @@ import {
   OptimizeWaypointsRequest,
   RoutePedestrianTravelStep,
   RoutePedestrianTravelStepType,
+  RouteTransitMode,
   RouteTravelMode,
   RouteVehicleTravelStep,
   RouteVehicleTravelStepType,
@@ -30,6 +31,9 @@ const FEET_TO_MILES_CONSTANT = 5280; // 1 mile is 5,280 feet or 1.60934 kilometr
 export interface ParseOrFindLocationResponse {
   locationLatLng: MigrationLatLng;
   position: [number, number];
+  formatted_address?: string;
+  place_id?: string;
+  types?: string[];
 }
 
 export function parseOrFindLocations(
@@ -195,7 +199,62 @@ export function populateTravelModeOption(
         input.TravelMode = RouteTravelMode.PEDESTRIAN;
         break;
       }
+      case TravelMode.TRANSIT: {
+        // Transit routing is not supported for route matrix or waypoint optimization
+        if (!("Origins" in input) && !("Waypoints" in input)) {
+          input.TravelMode = RouteTravelMode.TRANSIT;
+        } else {
+          console.warn(
+            "TravelMode.TRANSIT is not supported for distance matrix or waypoint optimization requests and will be ignored.",
+          );
+        }
+        break;
+      }
     }
+  }
+}
+
+// Maps Google TransitMode values to the corresponding Amazon RouteTransitMode values.
+// Google uses coarse-grained modes; Amazon has a richer set so each Google mode
+// expands to one or more Amazon modes.
+const GOOGLE_TRANSIT_MODE_MAP: Record<string, RouteTransitMode[]> = {
+  BUS: [RouteTransitMode.BUS, RouteTransitMode.BUS_RAPID_TRANSIT, RouteTransitMode.PRIVATE_BUS],
+  RAIL: [
+    RouteTransitMode.CITY_TRAIN,
+    RouteTransitMode.HIGH_SPEED_TRAIN,
+    RouteTransitMode.INTERCITY_TRAIN,
+    RouteTransitMode.INTERREGIONAL_TRAIN,
+    RouteTransitMode.REGIONAL_TRAIN,
+    RouteTransitMode.LIGHT_RAIL,
+    RouteTransitMode.MONORAIL,
+    RouteTransitMode.FUNICULAR_RAILWAY,
+  ],
+  SUBWAY: [RouteTransitMode.SUBWAY],
+  TRAIN: [
+    RouteTransitMode.CITY_TRAIN,
+    RouteTransitMode.HIGH_SPEED_TRAIN,
+    RouteTransitMode.INTERCITY_TRAIN,
+    RouteTransitMode.INTERREGIONAL_TRAIN,
+    RouteTransitMode.REGIONAL_TRAIN,
+  ],
+  TRAM: [RouteTransitMode.LIGHT_RAIL],
+};
+
+export function populateTransitOptions(options: google.maps.DirectionsRequest, input: CalculateRoutesRequest): void {
+  if (options.travelMode !== TravelMode.TRANSIT || !options.transitOptions?.modes?.length) {
+    return;
+  }
+
+  const allowedModes = [
+    ...new Set(options.transitOptions.modes.flatMap((mode) => GOOGLE_TRANSIT_MODE_MAP[mode] ?? [])),
+  ];
+
+  if (allowedModes.length > 0) {
+    input.TravelModeOptions = {
+      Transit: {
+        AllowedModes: allowedModes,
+      },
+    };
   }
 }
 

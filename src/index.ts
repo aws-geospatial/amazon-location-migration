@@ -28,6 +28,7 @@ import {
   MigrationPoint,
   MigrationSize,
   PlacesServiceStatus,
+  VehicleType,
 } from "./common";
 import {
   MigrationInfoWindow,
@@ -140,6 +141,7 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
       DistanceMatrixService: MigrationDistanceMatrixService,
       DirectionsStatus: DirectionsStatus,
       TravelMode: TravelMode,
+      VehicleType: VehicleType,
       UnitSystem: UnitSystem,
       DistanceMatrixElementStatus: DistanceMatrixElementStatus,
       DistanceMatrixStatus: DistanceMatrixStatus,
@@ -243,6 +245,7 @@ const migrationInit = async function (apiKey: string, region?: string, postMigra
                 DistanceMatrixService: MigrationDistanceMatrixService,
                 DirectionsStatus: DirectionsStatus,
                 TravelMode: TravelMode,
+                VehicleType: VehicleType,
                 DistanceMatrixElementStatus: DistanceMatrixElementStatus,
                 DistanceMatrixStatus: DistanceMatrixStatus,
               });
