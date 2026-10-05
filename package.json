@@ -22,7 +22,6 @@
     "node": ">= 16.0.0"
   },
   "browser": "./dist/amazonLocationMigrationSDK.js",
-  "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "files": [
     "./LICENSE.txt",
@@ -44,7 +43,6 @@
     "build:ts": "npm-run-all build-ts:*",
     "build:bundle": "rollup -c",
     "build-ts:types": "tsc --declaration --emitDeclarationOnly --outDir dist/types",
-    "build-ts:cjs": "tsc --module commonjs --outDir dist/cjs",
     "build-ts:esm": "tsc --esModuleInterop --module esnext --outDir dist/esm",
     "prepare": "husky install",
     "prepublishOnly": "npm-run-all clean lint prettier:check test build",
@@ -54,8 +52,36 @@
     "testMatch": [
       "**/**.test.ts"
     ],
+    "moduleNameMapper": {
+      "^maplibre-gl$": "<rootDir>/node_modules/maplibre-gl/dist/maplibre-gl.mjs"
+    },
     "transform": {
-      ".(js|ts)": "ts-jest"
+      "\\.mjs$": [
+        "babel-jest",
+        {
+          "babelrc": false,
+          "configFile": false,
+          "presets": [
+            [
+              "@babel/preset-env",
+              {
+                "targets": {
+                  "node": "current"
+                }
+              }
+            ]
+          ],
+          "plugins": [
+            "./test/jest/import-meta-url.cjs"
+          ]
+        }
+      ],
+      ".(js|ts)": [
+        "ts-jest",
+        {
+          "tsconfig": "test/tsconfig.json"
+        }
+      ]
     },
     "transformIgnorePatterns": [
       "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|ts|tsx|cjs|json)$",
@@ -95,7 +121,7 @@
     "@aws/polyline": "^0.1.2",
     "@turf/turf": "^7.1.0",
     "libphonenumber-js": "^1.11.16",
-    "maplibre-gl": "^5.5.0",
+    "maplibre-gl": "^6.11.2",
     "open-location-code": "^1.0.3"
   },
   "devDependencies": {
@@ -113,8 +139,8 @@
     "@types/jest": "^29.5.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
-    "@typescript-eslint/parser": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^8.71.0",
+    "@typescript-eslint/parser": "^8.71.0",
     "eslint": "^9.39.2",
     "glob": "^11.1.0",
     "husky": "^8.0.3",
@@ -130,11 +156,11 @@
     "react-dom": "^18.2.0",
     "rollup": "^4.22.4",
     "rollup-plugin-polyfill-node": "^0.13.0",
-    "ts-jest": "^29.1.0",
+    "ts-jest": "^29.4.14",
     "ts-node": "^10.9.1",
-    "typedoc": "^0.24.1",
-    "typescript": "^5.0.2",
-    "typescript-eslint": "^8.54.0",
+    "typedoc": "^0.28.20",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.0",
     "vite": "^6.2.6"
   }
 }
