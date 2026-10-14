@@ -112,6 +112,11 @@
     ],
     "!(*.{js,ts})": "prettier --write --ignore-unknown"
   },
+  "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "argparse": "2.0.1"
+    }
+  },
   "dependencies": {
     "@aws-sdk/client-geo-maps": "^3.1063.0",
     "@aws-sdk/client-geo-places": "^3.1063.0",
