@@ -40,10 +40,13 @@ function maplibreWorker() {
     generateBundle() {
       const maplibreDist = path.dirname(require.resolve("maplibre-gl/dist/maplibre-gl.mjs"));
       for (const fileName of maplibreWorkerFiles) {
+        const source = fs.readFileSync(path.join(maplibreDist, fileName), "utf8");
         this.emitFile({
           type: "asset",
           fileName,
-          source: fs.readFileSync(path.join(maplibreDist, fileName), "utf8"),
+          // We don't copy over maplibre's .map files, so strip the comment that points to them;
+          // otherwise dev servers (e.g. Vite) try to fetch a sourcemap that doesn't exist.
+          source: source.replace(/\n\/\/# sourceMappingURL=.*\n?$/, "\n"),
         });
       }
     },
