@@ -1,3 +1,22 @@
+# 2.0.0
+
+### ⚠️ Breaking changes
+
+- **MapLibre GL JS 6**: Updated `maplibre-gl` from 5.5.0 to 6.11.2 to resolve a critical XSS sanitizer bypass in `DOM.sanitize()` ([CVE-2026-85061](https://nvd.nist.gov/vuln/detail/CVE-2026-85061), [GHSA-jrc7-96c5-q579](https://github.com/advisories/GHSA-jrc7-96c5-q579)). The first fixed MapLibre release is 6.4.1, so this release moves the SDK to MapLibre v6
+- **ES modules only**: The CommonJS build (`dist/cjs` and the `main` entry) is removed, because MapLibre v6 cannot be loaded with `require()`. Import the SDK as an ES module
+- **WebGL2 required**: MapLibre v6 requires a browser with WebGL2
+- **MapLibre worker**: MapLibre v6 loads its web worker from a separate file (`maplibre-gl-worker.mjs`, which imports `maplibre-gl-shared.mjs`):
+  - Script tag: the SDK loads the worker from the same folder as `amazonLocationMigrationSDK.js`, and both files now ship in `dist/`. If you self-host the SDK, copy `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` next to `amazonLocationMigrationSDK.js`
+  - NPM `Loader`: added a `workerUrl` option to serve the worker from your own site. By default the `Loader` uses the worker for the bundled MapLibre version from jsDelivr, unless your app already set one with MapLibre's `setWorkerUrl()`
+  - Content Security Policy: a worker loaded from a different origin (for example jsDelivr) is started from a `blob:` URL, so your CSP must allow `worker-src blob:`. A same-origin worker needs only `worker-src 'self'`
+- See [MapLibre worker and browser requirements](README.md#maplibre-worker-and-browser-requirements) for setup details, including Vite and other bundlers
+
+### ✨ Features and improvements
+
+- The script-tag bundle now escapes non-ASCII characters so it loads on pages that don't declare UTF-8
+- Removed the unneeded source map comment from the bundled MapLibre worker files, so dev servers no longer request a missing source map
+- Security: Updated development and transitive dependencies to resolve vulnerabilities, including `brace-expansion`, `braces`, `handlebars`, `js-yaml` ([GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh)), `markdown-it`, `shell-quote`, `source-map-js`, `browserslist`, and `@humanfs`, and removed `sprintf-js` ([GHSA-hp3w-g68c-fv3c](https://github.com/advisories/GHSA-hp3w-g68c-fv3c))
+
 # 1.4.0
 
 ### ✨ Features and improvements
