@@ -147,6 +147,44 @@ loader.importLibrary("maps").then(({ Map }) => {
 });
 ```
 
+### MapLibre worker and browser requirements
+
+The migration SDK renders maps with [MapLibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) v6, which requires a browser with WebGL2 and runs tile decoding in a separate web worker script (`maplibre-gl-worker.mjs`).
+
+- **Script tag:** the SDK loads the worker from the same folder as `amazonLocationMigrationSDK.js`. The jsDelivr URLs above work as-is. If you host the SDK yourself, copy `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` from the package's `dist/` folder next to `amazonLocationMigrationSDK.js`.
+- **NPM `Loader`:** bundlers can't locate the MapLibre worker, so by default the `Loader` uses the worker for the matching MapLibre version from jsDelivr. To serve the worker from your own site instead, pass its URL as `workerUrl`. If your app already calls MapLibre's `setWorkerUrl()`, the `Loader` keeps that URL.
+
+With Vite, import the worker with the `?worker&url` suffix. Vite then builds it into a single file with your app and gives you its URL:
+
+```javascript
+import { Loader } from "@aws/amazon-location-migration-sdk";
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+
+const loader = new Loader({
+  apiKey: "AMAZON_LOCATION_API_KEY",
+  region: "AMAZON_LOCATION_REGION",
+  workerUrl,
+});
+```
+
+Use `?worker&url`, not plain `?url`. The worker imports `maplibre-gl-shared.mjs`, and a production build with `?url` copies the worker without that file, so no tiles load. If your package manager doesn't let your app import `maplibre-gl` directly (for example pnpm, when `maplibre-gl` isn't in your own `package.json`), add `maplibre-gl` as a dependency at the same version the SDK uses.
+
+With other bundlers, copy `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` from `node_modules/maplibre-gl/dist/` into the same folder of your static assets, and pass the worker's URL:
+
+```javascript
+const loader = new Loader({
+  apiKey: "AMAZON_LOCATION_API_KEY",
+  region: "AMAZON_LOCATION_REGION",
+  workerUrl: "/assets/maplibre-gl-worker.mjs",
+});
+```
+
+See [MapLibre's installation guide](https://maplibre.org/maplibre-gl-js/docs/#installation) for webpack, esbuild, Rollup and Next.js setups.
+
+When the worker is loaded from a different origin than your page (for example from jsDelivr), MapLibre starts it from a `blob:` URL, so a Content Security Policy must allow `worker-src blob:`. A same-origin worker needs only `worker-src 'self'`.
+
+The SDK is published as ES modules only. CommonJS `require("@aws/amazon-location-migration-sdk")` is not supported.
+
 ## Supported Google APIs
 
 For a full overview of supported Google Maps APIs and current limitations, please see the [Supported APIs documentation](documentation/supportedLibraries.md).

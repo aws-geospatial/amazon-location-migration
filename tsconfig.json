@@ -2,8 +2,13 @@
   "compilerOptions": {
     "target": "es2017",
     "lib": ["es2017", "dom"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "strict": false,
+    "types": ["google.maps", "geojson", "node"],
+    "skipLibCheck": true,
+    "rootDir": "src",
     "outDir": "dist"
   },
   "typedocOptions": {

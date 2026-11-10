@@ -1,3 +1,13 @@
+# 2.0.0
+
+### Security and compatibility
+
+- Updated `maplibre-gl` from 5.5.0 to 6.11.2 to resolve CVE-2026-85061 / GHSA-jrc7-96c5-q579, a critical XSS sanitizer bypass in `DOM.sanitize()`
+- The SDK is now published as ES modules only; CommonJS `require()` is no longer supported
+- MapLibre GL JS 6 requires a browser with WebGL2
+- Added the separate MapLibre worker files and a `workerUrl` option; self-hosted installations must copy both worker files, and cross-origin workers require `worker-src blob:` in the Content Security Policy
+- Updated development and transitive dependencies to resolve additional security vulnerabilities
+
 # 1.4.0
 
 ### ✨ Features and improvements

@@ -86,7 +86,7 @@ jest.mock("maplibre-gl", () => ({
   }),
 }));
 
-import { FullscreenControl, LngLatBounds, Map, MapOptions, NavigationControl } from "maplibre-gl";
+import { FullscreenControl, LngLatBounds, Map, MapOptions, NavigationControl, RequestParameters } from "maplibre-gl";
 
 MigrationMap.prototype._apiKey = "test-api-key";
 MigrationMap.prototype._region = "test-region";
@@ -166,7 +166,8 @@ test("migration map should transform requests with custom user agent", () => {
   const transformRequestFn = mockedMapInput.transformRequest;
   const testUrl =
     "https://maps.geo.test-region.amazonaws.com/v2/styles/Standard/descriptor?key=test-api-key&color-scheme=Light";
-  const output = transformRequestFn!(testUrl);
+  // Our transformRequest is synchronous, even though MapLibre v6 also allows it to return a Promise
+  const output = transformRequestFn!(testUrl) as RequestParameters;
   expect(output!.url).toStrictEqual(testUrl);
   expect("X-Amz-User-Agent" in output!.headers).toStrictEqual(true);
   expect(output!.headers["X-Amz-User-Agent"]).toContain("migration-sdk");

@@ -55,4 +55,19 @@ export default [
       "@typescript-eslint/ban-ts-comment": "off",
     },
   },
+  {
+    // Jest setup and transform files run as CommonJS
+    files: ["setupFilesAfterEnv.js", "**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        module: "readonly",
+        require: "readonly",
+        globalThis: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ];

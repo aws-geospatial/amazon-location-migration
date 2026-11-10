@@ -7,3 +7,10 @@
 if (typeof window.URL.createObjectURL === "undefined") {
   window.URL.createObjectURL = jest.fn();
 }
+
+// MapLibre GL JS v6 decodes tiles with TextDecoder at module load, which jsdom doesn't provide
+if (typeof globalThis.TextDecoder === "undefined") {
+  const { TextDecoder, TextEncoder } = require("util");
+  globalThis.TextDecoder = TextDecoder;
+  globalThis.TextEncoder = TextEncoder;
+}

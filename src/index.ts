@@ -4,6 +4,7 @@
 import { withAPIKey } from "@aws/amazon-location-utilities-auth-helper";
 import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
 import { GeoRoutesClient } from "@aws-sdk/client-geo-routes";
+import { getVersion, getWorkerUrl, setWorkerUrl } from "maplibre-gl";
 
 import {
   MigrationDirectionsRenderer,
@@ -59,7 +60,7 @@ import { PACKAGE_VERSION } from "./version";
 // Also the MapLibre Geocoder input field won't function properly
 const maplibreStyle = document.createElement("link");
 maplibreStyle.setAttribute("rel", "stylesheet");
-maplibreStyle.setAttribute("href", "https://cdn.jsdelivr.net/npm/maplibre-gl@5.5.0/dist/maplibre-gl.css");
+maplibreStyle.setAttribute("href", "https://cdn.jsdelivr.net/npm/maplibre-gl@6.11.2/dist/maplibre-gl.css");
 document.head.appendChild(maplibreStyle);
 const maplibreGeocoderStyle = document.createElement("link");
 maplibreGeocoderStyle.setAttribute("rel", "stylesheet");
@@ -308,6 +309,14 @@ if (currentScript) {
 export interface LoaderOptions {
   apiKey: string;
   region?: string;
+  /**
+   * URL of the MapLibre GL JS worker script (`maplibre-gl-worker.mjs`). MapLibre v6 can't find its worker file once a
+   * bundler (Vite, webpack, esbuild, Rollup) has bundled it. If you don't set this, the Loader keeps a worker URL your
+   * app already set with MapLibre's `setWorkerUrl()`, and otherwise uses the worker for the exact bundled MapLibre
+   * version from the jsDelivr CDN. Set this to serve the worker yourself, e.g. to avoid the CDN or a `worker-src blob:`
+   * CSP directive. With Vite, `import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"`.
+   */
+  workerUrl?: string;
 }
 
 // Mimic the @googlemaps/js-api-loader interface so that users can also import google
@@ -316,9 +325,16 @@ export class Loader {
   #apiKey: string;
   #region: string;
 
-  constructor({ apiKey, region }: LoaderOptions) {
+  constructor({ apiKey, region, workerUrl }: LoaderOptions) {
     this.#apiKey = apiKey;
     this.#region = region;
+
+    if (workerUrl) {
+      setWorkerUrl(workerUrl);
+    } else if (!getWorkerUrl()) {
+      // Keep a worker URL the app already set with MapLibre's own setWorkerUrl()
+      setWorkerUrl(`https://cdn.jsdelivr.net/npm/maplibre-gl@${getVersion()}/dist/maplibre-gl-worker.mjs`);
+    }
   }
 
   // One of two ways the @googlemaps/js-api-loader loads the Google APIs, which follows their importLibrary

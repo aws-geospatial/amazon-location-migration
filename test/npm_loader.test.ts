@@ -4,9 +4,15 @@
 // Import the migration SDK index. Unlike the index.test.ts, we don't setup a mock currentScript, so this
 // test file can test being imported through the NPM Loader pattern
 import { Loader } from "../src/index";
+import { getVersion, getWorkerUrl, setWorkerUrl } from "maplibre-gl";
 
 // Spy on console.error so we can verify it gets called in error cases
 jest.spyOn(console, "error").mockImplementation(() => {});
+
+beforeEach(() => {
+  // The MapLibre worker URL is global state, so clear it between tests
+  setWorkerUrl("");
+});
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -192,4 +198,36 @@ test("should report an error if a library we don't support is requested through 
 
   expect(HeatmapLayer).toBeUndefined();
   expect(console.error).toHaveBeenCalledTimes(1);
+});
+
+test("NPM Loader should default the MapLibre worker URL to the CDN copy of the bundled MapLibre version", () => {
+  new Loader({
+    apiKey: "testAPIKey",
+    region: "us-west-2",
+  });
+
+  expect(getWorkerUrl()).toStrictEqual(
+    `https://cdn.jsdelivr.net/npm/maplibre-gl@${getVersion()}/dist/maplibre-gl-worker.mjs`,
+  );
+});
+
+test("NPM Loader should use a custom MapLibre worker URL when one is provided", () => {
+  new Loader({
+    apiKey: "testAPIKey",
+    region: "us-west-2",
+    workerUrl: "https://example.com/assets/maplibre-gl-worker.mjs",
+  });
+
+  expect(getWorkerUrl()).toStrictEqual("https://example.com/assets/maplibre-gl-worker.mjs");
+});
+
+test("NPM Loader should keep a MapLibre worker URL the app already set", () => {
+  setWorkerUrl("/assets/maplibre-gl-worker.mjs");
+
+  new Loader({
+    apiKey: "testAPIKey",
+    region: "us-west-2",
+  });
+
+  expect(getWorkerUrl()).toStrictEqual("/assets/maplibre-gl-worker.mjs");
 });
